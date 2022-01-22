@@ -361,9 +361,9 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(1,X+3)-mode->getY(y3,X+3));
 		dDP = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1)/Pscale*Rstar;
 		
-		if(isnan(d2Phi)) d2Phi = 0.0;
-		if(isnan(difxi)) difxi = 0.0;
-		if(isnan(dDP)) dDP = 0.0;
+		if(std::isnan(d2Phi)) d2Phi = 0.0;
+		if(std::isnan(difxi)) difxi = 0.0;
+		if(std::isnan(dDP)) dDP = 0.0;
 		
 		//Now calculate residuals
 		//Perturbed Poisson equation
@@ -389,9 +389,9 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		e1 = e1/n1;
 		e2 = e2/n2;
 		e3 = e3/n3;
-		if(isnan(e1)) e1 = 0.0;
-		if(isnan(e2)) e2 = 0.0;
-		if(isnan(e3)) e3 = 0.0;
+		if(std::isnan(e1)) e1 = 0.0;
+		if(std::isnan(e2)) e2 = 0.0;
+		if(std::isnan(e3)) e3 = 0.0;
 		//collect residuals
 		checkPois += e1*e1;
 		checkCont += e2*e2;

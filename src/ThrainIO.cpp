@@ -10,7 +10,6 @@
 #include "ThrainMain.h"
 #include "ThrainIO.h"
 
-
 //this function reads in user input from the specified file to create calculation data
 int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	//open file
@@ -59,9 +58,9 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	instring = std::string(input_buffer);
 	if(!instring.compare("newtonian")) calcdata.regime = regime::PN0;
 	else{
-		printf("error in input method of physical regime\n");
-		printf("THRAIN is only capable of Newtonian physics\n");
-		return 1;
+		printf("ERROR IN INPUT: THRAIN only knows Newtonian physics!\n");
+		printf("This error is recoverable!  Setting to proper regime.\n");
+		calcdata.regime = regime::PN0;
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
@@ -71,7 +70,8 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	else if(!instring.compare("MESA")) calcdata.model = model::MESA;
 	else if(!instring.compare("SWD"))  calcdata.model = model::SWD;
 	else {
-		printf("Error in input: stellar model type not recognized or unsupported\n");
+		printf("ERROR IN INPUT: THRAIN can only work with polytrope, CHWD, MESA, or SWD\n");
+		printf("This error is fatal.  Quitting.");
 		return 1;
 	}
 	
@@ -106,12 +106,14 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		else if(!instring.compare("zsurf"))  {calcdata.zsurf =temp; calcdata.params|=units::pzsurf;}
 		else if(!instring.compare("logg"))   {calcdata.logg  =temp; calcdata.params|=units::plogg;}
 		else {
-			printf("ERROR invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
+			printf("ERROR IN INPUT: invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
+			printf("This error is fatal.  Quitting.\n");
 			return 1;
 		}
 		//make sure we did not specify the same parameter twice
 		if(calcdata.params == tempparam){
-			printf("ERROR double specification of stellar parameters, star underdefined\n");
+			printf("ERROR IN INPUT: double specification of stellar parameters, star underdefined\n");
+			printf("This error is fatal.  Quitting.\n");
 			switch(calcdata.params){
 				case units::pmass:   printf("\tmass given twice\n"); break;
 				case units::pradius: printf("\tradius given twice\n"); break;
@@ -121,7 +123,8 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 			return 1;	
 		}	
 		if((calcdata.params&units::pteff)){
-			printf("ERROR polytropes cannot be assigned temperature\n");
+			printf("ERROR IN INPUT: polytropes cannot be assigned temperature\n");
+			printf("This error is fatal.  Quitting.\n");
 			return 1;
 		}
 	}
@@ -205,23 +208,26 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		//save value in appropriate slot use bit-masking to keep track of variables
 		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::pmass;}
 		else {
-			printf("ERROR first parameter to SimpleWD must be mass\n");
+			printf("ERROR IN INPUT: first parameter to SimpleWD must be mass\n");
+			printf("This error is fatal.  Quitting.\n");
 			return 1;
 		}
-		//printf("%s=%lf\n", input_buffer, temp);
 		//read in second physical parameters -- name as string, value as double
 		fscanf(input_file, "%s %lf\n", input_buffer, &temp);
 		instring=std::string(input_buffer);
 		//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
 		if(!instring.compare("teff")){ calcdata.teff = temp; calcdata.params|=units::pteff;}
 		else {
-			printf("ERROR second parameter to SimpleWD must be teff\n");
-			return 1;
+			printf("ERROR IN INPUT: second parameter to SimpleWD must be teff\n");
+			printf("This error is recoverable.  Using teff = 12 000 K\n");
+			calcdata.teff = 12000.0;
+			calcdata.params|=units::pteff;
 		}
 		//double check we have both mass and effective temperature
 		char tempparam = units::pmass|units::pteff;
 		if(calcdata.params != tempparam){
-			printf("ERROR a SimpleWD needs both mass and teff\n");
+			printf("ERROR IN INPUT: a SimpleWD needs both mass and teff\n");
+			printf("This error is fatal.  Quitting.\n");
 			return 1;	
 		}
 		printf("Making SimpleWD model with:\n");
@@ -237,9 +243,10 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	else if(!instring.compare("SI"))  calcdata.units = units::SI;
 	else if(!instring.compare("CGS")) calcdata.units = units::CGS;
 	else{
-		printf("error in input method of units\n");
+		printf("ERROR IN INPUT: units incorrectly written...\n");
 		printf("units: %s\n", input_buffer);
 		printf("units: %s\n", instring.c_str());
+		printf("This error is fatal.  Quitting.\n");
 		return 1;
 	}
 
@@ -249,10 +256,10 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	if(!instring.compare("radial"))           calcdata.modetype = modetype::radial;
 	else if(!instring.compare("nonradial"))   calcdata.modetype = modetype::nonradial;
 	else if(!instring.compare("cowling"))     calcdata.modetype = modetype::cowling;
-	else if(!instring.compare("quasinormal")) calcdata.modetype = modetype::quasinormal;
 	else{
-		printf("error in mode specification\n");
-		return 1;
+		printf("ERROR IN INPUT: THRAIN can only compute nonradial modes.\n");
+		printf("This error is recoverable.  Changing mode type.");
+		calcdata.modetype = modetype::nonradial;
 	}
 	//read in the adiabatic index for the mode calculation
 	fscanf(input_file, "%s\n", input_buffer);
@@ -307,12 +314,6 @@ int echo_input(CalculationInputData &calcdata){
 	switch(calcdata.regime){
 		case regime::PN0:
 			fprintf(output_file, "newtonian ");
-			break;
-		case regime::PN1:
-			fprintf(output_file, "1pn ");
-			break;
-		case regime::GR:
-			fprintf(output_file, "gr ");
 			break;
 	}
 	switch(calcdata.model){
@@ -381,9 +382,6 @@ int echo_input(CalculationInputData &calcdata){
 			break;
 		case modetype::cowling:
 			fprintf(output_file, "cowling\t");
-			break;
-		case modetype::quasinormal:
-			fprintf(output_file, "quasinormal\t");
 			break;	
 	}
 	fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
@@ -473,7 +471,25 @@ int write_output(CalculationOutputData &calcdata){
 	return stat;
 }
 
+
+char dwarf[12][27] = {
+//use raw stirng literal input format R"()" to make ASCII art align
+	R"(#|*     * *     *|#)",
+	R"(#| *    ___    * |#)",
+	R"(#|  (\/.....\/)  |#)",
+	R"(#|  \/.......\/  |#)", 
+	R"(#| * |.-----.| * |#)", 
+	R"(#|  (  U | X  )  |#)",
+	R"(#|* (    v    ) *|#)",
+	R"(#|  /\_//_\\_/\  |#)",
+	R"(#| |  /     \  | |#)", 
+	R"(#| |     |     | |#)",
+	R"(#| /=\-\|O|/-/=\ |#)",
+	R"(#|       V       |#)"
+};
+
 int write_stellar_output(CalculationOutputData& calcdata){
+	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
 	char output_file_name[128];
@@ -491,23 +507,23 @@ int write_stellar_output(CalculationOutputData& calcdata){
 		}
 	}
 	
-	//print the cool splash
-	int WIDTH = 120;
-	char r[256],s[256],m[256];
-	switch(calcdata.regime){
-		case regime::PN0:
-		sprintf(r,"Newtonian (0PN)");
-		break;
-		case regime::PN1:
-		sprintf(r,"Post-Newtonian (1PN)");
-		break;
-		case regime::GR:
-		sprintf(r,"General Relativistic (GR)");
-		break;
-	}
+	//print the title bar
+	int WIDTH = 86;
+	//first bar
+	fprintf(output_file, "#");
+	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
+	//code title
+	std::string splash = "|    THRAIN     |  The Mighty White Dwarf Code";
+	fprintf(output_file, "\n#%s \n", splash.c_str());
+	//second bar
+	fprintf(output_file, "#");
+	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
+	fprintf(output_file, "\n");
+	
+	char s[256],m[256];
 	switch(calcdata.model){
 		case model::polytrope:
-		sprintf(s,"Polytropic Star");
+		sprintf(s,"Polytropic star");
 		break;
 		case model::CHWD:
 		sprintf(s,"Chandrasekhar WD");
@@ -516,64 +532,22 @@ int write_stellar_output(CalculationOutputData& calcdata){
 		sprintf(s,"MESA model");
 		break;
 		case model::SWD:
-		sprintf(s,"SWD model");
+		sprintf(s,"Simple WD model");
 		break;
 	}
 	switch(calcdata.modetype){
 		case modetype::radial:
-			sprintf(m,"Radial");
+			sprintf(m,"radial");
 			break;
 		case modetype::nonradial:
-			sprintf(m,"Nonradial");
+			sprintf(m,"nonradial");
 			break;
 		case modetype::cowling:
 			sprintf(m,"Cowling");
 			break;
-		case modetype::quasinormal:
-			sprintf(m,"Quasinormal");
-			break;
 	}	
-	char splashy[1100];
-	sprintf(splashy, "%s %s with %s %s Pulsations", r, s, r, m);
-	print_splash(output_file, splashy, WIDTH);
-	
-	//printf the background model data
-	fprintf(output_file, "# Stellar Background Model:\t" );
-	char outstring[128];
-	switch(calcdata.regime){
-		case regime::PN0:
-			fprintf(output_file, "Newtonian ");
-			break;
-		case regime::PN1:
-			fprintf(output_file, "Post-Newtonian ");
-			break;
-		case  regime::GR:
-			fprintf(output_file, "Relativistic ");
-			break;
-	}
-	switch(calcdata.model){
-		case model::polytrope:
-			fprintf(output_file, "Polytrope n = %.2lf", calcdata.input_params[0]);
-			break;
-		case model::CHWD:
-			fprintf(output_file, "Chandrasekhar WD y0 = %.2lf", calcdata.input_params[0]);
-			break;
-		case model::MESA:
-			fprintf(output_file, "MESA model %s.dat", calcdata.str_input_param.c_str());
-			break;
-		case model::SWD:
-			fprintf(output_file, "SWD \n");
-			fprintf(output_file, "#                          \t");
-			fprintf(output_file, "H: %le He: %le  C: %le  O: %le", 
-				((SimpleWD*) calcdata.star)->Xmass.H1,
-				((SimpleWD*) calcdata.star)->Xmass.He4,
-				((SimpleWD*) calcdata.star)->Xmass.C12,
-				((SimpleWD*) calcdata.star)->Xmass.O16);
-			break;
-	}
-	fprintf(output_file, "\n");
-	fprintf(output_file, "#                          \tnumber of grid points = %d\n", calcdata.Ngrid);
-	fprintf(output_file, "#\n");
+	fprintf(output_file, "%s  %s with %s pulsations\n", dwarf[d++], s, m);
+
 	//print out a message showing which observable parameters were passed, and with which units
 	char unitM[100], unitL[10], unitT[10], unitG[10], unitZ[10];
 	switch(calcdata.units){
@@ -582,40 +556,72 @@ int write_stellar_output(CalculationOutputData& calcdata){
 			sprintf(unitL, "(km)    ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
-			fprintf(output_file,"# Astronomical Units (Msolar, km, s)\n");
+			//fprintf(output_file,"%s  Astronomical Units (Msolar, km, s)\n", dwarf[d++]);
 			break;
 		case units::geo:
 			sprintf(unitM, "(m)     ");
 			sprintf(unitL, "(m)     ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
-			fprintf(output_file,"# Geometric Units (G=c=1)\n");
+			//fprintf(output_file,"%s  Geometric Units (G=c=1)\n", dwarf[d++]);
 			break;
 		case units::SI:
 			sprintf(unitM, "(kg)    ");
 			sprintf(unitL, "(m)     ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
-			fprintf(output_file,"# SI Units (kg, m, s)\n");
+			//fprintf(output_file,"%s  SI Units (kg, m, s)\n", dwarf[d++]);
 			break;
 		case units::CGS:
 			sprintf(unitM, "(g)     ");
 			sprintf(unitL, "(cm)    ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
-			fprintf(output_file,"# CGS Units (g, cm, s)\n");
+			//fprintf(output_file,"%s  CGS Units (g, cm, s)\n", dwarf[d++]);
 			break;
 	}
-	fprintf(output_file,"#\tMass   %s = %lg %s", unitM, calcdata.mass,  (calcdata.params&units::pmass?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"#\tRadius %s = %lg %s", unitL, calcdata.radius,(calcdata.params&units::pradius?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"#\tZsurf  %s = %le %s", unitZ, calcdata.zsurf, (calcdata.params&units::pzsurf?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"#\tlog g%s   = %lg %s", unitG, calcdata.logg,  (calcdata.params&units::plogg?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::pmass?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::pradius?"(specified)\n":"(derived)\n"));
 	if(calcdata.teff!=0.0)
-	fprintf(output_file,"#\tTeff (K)%s= %lg %s", unitZ, calcdata.teff,  (calcdata.params&units::pteff?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff (K)%s= %lg %s", dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::pteff?"(specified)\n":"(derived)\n"));
+	else
+	fprintf(output_file,"%s      Teff      = N/A \n", dwarf[d++]);	
+	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::plogg?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::pzsurf?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s  \n", dwarf[d++]);
 	
-	fprintf(output_file, "#Fractional RMS error = %1.2le\n", calcdata.star_SSR);
-	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
-	fprintf(output_file, "\n\n");
+
+	//printf the background model data
+	switch(calcdata.model){
+		case model::polytrope:
+			fprintf(output_file, "%s  index n = %.2lf\n", dwarf[d++], calcdata.input_params[0]);
+			fprintf(output_file, "%s  \n", dwarf[d++]);
+			break;
+		case model::CHWD:
+			fprintf(output_file, "%s  y0 = %.2lf", dwarf[d++], calcdata.input_params[0]);
+			fprintf(output_file, "%s  \n", dwarf[d++]);
+			break;
+		case model::MESA:
+			fprintf(output_file, "%s  model file %s.dat", dwarf[d++], calcdata.str_input_param.c_str());
+			fprintf(output_file, "%s  \n", dwarf[d++]);
+			break;
+		case model::SWD:
+			fprintf(output_file, "%s  Layer masses: \n", dwarf[d++]);
+			fprintf(output_file, "%s    ", dwarf[d++]);
+			fprintf(output_file, "H: %1.3le He: %1.3le  C: %1.3le  O: %1.3le\n", 
+				((SimpleWD*) calcdata.star)->Xmass.H1,
+				((SimpleWD*) calcdata.star)->Xmass.He4,
+				((SimpleWD*) calcdata.star)->Xmass.C12,
+				((SimpleWD*) calcdata.star)->Xmass.O16);
+			break;
+	}
+	fprintf(output_file, "%s  \n", dwarf[d++]);
+	fprintf(output_file, "%s  Number of grid points : %d\n", dwarf[d++], calcdata.Ngrid);
+	fprintf(output_file, "%s  Fractional RMS error  : %1.3le\n", dwarf[d++], calcdata.star_SSR);
+	//bottom bar
+	fprintf(output_file, "#");
+	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
+	fprintf(output_file, "\n");
 	fclose(output_file);
 	
 	char outname[128];
@@ -638,37 +644,23 @@ int write_mode_output(CalculationOutputData& calcdata){
 		return 1;
 	}
 		
-	int WIDTH = 120;
+	int WIDTH = 86;
 	if(calcdata.mode_writ==0){
-		fprintf(output_file, "\n");
-		for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
-		fprintf(output_file, "\n");
-		fprintf(output_file, "# Stellar Pulsation Results:\t");
-		switch(calcdata.modetype){
-			case modetype::radial:
-				fprintf(output_file, "Radial\n");
-				break;
-			case modetype::nonradial:
-				fprintf(output_file, "Nonradial\n");
-				break;
-			case modetype::cowling:
-				fprintf(output_file, "Cowling\n");
-				break;
-			case modetype::quasinormal:
-				fprintf(output_file, "Quasinormal\n");
-				break;	
-		}
+		fprintf(output_file, "#  Stellar Pulsation Results  \n");
 		//Printf the adiabatic index used in calculation -- 5/3, 4/3 special cases
-		fprintf(output_file, "# Adiabatic index (Gamma1) = ");
+		fprintf(output_file, "#  Adiabatic exponent (Gamma1) ");
 		double a = calcdata.adiabatic_index*3.0;
-		if(fabs(a-5.0)<1e-10) fprintf(output_file, "5/3\n#\n");
-		else if (fabs(a-4.0)<1e-10) fprintf(output_file, "4/3\n#\n");
-		else if (a==0.0) fprintf(output_file, "matched to stellar profile\n#\n");
-		else fprintf(output_file, "%lf\n#\n", calcdata.adiabatic_index);
+		if(fabs(a-5.0)<1e-10) fprintf(output_file, "= 5/3\n");
+		else if (fabs(a-4.0)<1e-10) fprintf(output_file, "= 4/3\n");
+		else if (a==0.0) fprintf(output_file, "matched to stellar profile\n");
+		else fprintf(output_file, "= %lf\n", calcdata.adiabatic_index);
+		fprintf(output_file, "#");
+		for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
+		fprintf(output_file, "\n");
 		
 		//begin printing titles for columns
 		//line 1
-		fprintf(output_file, "#     \tmode \tfreq               \tfreq            \tperiod             \tperiod             ");
+		fprintf(output_file, "#     \tmode \tfreq               \tfreq            \tperiod             ");
 		std::vector<std::string> topline{
 			"\tfractional  ",
 			"\t            ",
@@ -676,14 +668,10 @@ int write_mode_output(CalculationOutputData& calcdata){
 			"\tabs.diff. w/"
 		};
 		for(int e=0; e<error::numerror; e++)
-			if(calcdata.error[e]) fprintf(output_file, "%s", topline[e].c_str());
-		//if(isRMSR) fprintf(output_file, "\tfractional");
-		//if(isC0)   fprintf(output_file, "\t         ");
-		//if(isJCD) fprintf(output_file,"\tabs. diff. w/");                                                                      
-		//if(isIsopycnic) fprintf(output_file,"\trel.error w/");                                                                   
+			if(calcdata.error[e]) fprintf(output_file, "%s", topline[e].c_str());                                                                 
 		fprintf(output_file, "\n");                                                                                    
 		//line 2                                                                                                        
-		fprintf(output_file, "# L,N \ttype \tsq(GM/R^3)         \t(Hz)            \tsq(R^3/GM)         \t(s)               ");
+		fprintf(output_file, "# L,N \ttype \tsq(GM/R^3)         \t(Hz)            \t(s)               ");
 		std::vector<std::string> botline{
 			"\tRMSR     ",
 			"\tc0 or c1 ",
@@ -692,12 +680,8 @@ int write_mode_output(CalculationOutputData& calcdata){
 		};
 		for(int e=0; e<error::numerror; e++)
 			if(calcdata.error[e]) fprintf(output_file, "%s", botline[e].c_str());
-		//if(isRMSR)      fprintf(output_file,"\tRMSE     ");
-		//if(isC0)        fprintf(output_file,"\tc0 or c1 ");    
-		//if(isJCD)       fprintf(output_file,"\tJCD-DJM paper (uHz)");
-		//if(isIsopycnic) fprintf(output_file,"\tPekeris formula");
-		fprintf(output_file, "\n");
-		for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
+		fprintf(output_file, "\n#");
+		for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 		fprintf(output_file, "\n");
 	}
 	
@@ -706,18 +690,18 @@ int write_mode_output(CalculationOutputData& calcdata){
 		//print the mode numbers L,K
 		fprintf(output_file, " %d,%d \t", calcdata.l[j], calcdata.k[j]);
 		//print a mode-type label (p,f,g)
-		     if (calcdata.k[j] <0.0) fprintf(output_file, "g\t");
-		else if (calcdata.k[j] >0.0) fprintf(output_file, "p\t");
-		else if (calcdata.k[j]==0.0) fprintf(output_file, "f\t");
+		     if (calcdata.k[j] <0.0) fprintf(output_file, "g   \t");
+		else if (calcdata.k[j] >0.0) fprintf(output_file, "p   \t");
+		else if (calcdata.k[j]==0.0) fprintf(output_file, "f   \t");
 		if(calcdata.w[j]==0.0){
 			fprintf(output_file, "unable to find mode\n");
 			calcdata.mode_writ++;
 			continue;
 		}
-		fprintf(output_file, "%0.12le \t%3.12le \t%0.12le \t%0.12le", calcdata.w[j], calcdata.f[j], calcdata.freq0*calcdata.period[j],calcdata.period[j]);
+		fprintf(output_file, "%0.12le \t%3.12le \t%0.12le", calcdata.w[j], calcdata.f[j],calcdata.period[j]);
 		//fprintf(output_file, "\t%1.2le", calcdata.mode_SSR[j]);
 		for(int e=0; e<calcdata.i_err; e++){
-			if(!isnan(calcdata.err[e][j])) fprintf(output_file, "\t%1.2le", calcdata.err[e][j]);
+			if(!std::isnan(calcdata.err[e][j])) fprintf(output_file, "\t%1.2le", calcdata.err[e][j]);
 			else fprintf(output_file, "\tN/A");
 		}
 		fprintf(output_file, "\n");
@@ -734,19 +718,20 @@ int write_mode_output(CalculationOutputData& calcdata){
 }
 
 void print_splash(FILE* output_file, char* title, int WIDTH){
-	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
-	std::string splash = "THRAIN: the Mighty White Dwarf Code";
-	fprintf(output_file, "\n#  %s \n", splash.c_str());
-	fprintf(output_file, "\n#  %s ", title);
-	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
+	//first bar
+	fprintf(output_file, "#");
+	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
+	//code title
+	std::string splash = "|    THRAIN     |  The Mighty White Dwarf Code";
+	fprintf(output_file, "\n#%s \n", splash.c_str());
+	//second bar
+	fprintf(output_file, "#");
+	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	fprintf(output_file, "\n");
 }
 
 
 //NOTE: this function has a problem and will always cause a seg fault
-// I had fixed it before, but inadvertently overwrote my fix of it
-// The issue has to do with deleting the k=0 mode
-//More concretely, it is related the index lastl
 int write_tidal_overlap(CalculationOutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
 	//open file to write output summary
@@ -775,7 +760,7 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	//a useful error measurement is to calculate c0 -- see Fuller & Lai 2011 A
 	//for this, we need the k=0 mode for each value of l
 	//produce a list of the different L asked for
-	int lastl=0;
+	int lastl=0, minl=100, maxl=-1;
 	int num = calcdata.mode_done;
 	int l_list[num];
 	printf("\tpreparing mode list...\t");
@@ -783,11 +768,13 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	for(int j=1; j<num; j++){
 		int l_current = calcdata.l[j];
 		if(l_current == l_list[lastl]) continue;
+		// do not calculate overlap for dipole or radial modes
 		if(l_current < 2) {l_list[lastl]=l_current; continue;}
 		else{
+			//check if we already counted this l value
 			bool already = false;
 			for(int i=0; (i<=lastl) & !already; i++){
-				if(l_current == l_list[i]) already = true;
+				already |= (l_current == l_list[i]);
 			}
 			if(already) continue;
 			else {
@@ -795,26 +782,40 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 				l_list[lastl] = l_current;
 			}
 		}
+		//find min, max
+		if(l_current < minl) minl=l_current;
+		if(l_current > maxl) maxl=l_current;
 	}
+	//extra increment to align with zero-indexing
 	lastl++;
+	for(int j=lastl; j<num; j++) l_list[j]=-1;
 	printf("done\n");
 	
+	//an array to allow indexing of fmodes by l
+	int jforl[maxl-minl+1];
+	for(int l=minl; l<=maxl; l++){
+		for(int j=0; j<lastl; j++){
+			if(l==l_list[j]) jforl[l] = j;
+		}
+	}
+		
 	//now make the fundamental mode for each of those l
-	ModeBase *fmode[1+lastl];
+	ModeBase *fmode[lastl];
 	printf("\tpreparing f-modes...\n");fflush(stdout);
 	for(int j=0; j<lastl; j++){
 		printf("\t\tl=%d\t", l_list[j]);
 		//for dipole (l=1) modes, there is no f-mode-- skip!
 		if(l_list[j]<2) {
+			fmode[j] = NULL;
 			printf("no tidal response at this order\n");
 			continue;
 		}
 		//check if the f-mode has already been found earlier
 		bool inlist=false;
-		for(int i=0; i<calcdata.mode_done; i++){
+		for(int i=0; i<num; i++){
 			if(calcdata.l[i]==l_list[j] & calcdata.k[i]==0) {
 				inlist=true;
-				fmode[l_list[j]] = calcdata.mode[i];	
+				fmode[j] = calcdata.mode[i];	
 			}
 		}
 		//if so, we don't need to calculate it, move on to next l
@@ -825,9 +826,8 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 		//if not, then keep searching until we find it
 		printf("searching ...\t");fflush(stdout);
 
-		ModeBase *temp = new Mode<4>(0,l_list[j],0, calcdata.driver);
-		fmode[l_list[j]] = temp;//new Mode<4>(0,l_list[j],0, calcdata.driver);	
-		int kk = fmode[l_list[j]]->modeOrder();
+		fmode[j] = new Mode<4>(0,l_list[j],0, calcdata.driver);	
+		int kk = fmode[j]->modeOrder();
 		if(kk!=0){
 			//use a bisection search to find the desired mode
 			double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0, w2out=0.0;
@@ -837,7 +837,7 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			if(kk > 0){		
 				//use the current mode as a max bracket (since it is high)
 				kmax  = kk;
-				w2max = fmode[l_list[j]]->getOmega2();
+				w2max = fmode[j]->getOmega2();
 				//use an absolute minimum as a min bracket
 				// (note: this puts limits on allowed gmodes at -999999999)
 				w2min = 0.0;
@@ -847,7 +847,7 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			else if(kk < 0){
 				//use the current mode as a min bracket
 				kmin  = kk;
-				w2min = fmode[l_list[j]]->getOmega2();
+				w2min = fmode[j]->getOmega2();
 				dw2 = w2min;
 				//if the max bracket was not found in list, search for it
 				//start at current mode and increase
@@ -859,7 +859,7 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 					w2max = w2max + dw2;
 
 					//fmode[l_list[j]] = new Mode<NV1>(w2max, l_list[j],0,calcdata.driver);
-					kmax = fmode[l_list[j]]->modeOrder();
+					kmax = fmode[j]->modeOrder();
 					//if we found it, quit
 					if(kmax == 0){
 						kk=kmax;
@@ -885,10 +885,10 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			while(kk != 0){
 				w2in = 0.5*(w2min+w2max); //bisect the brackets
 				//create a trial mode
-				delete fmode[l_list[j]];
-				//fmode[l_list[j]] = new Mode<4>(w2in, l_list[j],0,calcdata.driver);
-				kk = fmode[l_list[j]]->modeOrder();
-				w2out = fmode[l_list[j]]->getOmega2();
+				delete fmode[j];
+				fmode[j] = new Mode<4>(w2in, l_list[j],0,calcdata.driver);
+				kk = fmode[j]->modeOrder();
+				w2out = fmode[j]->getOmega2();
 			
 				//if we found it, then great.  move on to next
 				if(kk == 0) {
@@ -914,12 +914,12 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			}
 		}
 	}
-	printf("done\n");
+	printf("\tdone\n");
 	
 	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
-	fprintf(output_file, "\n");
+	fprintf(output_file, "\n");fflush(output_file);
 	int ll=l_list[0];
 	for(int j=0; j<calcdata.mode_done; j++){
 		if(calcdata.l[j]<2) continue;
@@ -933,15 +933,15 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			fprintf(output_file, "unable to find mode\n");
 			continue;
 		}
-		fprintf(output_file, "%0.12le \t%3.16le \t%0.12le \n", 
-			sqrt(calcdata.mode[j]->getOmega2()), 
-			fabs(calcdata.mode[j]->tidal_overlap()),
-			fabs(calcdata.driver->innerproduct(calcdata.mode[j],fmode[calcdata.l[j]]))
+		fprintf(output_file, "%0.12le \t", sqrt(calcdata.mode[j]->getOmega2())); fflush(output_file);
+		fprintf(output_file, "%3.16le \t", fabs(calcdata.mode[j]->tidal_overlap())); fflush(output_file);
+		fprintf(output_file, "%0.12le \n", 
+			fabs(calcdata.driver->innerproduct(calcdata.mode[j],fmode[jforl[calcdata.l[j]]]))
 		);
 		fflush(output_file);
 	}
 	fclose(output_file);
-	for(int j=0; j<l_list[0]+lastl; j++){
+	for(int j=0; j<lastl; j++){
 		delete fmode[j];
 	}
 	printf("\tdone\n");

@@ -77,7 +77,6 @@ int create_modes(CalculationOutputData &data_out){
 			mode_finder<CowlingModeDriver>(data_out);
 			break;
 		case modetype::radial:
-		case modetype::quasinormal:
 		case modetype::nonradial:
 			data_out.driver = new NonradialModeDriver(data_out.star, data_out.adiabatic_index);			
 			mode_finder<NonradialModeDriver>(data_out);
@@ -261,7 +260,7 @@ template <class MODEDRIVER> int mode_finder(CalculationOutputData &data){
 						modetry[i] = new MODE(w2max, l_list[j],0,data.driver);
 						kmax = modetry[i]->modeOrder();
 						printf("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
-						if(isnan(w2min) | isnan(w2max)) return 1;
+						if(std::isnan(w2min) | std::isnan(w2max)) return 1;
 						//if we found it, quit
 						inlist = false;
 						if(kmax == kl[i]){
@@ -614,7 +613,6 @@ template <class MODEDRIVER> int mode_finder(CalculationOutputData &data){
 				if((!containsK) & (data.k[i]==testK)) indexK=i;
 				containsK |= (data.k[i]==testK);
 			}
-			//if(isnan(data.mode[indexK]->tidal_overlap())) containsK = false;
 			//if so use it
 			if(containsK) testmode = static_cast<MODE*>(data.mode[indexK]);
 			//if not, make one
@@ -622,12 +620,9 @@ template <class MODEDRIVER> int mode_finder(CalculationOutputData &data){
 				testmode = new MODE(testK,l_list[j],0,data.driver);
 			}
 			bool correctTest = (testmode->modeOrder() == testK);
-			printf("TEST %d\n", testmode->modeOrder());
-			printf("TEST %le\n", testmode->tidal_overlap());
 			for(int i=enext;i<data.mode_done; i++){
 				if(correctTest) data.err[e][i] = fabs(data.driver->innerproduct(data.mode[i],testmode));
 				else            data.err[e][i] = nan("");
-				printf("%le\n", data.err[e][i]);
 			}
 			e++;
 			if(!containsK) delete testmode;
@@ -655,7 +650,7 @@ template <class MODEDRIVER> int mode_finder(CalculationOutputData &data){
 		
 		//STEP 7: at the end of each L, print all data to the output file 
 		write_mode_output(data);
-		for(int k=0; k<nextk; k++) delete modetry[k];
+		//for(int k=0; k<nextk; k++) delete modetry[k];
 	}
 		
 	return 0;

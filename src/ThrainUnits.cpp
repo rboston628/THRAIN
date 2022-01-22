@@ -5,8 +5,8 @@
 
 #include "ThrainMain.h"
 
-#ifndef GRPULSEUNITSH
-#define GRPULSEUNITSH
+#ifndef THRAINUNITSH
+#define THRAINUNITSH
 
 
 int format_units(CalculationOutputData& data){	

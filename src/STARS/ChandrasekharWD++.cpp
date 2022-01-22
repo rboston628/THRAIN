@@ -66,10 +66,10 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	//find brackets on dx that bound a zero in yS
 	if(yS > 0){
 		dxmin = dx; ySmin = yS;
-		while(yS > 0 && !isnan(yS)){
+		while(yS > 0 && !std::isnan(yS)){
 			dx += ddx;
 			yS = RK4integrate(len, dx);
-			if(isnan(yS)){
+			if(std::isnan(yS)){
 				dx = 1.0/len; ddx *= 0.1; yS = 1.0;
 			}
 		}
@@ -90,11 +90,11 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	if(ySmin*ySmax > 0.0) {printf("big problem, chief\n"); exit(EXIT_FAILURE);}
 	
 	//now use bisection to find dx so that yS=0.0
-	while( fabs(yS)>0.0 || isnan(yS) ){
+	while( fabs(yS)>0.0 || std::isnan(yS) ){
 		dx = 0.5*(dxmin+dxmax);
 		yS = RK4integrate(len, dx);
 		
-		if(isnan(yS)){
+		if(std::isnan(yS)){
 			yS = -1.0;
 		}
 		if( (yS*ySmax>0.0) ){

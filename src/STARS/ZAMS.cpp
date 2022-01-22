@@ -1,5 +1,5 @@
 //**************************************************************************************
-//							SIMPLE WHITE DWARF STAR
+//							ZERO AGE MAIN SEQUENCE STAR
 // ZAMS.cpp
 // Uses simple C/O core with He/H envelope and atmosphere
 //  User must specify total H, He, C, and O fractions within the star

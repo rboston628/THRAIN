@@ -32,43 +32,16 @@ double radiative_opacity(const StellarVar& ly, const Abundance& X){
 	double ke = 0.195*(1+X.H1);
 	double kbf = 4.34e25*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
 	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	return kbf + kff + ke;
-//	if(X.H1<1e-3){ //from Iben 1975
-		double t6 = ly[temp]-6.*log(10.0);
-		double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
-		double Ap = 1. + C*(1.+C/24.55);
-		double mu = meanZA - 1.;
-		double B  =  3.86 + 0.252*sqrt(mu) + 0.018*mu;
-		double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
-		double lr = -A + B*t6;
-//		double k  = 0.67*(ly[dens]-lr) + log(Ap);
-		double k = Ap*exp(0.67*(ly[dens]-lr));
-		return k + ke + kbf + kff;
-//	}//*/
-//	else{ //if(X.H1<0.8){
-//	double kff = 0.645e23*(X.mean_Z()*X.mean_Z()*X.mu_e()/X.mean_A())*exp(ly[dens]-3.5*ly[temp]);
-//	double k_H  = 2.5e-31*(X.C12+X.O16)/0.02*exp(0.5*ly[dens]+9.*ly[temp]);
-//	double k_K  = (4.3e25*(X.C12+X.O16) + 3.7e22*(X.H1+X.He4))*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	return ke+kff+kbf + k_K + k;
-//	return k_bf+k_e+k_ff;//*/
-//  the below is from .... Henyey et al 1959, or Bodenheimer 1965
-/*	double lt7 = ly[temp] - 7.0*log(10.0), t7 = exp(lt7);
-	double rho = exp(ly[dens]), rho1X = rho*(1.+X.H1);
-	double k1 = 6.48e-3*X.H1*rho1X*exp(-4.25*lt7);
-	double k2 = 186.0*rho1X*X.He4*( 1.05e-3*exp(-3.*lt7)/(1.+10*t7) + (2.-X.He4)*pow(0.15 + t7*(300.0*t7-7.),-4.));
-	double k3 = 4.38e3*(X.C12+X.O16)/sqrt( (0.455*sqrt(rho1X)+1.)*(5.38*t7*t7/rho1X+1.)*(1.34e5*exp(5*lt7)/rho1X+1.)*(1.44*t7*t7 + 0.1*exp(-1.5*lt7)));
-	return ( (k1+k2+ kbf + kff)*(k3+ke) + k3*ke )/(k1+k2+k3+ke + kbf + kff) + k1 + k2 + k3 + ke;
-//	}//*/
-//	else{
-/*		double Pe = pressure_deg_partial(exp(ly[dens]),exp(ly[temp]), X);
-		double V  = exp(-ly[dens]);
-		double T  = exp(ly[temp] - 4.*log(10.));
-		double k1 = 0.194*(1.+X.H1);//5.4e-13*V/T;
-		double k2 = X.H1/(4.5*pow(T,6) + 1./T/( 4.e-3/pow(T,4)+2.e-4*pow(V,0.25) ));
-		double k3 = X.He4/(1.4e3*T+pow(T,6));
-		double k4 = (X.C12+X.O16)*sqrt(T)/(20.*T+5.*pow(T,4)+pow(T,5));
-		return Pe*(k1+(k2+k3+k4)*exp(ly[dens]));
-//	}//*/
+	//from Iben 1975
+	double t6 = ly[temp]-6.*log(10.0);
+	double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
+	double Ap = 1. + C*(1.+C/24.55);
+	double mu = meanZA - 1.;
+	double B  =  3.86 + 0.252*sqrt(mu) + 0.018*mu;
+	double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
+	double lr = -A + B*t6;
+	double k = Ap*exp(0.67*(ly[dens]-lr));
+	return k + ke + kbf + kff;
 }
 
 double conductive_opacity(const StellarVar& ly, const Abundance& X){
@@ -92,9 +65,6 @@ double conductive_opacity(const StellarVar& ly, const Abundance& X){
 double SimpleWD::opacity(const StellarVar& ly, const Abundance& X){
 	double k_rad = radiative_opacity(ly,X);
 	double k_cond= conductive_opacity(ly,X);
-//	double Pcore = core_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	double Patm  =  atm_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	if(exp(ly[dens]) < 1e-3) k_cond=1e24;
 	return 1./(1./k_rad+1./k_cond);
 //	else return k_rad;
 }
@@ -122,9 +92,6 @@ SimpleWD::SimpleWD(
 	//if( Ncore%2==0) Ncore = Ncore+1;
 	Natm = Ntot - Ncore;
 	if( Ncore%2==0) {Ncore = Ncore+1; Natm = Natm-1;}
-	//the boundary of atmosphre
-	//if( Natm%2==0) Natm = Natm+1;
-	//Ntot = Ncore + Natm;
 	
 	double Mcore = 0.99;
 	//initilize the log-radial grid
@@ -203,7 +170,7 @@ SimpleWD::SimpleWD(
 		}
 
 		bool failed = false;
-		for(int i=0; i<numv; i++) if(isnan(dx[i])) failed=true;
+		for(int i=0; i<numv; i++) if(std::isnan(dx[i])) failed=true;
 		//if(failed) for(int i=0; i<numv; i++) dx[i] = dxsave[i];
 		bool allzero = true;
 		for(int i=0; i<numv; i++) allzero &= (dx[i] == 0.0);
@@ -411,36 +378,7 @@ void SimpleWD::initFromChandrasekhar(){
 //    both the atmospher (He4) and envelope (H1) use a decreasing step size
 //        the step size is modelled after a geometric series, and slowly approaches 0.9999
 //**************************************************************************************/
-void SimpleWD::setupGrid(double Qcore, int Ncenter){
-	//in the core, just use constant step size
-/*	double dq = Qcore/(Ncenter-1);
-	double logQcore = log(Qcore);
-		
-	//now we define the core with constant step sizes
-	double q = 0.0; //the center
-	int n=0;
-	for( ; n<Ncenter; n++){
-		logQ[n] = log(q);
-		q = q + dq;
-	}
-	
-	//in the envelope, use a decreasing step size based on geometric series
-	double dq1 = 1. - dq/(1.-Qcore);
-	// fixed-point iteration to ensure self-consistency of dx1
-	for(int a=0;a<20;a++) dq1 = 1.0 - dq/(1.-Qcore)*(1.-pow(dq1, (Ntot-Ncenter-1)/2));
-	//now form the grid, starting at end of core
-	for( ; n<=Ntot-1; n++){
-		logQ[n] = log(q);
-		if(n%2==0) dq = dq*dq1;
-		q = q + dq;
-	}
-	
-	// FOR SOME REASON, THIS HAS SLIGHTLY WRONG LIMIT
-	for(n=0; n<Ntot; n++){
-		logQ[n] = logQ[n]-logQ[Ntot-1];
-	}
-	*/
-	
+void SimpleWD::setupGrid(double Qcore, int Ncenter){	
 	int n=0;
 	double q = 0.0; //the center
 	
@@ -792,6 +730,7 @@ void SimpleWD::calculateAtmosphere(const double x[numv]){
 //    this must be done using non-log variables, beause log variables are singular
 //**************************************************************************************/
 int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
+	rholast = 0.0;
 	//prepare variables
 	double rs = (1.0 + x[2]);
 	double ms = (1.0);
@@ -824,7 +763,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	double b = radiation_a*exp(4.*lyp[temp])/6.;
 	double kp = radiative_opacity(lyp, Xsurf);
 	lyp[pres] = log(a/kp+b);	// refine guess for PS
-	//prepare a Newton method to find photosphere
+	//prepare a Newton method to find surface value of rho
 	double f1 = atm_pressure(Yphoto[dens], Yphoto[temp], Xsurf)-a/kp-b, f2=1.0e2;
 	double x1=1e2, x2 = Yphoto[dens], dx;
 	while(fabs(x1-x2)/x1 > 1e-10){
@@ -853,7 +792,6 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	Yphoto[pres] = a/kp+b;
 	lyp = log(Yphoto);
 	kp = radiative_opacity(lyp, Xsurf);
-//	printf("first guess photosphere : %le %le\n", Yphoto[dens], Yphoto[pres]);
 		
 	//now find values of P, rho, T at the true surface, tau=0.0
 	Ysurf[temp] = pow(3./4.*(taus + 2./3.),0.25)*Teff; // surface temperature from Eddington
@@ -916,6 +854,8 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	logY[Ntot-2] = log(Y[1]) - logYscale;
 	Y[0] = exp(logY[Ntot-1]);
 	Y[1] = exp(logY[Ntot-2]);
+	rholast = Y[1][dens];
+
 	//calculate surface derivatives
 	nabla = atm_pressure.nabla_ad( Y[1][dens], Y[1][temp], Xsurf);
 	dlogY[Ntot-1] = dlogYdlogR(logY[Ntot-1], nabla); 
@@ -1008,7 +948,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	PS = a/kp+b;
 	printf("P   guess: %le\n", PS);
 	
-	if(isnan(PS)) return 0;
+	if(std::isnan(PS)) return 0;
 	
 	double mp = exp(logQ[Ntot-2]);
 	double taup = kp*Mstar/4./m_pi*pow(Rstar*rs,-2)*(1.-mp);
@@ -1080,11 +1020,11 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 			YC = Y[Ntot-1-X] + K[a]*B[a];
 			chemC = findAbundance(log(YC)[mass], log(YC)[radi], dXelem[X-1]);
 			YC[dens] = exp(equationOfState(log(YC), chemC, rholast));
-			if(isnan(YC[pres])) printf("%d %d NAN pres\n", X, a);
-			if(isnan(YC[dens])) printf("%d %d NAN dens\n", X, a);
-			if(isnan(YC[mass])) printf("%d %d NAN mass\n", X, a);
-			if(isnan(YC[temp])) printf("%d %d NAN temp\n", X, a);
-			if(isnan(YC[lumi])) printf("%d %d NAN lumi\n", X, a);
+			if(std::isnan(YC[pres])) printf("%d %d NAN pres\n", X, a);
+			if(std::isnan(YC[dens])) printf("%d %d NAN dens\n", X, a);
+			if(std::isnan(YC[mass])) printf("%d %d NAN mass\n", X, a);
+			if(std::isnan(YC[temp])) printf("%d %d NAN temp\n", X, a);
+			if(std::isnan(YC[lumi])) printf("%d %d NAN lumi\n", X, a);
 		}
 		//update the chemical composition and the density
 		Y[Ntot-X] = Y[Ntot-X-1] + K[0]/6.0 + K[1]/3.0 + K[2]/3.0 + K[3]/6.0;
@@ -1197,7 +1137,7 @@ double SimpleWD::energyTransport( const StellarVar& logy, const Abundance& X)
 	double kappa = opacity(ly, X);
 	double D_coeff = 3./(16.*m_pi*radiation_a*C_CGS*G_CGS);
 	double delta = D_coeff*kappa*exp(ly[lumi]+ly[pres]-ly[mass]-4.*ly[temp]);
-	if(isnan(delta)) delta = D_coeff*kappa*exp(ly[pres]-4.*ly[temp])*Lstar/Mstar;
+	if(std::isnan(delta)) delta = D_coeff*kappa*exp(ly[pres]-4.*ly[temp])*Lstar/Mstar;
 	
 	double delta_ad = getEOS(exp(ly), X)->nabla_ad(exp(ly[dens]), exp(ly[temp]), X);
 		
@@ -1233,8 +1173,8 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
 	
 	if(rho<0.0) rho = -rho;
-	if(isnan(rho)) printf("RHO IS NAN!\n");
-	if(isnan(log(rho))){
+	if(std::isnan(rho)) printf("RHO IS NAN!\n");
+	if(std::isnan(log(rho))){
 		printf("%le %le %le %le %le %le\n", exp(logy[radi]), y[pres], y[temp], rho, rho/Dscale, log(rho/Dscale));
 	}
 	
@@ -1402,7 +1342,7 @@ void SimpleWD::populateBruntVaisala(){
 		kappa[X] = opacity(ly, Xelem[X]);
 		
 		nabla[X] = D_coeff*kappa[X]*exp(ly[pres]+ly[lumi]-ly[mass]-4.*ly[temp]);
-		if(isnan(nabla[X])) nabla[X] = D_coeff*kappa[0]*exp(ly[pres] - 4.*ly[temp])*Lstar/Mstar;
+		if(std::isnan(nabla[X])) nabla[X] = D_coeff*kappa[0]*exp(ly[pres] - 4.*ly[temp])*Lstar/Mstar;
 		myEOS = getEOS(YY, Xelem[X]);
 
 		adiabatic_1[X] = myEOS->Gamma1(  YY[dens],YY[temp],Xelem[X]);
@@ -1411,7 +1351,7 @@ void SimpleWD::populateBruntVaisala(){
 		chiT           = myEOS->chiT(    YY[dens],YY[temp],Xelem[X]);
 		chir           = myEOS->chiRho(  YY[dens],YY[temp],Xelem[X]);
 		if(nabla_ad[X] < nabla[X]) nabla[X] = nabla_ad[X];
-		if(isnan(ledoux[X])) ledoux[X]=0.0;
+		if(std::isnan(ledoux[X])) ledoux[X]=0.0;
 		brunt_vaisala[X] = exp(2.*logY[X][mass]-4.*logY[X][radi]+logY[X][dens]-logY[X][pres])
 				*chiT/chir*(nabla_ad[X]-nabla[X]+ledoux[X]);
 	}
@@ -1470,8 +1410,6 @@ void SimpleWD::setupCenter(){
 			-tc[1]*tc[1]*dPdtt-2.*tc[1]*dc[1]*dPddt-dc[1]*dc[1]*dPddd)/(2.*dPdd);
 	//dc[2] = dc[0]*(nc*ac[4] + 0.5*nc*(nc-1)*ac[2]*ac[2]);
 	printf("x^4:\t%le %le %le\n", dc[2], pc[2], tc[2]);
-	
-
 	
 	//now make the actual terms
 	// c
@@ -1728,7 +1666,7 @@ void SimpleWD::printChem(char *c){
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
 	for(int X=Ntot-1; X >= 0; X--){
-	//	if(isnan(Xelem[X].H1)) {MM=logY[X-1][mass]; continue;};
+	//	if(std::isnan(Xelem[X].H1)) {MM=logY[X-1][mass]; continue;};
 		fprintf(fp, "%d", X);									//col 1
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3

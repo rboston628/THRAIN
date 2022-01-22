@@ -346,8 +346,8 @@ void Mode<numvar>::convergeNewton(double tol, int term){
 		w2 = w1 - W1*(w2-w1)/(W2-W1);
 		W1 = RK4center(w2, yCenter,ySurface);
 		
-		if(isnan(W1)) printf("NaN in W1 at step %d\n", stop);
-		if(isnan(w2)) printf("NaN in w2 at step %d\n", stop);
+		if(std::isnan(W1)) printf("NaN in W1 at step %d\n", stop);
+		if(std::isnan(w2)) printf("NaN in w2 at step %d\n", stop);
 
 		if( stop++ == term) break;
 	}

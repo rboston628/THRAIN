@@ -22,7 +22,7 @@
 #define HEADER
 
 //constants labeling the physical regime being used
-namespace regime { enum Regime {PN0, PN1, GR};}
+namespace regime { enum Regime {PN0};}
 //constants labeling the stellar models used 
 namespace model {enum StellarModel {polytrope, CHWD, MESA, SWD};}
 //constants describing units used for calculation
@@ -37,7 +37,7 @@ namespace units {
 	enum Units {astro, geo, SI, CGS};
 	enum ParamType {pmass=0b00001, pradius=0b00010, pzsurf=0b00100, plogg=0b01000, pteff=0b10000};
 }
-namespace modetype {enum ModeType {radial, nonradial, cowling, quasinormal};}
+namespace modetype {enum ModeType {radial, nonradial, cowling};}
 namespace error {enum ErrorType {isRMSR=0, isC0, isIsopycnic, isJCD, numerror};}
 
 //an  object specifying input parameters for a calculation
