@@ -1,6 +1,6 @@
 //**************************************************************************************
 //							THRAIN I/O
-//  ThrainIO.cpp
+//  ThrainIO.cpp                                                         S Reece Boston
 //	This is a first step towads an I/O interface.
 //	Will take a filename form the commandline, uses as input
 //		The input files need to be formatted in the expected way to function
@@ -481,11 +481,11 @@ char dwarf[12][27] = {
 	R"(#| * |.-----.| * |#)", 
 	R"(#|  (  U | X  )  |#)",
 	R"(#|* (    v    ) *|#)",
-	R"(#|  /\_//_\\_/\  |#)",
-	R"(#| |  /     \  | |#)", 
-	R"(#| |     |     | |#)",
-	R"(#| /=\-\|O|/-/=\ |#)",
-	R"(#|       V       |#)"
+	R"(#|_ /\_//-\\_/\ _|#)",
+	R"(#|%| /     \   |%|#)", 
+	R"(#|%|     |     |%|#)",
+	R"(#|%/___\|O|/___\%|#)",
+	R"(#|%%%%%%%V%%%%%%%|#)"
 };
 
 int write_stellar_output(CalculationOutputData& calcdata){
@@ -583,9 +583,9 @@ int write_stellar_output(CalculationOutputData& calcdata){
 	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::pmass?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::pradius?"(specified)\n":"(derived)\n"));
 	if(calcdata.teff!=0.0)
-	fprintf(output_file,"%s      Teff (K)%s= %lg %s", dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::pteff?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::pteff?"(specified)\n":"(derived)\n"));
 	else
-	fprintf(output_file,"%s      Teff      = N/A \n", dwarf[d++]);	
+	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
 	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::plogg?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);

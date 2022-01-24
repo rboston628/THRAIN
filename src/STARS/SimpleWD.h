@@ -1,6 +1,6 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.h
+// SimpleWD.h                                                             S Reece Boston
 // Uses simple C/O core with He/H envelope and atmosphere
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 
@@ -9,7 +9,7 @@
 //		- Arcoragi & Fontaine 1980
 //  The interior equation of state includes pressure contributions from
 //		P = P_deg + P_ions + P_coulomb + P_rad
-//		the electron degeneracy is approximated as T=0, while the others use finite temperature
+//		the electron degeneracy is approximated as T=0
 //	Integrates with Schwarzschild's dimensionless logarithmic variables
 // **************************************************************************************/
 
@@ -87,17 +87,6 @@ private:
 	StellarVar Ysolar;
 	StellarVar Ystar;
 	
-	double opacity(const StellarVar&, const Abundance&);
-	
-	//abundances
-	Abundance  Xtot;
-	Abundance *Xelem, *dXelem;
-	Abundance massFraction();
-	//
-	EOS core_pressure, atm_pressure;
-	EOS* getEOS(const StellarVar& Y, const Abundance& X);
-	
-	
 	//methods to calculate each of the three sections
 	static const int numv=3;
 	void   joinAtCenter(double x[numv], double f[numv], double& F);
@@ -111,9 +100,18 @@ private:
 	StellarVar dlogYdlogM( const StellarVar&, const double& delta, const double epsilon=1.0);
 	
 	//the physics
+	double opacity(const StellarVar&, const Abundance&);
 	double energyProduction(const StellarVar&, const Abundance&);
 	double equationOfState( const StellarVar&, const Abundance&, double& rholast);
 	double energyTransport( const StellarVar&, const Abundance&);
+	
+	//abundances
+	Abundance  Xtot;
+	Abundance *Xelem, *dXelem;
+	Abundance massFraction();
+	//
+	EOS core_pressure, atm_pressure;
+	EOS* getEOS(const StellarVar& Y, const Abundance& X);
 	
 	double zy, zc, zo;
 	double by, bc, bo;

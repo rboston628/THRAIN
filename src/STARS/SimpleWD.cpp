@@ -1,6 +1,6 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.cpp
+// SimpleWD.cpp                                                           S Reece Boston
 // Uses simple C/O core with He/H envelope and atmosphere
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 

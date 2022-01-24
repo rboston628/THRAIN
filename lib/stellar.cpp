@@ -3,86 +3,6 @@
 
 #include "stellar.h"
 
-/*struct Abundance {
-	double H1, He4, C12, O16;
-	int e;
-	double mean_A() const {
-		using namespace chemical;
-	//	printf("\tmuA:\t%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
-		return 1./(H1 + He4/chemical::A[he] + C12/chemical::A[c] + O16/chemical::A[o]);
-	}
-	double mean_Z() const {
-		using namespace chemical;
-		return H1 + He4*chemical::Z[he] + C12*chemical::Z[c] + O16*chemical::Z[o];
-	}
-	double mu_e(double y=1.0) const {
-		using namespace chemical;
-		return 1./(H1*y + 0.5*(He4+C12+O16)*y);
-	}
-	double mean_weight(double y=1.0) const {
-		using namespace chemical;
-		return 1./(1./mu_e(y) + 1./mean_A());
-	}
-	double mean_coulomb() const{
-		using namespace chemical;
-		return H1 
-			+ He4*pow(chemical::Z[he],2)*pow(chemical::A[he],-1./3.) 
-			+ C12*pow(chemical::Z[ c],2)*pow(chemical::A[ c],-1./3.) 
-			+ O16*pow(chemical::Z[ o],2)*pow(chemical::A[ o],-1./3.) ;
-	}
-	void print() const {
-		printf("%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
-	}
-	Abundance() :H1(0), He4(0), C12(0), O16(0), e(0) {};
-	Abundance(double x1, double x2, double x3, double x4) 
-		: H1(x1),He4(x2),C12(x3),O16(x4), e(0){};
-	
-	Abundance operator*(const double& x) {
-		return Abundance(H1*x, He4*x, C12*x, O16*x);
-	}
-	Abundance operator+(const Abundance& x){
-		return Abundance(H1+x.H1, He4+x.He4, C12+x.C12, O16+x.O16);
-	}
-	Abundance operator-(const Abundance& x){
-		return Abundance(H1-x.H1, He4-x.He4, C12-x.C12, O16-x.O16);
-	}
-	void operator=(const Abundance& x){
-		H1 = x.H1; He4 = x.He4; C12 = x.C12; O16 = x.O16;
-		e = x.e;
-	}
-	double  operator[](int n) const {
-		switch(n){
-			case 0: return H1;  break;
-			case 1: return He4; break;
-			case 2: return C12; break;
-			case 3: return O16; break;
-			default: return 0.0;
-		}
-	}
-	double& operator[](int n){
-		switch(n){
-			case 0: return H1;  break;
-			case 1: return He4; break;
-			case 2: return C12; break;
-			case 3: return O16; break;
-			default: return nothing; 
-		}
-	}
-	void enforce(){
-		if(H1 <0.0) H1  = 0.0;
-		if(He4<0.0) He4 = 0.0;
-		if(C12<0.0) C12 = 0.0;
-		if(O16<0.0) O16 = 0.0;
-		double tot = H1+He4+C12+O16;
-		H1 /= tot;
-		He4/= tot;
-		C12/= tot;
-		O16/= tot;
-	}
-	private:
-		double nothing;
-};*/
-
 double chemical::partial_mean_A(elem i, Abundance X){
 	return -pow(X.mean_A(),2)*
 			(1./chemical::A[i] - 1./chemical::A[X.e]);
@@ -113,15 +33,6 @@ StellarVar log(const StellarVar &x){
 	for(int j=0; j<num_var; j++) val[j] = std::log(x[j]);
 	return val;
 }
-
-/*//some opacities
-double radiative_opacity(StellarVar ly, Abundance X){
-	static const double kappa0 = 4.34e24*(X.C12+X.O16)*(1.+X.H1); //Schwarzschild 1946, Cox&Giuli, Shapiro & Teuskolsky 1983 eq 4.1.8
-	return kappa0*exp(ly[dens]-3.5*ly[temp]);// Shapiro & Teukolsky 1983 eq 4.1.3
-}
-double conductive_opacity(StellarVar ly, Abundance X){
-	return 4.e-8*pow(X.mu_e()*X.mean_Z(),2)/X.mean_A()*exp(2.*(ly[temp]-ly[dens]));
-}*/
 
 
 int EOS::rando(39);
