@@ -1,16 +1,29 @@
-.DS_Store
-*.aux
-*.out
-*.toc
-*.log
-*.out
-*.gz
-*.log
-*.o
-*.a
-output/*
-*.tex
-icon/*
-thrain
-swd.txt
-ignore/*
+## IGNORE EVERYTHING -- MANUALLY INCLUDE INSTEAD
+*
+
+## EXCEPTIONS
+# basic files
+!.gitignore
+!README.md
+!LICENSE
+!makefile
+
+
+# sample input files
+!sampleinput4.txt
+!sampleinput7.txt
+
+
+# the source code itself
+!lib/*
+!src/*
+
+## DOCUMENTATION
+# include the documentation
+!documentation/*
+# but not the text source files or aux files
+documentation/*.tex
+documentation/*.aux
+documentation/*.toc
+documentation/*.log
+documentation/*.synctex.gz
