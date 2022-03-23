@@ -25,14 +25,15 @@
 #include "ChandrasekharWD++.h"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
-//	static const double kappa0 = 4.34e24*(X.C12+X.O16)*(1.+X.H1); //Schwarzschild 1946, Cox&Giuli, Shapiro & Teuskolsky 1983 eq 4.1.8
-//	return kappa0*exp(ly[dens]-3.5*ly[temp]);// Shapiro & Teukolsky 1983 eq 4.1.3
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
 	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16;
-	double ke = 0.195*(1+X.H1);
-	double kbf = 4.34e25*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	double ke = 0.195*(1.+X.H1);
+	//see Schwarzschild 1958 (pg 237 or eq16.2), Schwarzschild 1946 (eq9), and Shapiro & Teuskolsky (eq4.1.8)
+	//note assumption of guillotine (Gaunt) factor ~ 10
+	double kbf = 4.34e24*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	//see Schearzschild 1858, or Hansen and Kawaler eq4.37
 	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-	//from Iben 1975
+	//from Iben 1975, Appendix B
 	double t6 = ly[temp]-6.*log(10.0);
 	double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
 	double Ap = 1. + C*(1.+C/24.55);
@@ -45,9 +46,6 @@ double radiative_opacity(const StellarVar& ly, const Abundance& X){
 }
 
 double conductive_opacity(const StellarVar& ly, const Abundance& X){
-//	return 4.e-8*pow(X.mu_e()*X.mean_Z(),2)/X.mean_A()*exp(2.*(ly[temp]-ly[dens]));
-//	double t7 = ly[temp] - 7.0*log(10.0);
-//	return 301.8*exp(-t7)/(1. + pow(0.004364*(1.+X.H1)*exp(ly[dens]-1.5*t7),5./3.) );
 // below is based on Cassis 2007, which relies on Yakovlev & Urpin 1980 and Potekhin et al 1999
 	double rho = exp(ly[dens]);
 	double x = pow(rho/Chandrasekhar::B0/X.mu_e(), 1./3.);
@@ -350,6 +348,7 @@ void SimpleWD::initFromChandrasekhar(){
 	// we must OVER-estimate, to avoid radiation pressure dominating
 	Ystart0[dens] = 1.5*testStar->rho(0);
 	Ystart0[pres] = 1.5*testStar->P(0);
+	//Ystart0[pres] = core_pressure(Ystart0[dens], 1.2e10, Abundance(0.,0.,1.-mo,mo));
 	//guesses of surface -- not very good, don't use
 	YstartS[dens] = testStar->rho(Ntest-2);
 	YstartS[pres] = testStar->P(Ntest-2);
@@ -359,13 +358,7 @@ void SimpleWD::initFromChandrasekhar(){
 	
 	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
 	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
-	
-	//use the Chandrasekhar model to handle the central mode BCs
-//	int CBC = 4;
-//	testStar->getAstarCenter(A0, CBC, 0);
-//	testStar->getVgCenter(   V0, CBC, 0); 
-//	testStar->getUCenter(    U0, CBC); 
-//	testStar->getC1Center(   c0, CBC); 
+
 	return;
 }
 
@@ -381,17 +374,15 @@ void SimpleWD::initFromChandrasekhar(){
 void SimpleWD::setupGrid(double Qcore, int Ncenter){	
 	int n=0;
 	double q = 0.0; //the center
+	logQ[0] = log(q);
 	
-	double Ndenom = double(Ncenter*(Ncenter-1.)*(2.*Ncenter-1.));
-	double dx = pow(6.*Qcore/Ndenom,1./3.);
-	double dx3 = pow(dx,3);
+	double dx = pow(3.*Qcore,1./3.)/Ncenter;
+	double dx3 = pow(dx,3)/3.;
 	double dq = dx3;
 	double logq = log(q);
-	logQ[0] = logq;
-	q = q + 0.5*dx3;
-	logQ[1] = log(q);
-	for(n=2 ; n<Ncenter; n++){
-		dq = n*n*dx3;
+	
+	for(n=0 ; n<Ncenter; n++){
+		dq = (3.*n*n + 3.*n + 1.)*dx3;
 		q = q + dq;
 		logQ[n] = log(q);
 	}
@@ -512,7 +503,7 @@ void SimpleWD::expandGrid(int Ntrue){
 		//average guesses
 		logY[x] = (logy1+logy2)*0.5;//(logY[x-1]+logY[x+1])*0.5; //
 		//fill in other properties at half-grid
-		logQ[x]  = logY[x][mass];
+		logQ[x]  = (logQ[x+1]+logQ[x-1])*0.5;//logY[x][mass];
 		Xelem[x] = findAbundance(logY[x][mass], logY[x][radi], dXelem[x]);
 		nabla = energyTransport(logY[x], Xelem[x]);
 		dlogY[x] = dlogYdlogR(logY[x],nabla);
@@ -520,7 +511,7 @@ void SimpleWD::expandGrid(int Ntrue){
 	}
 	int x=Ntrue-2;
 	logY[x] = (logY[x+1]+logY[x-1])*0.5;
-	logQ[x] = logY[x][mass];
+	logQ[x] = (logQ[x+1]+logQ[x-1])*0.5;//logY[x][mass];
 	Xelem[x] = findAbundance(logY[x][mass], logY[x][radi], dXelem[x]);
 	dlogY[x] = dlogYdlogR(logY[x],nabla);
 	dlogY[x][dens] = (logY[x+1][dens]-logY[x-1][dens])/(logY[x+1][radi]-logY[x-1][radi]);
@@ -574,24 +565,27 @@ double SimpleWD::calculateCore(const double x[numv], int Nmax){
 	int X = firstCoreStep(x, rholast, Nmax);
 	//now begin integrations
 	for(; X<Nmax; X++){
+//		printf("X=%d\t", X); fflush(stdout);
 		dlogQ = logQ[X+1]-logQ[X];
 		chemC = Xelem[X];
 		logYC = logY[X];
 		for(int a = 0; a<4; a++){
+//			printf("%d",a);fflush(stdout);
 			nabla = energyTransport(logYC, chemC);
 			//now from these, calculate next shift
 			//use radius as independent variable
 			K[a] = dlogYdlogM(logYC, nabla)*dlogQ;
 			//calculate "corrected" positions using previous shift vectors
 			logYC = logY[X] + K[a]*B[a];
-			chemC = findAbundance(logYC[mass], logYC[radi], dXelem[X+1]);
-			logYC[dens] = equationOfState(logYC, chemC, rholast);
+			chemC = findAbundance(logYC[mass], logYC[radi], dXelem[X]);
+			logYC[dens] = equationOfState(logYC, chemC, rholast, X);
 		}
 		//update the structure variables
 		logY[X+1] = logY[X] + K[0]/6.0 + K[1]/3.0 + K[2]/3.0 + K[3]/6.0;
 		//update the chemical abundances and calculate the density from EOS
 		Xelem[X+1] = findAbundance(logY[X+1][mass], logY[X+1][radi], dXelem[X+1]);
-		logY[X+1][dens] = equationOfState(logY[X+1], Xelem[X+1],rholast);
+//		printf("\tX+1=%d\n", X+1);
+		logY[X+1][dens] = equationOfState(logY[X+1], Xelem[X+1],rholast, X+1);
 		//save the derivatives
 		nabla = energyTransport(logY[X+1], Xelem[X+1]);
 		dlogY[X+1] = dlogYdlogR(logY[X+1], nabla);
@@ -1063,6 +1057,7 @@ void SimpleWD::joinAtCenter(double x[numv], double f[numv], double& F){
 	
 	F = 0.0;
 	for(int i=0; i<numv; i++) F += 0.5*( f[i]*f[i] );
+//	for(int i=0; i<numv; i++) printf("%le\n", f[i]);
 
 	return;
 }
@@ -1160,15 +1155,23 @@ EOS* SimpleWD::getEOS(const StellarVar &y, const Abundance& X){
 	else return &core_pressure; //*/
 }
 
-double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, double& rho_last){
+double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, double& rho_last, int X){
 	StellarVar y = exp(logy+logYscale);
 	//find the radiation pressure
 	double Prad, rho=0.0;
 	Prad = radiation_a/3.*pow(y[temp],4);
 	if(Prad > y[pres]) {
 		printf("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
+		printf("r=%le m=%le P=%le\n", exp(logy[radi]), exp(logy[mass]), exp(logy[pres]));
 	//	y[temp] = 0.0;
+		Ystart0[dens] *= 1.5;
+		Ystart0[pres] *= 1.5;
+		double xx[numv] = {Ystart0[pres]/Pscale, y[temp]/Tscale, 1.e-3};
+		calculateCore(xx,X+1);
+		y = exp(logY[X]+logYscale);
+		printf("r=%le m=%le P=%le\n", exp(logY[X][radi]), exp(logY[X][mass]), exp(logY[X][pres]));
 	}
+	
 	
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
 	
@@ -1202,7 +1205,14 @@ Abundance SimpleWD::findAbundance(
 	double zee = -log(1.-exp(logm));	
 	Xc.He4 = my/(1.+exp(by*(zee-zy)));
 	Xc.C12 = mc/(1.+exp(bc*(zee-zc)));
-	Xc.O16 = mo/(1.+exp(bo*(zee-zo)));//*/
+	//the oxygen profile should be a double-step function
+	double mo1 = 0.5*mo, bo1 = 4.*bo, zo1 = 0.25*zo;
+	double mo2 = 0.5*mo, bo2 = 4.*bo, zo2 = 1.25*zo;
+	double XO1 = mo1/( 1.+exp(bo1*(zee-zo1)) );
+	double XO2 = mo2/( 1.+exp(bo2*(zee-zo2)) );
+	Xc.O16 = XO1 + XO2;
+	
+	Xc.O16 = mo/(1.+exp(bo*(zee-zo)));
 	
 	//any values are are negligibly small, set to zero
 	for(int i=0; i<4; i++) if(Xc[i]<=tol) Xc[i]=0.0;
@@ -1213,21 +1223,27 @@ Abundance SimpleWD::findAbundance(
 	XX.He4 = Xc.He4 - Xc.C12;
 	XX.H1  = 1.0 - XX.He4 - XX.C12 - XX.O16;
 	
-	//calculate the derivatives -- with respect to zee
-	dX.O16 = -bo*Xc.O16*exp(bo*(zee-zo))/(1.+exp(bo*(zee-zo)))*exp(zee);
-	dX.C12 = -bc*Xc.C12*exp(bc*(zee-zc))/(1.+exp(bc*(zee-zc)))*exp(zee);
-	dX.He4 = -by*Xc.He4*exp(by*(zee-zy))/(1.+exp(by*(zee-zy)))*exp(zee);//*/
-	// change derivatives -- with respect to P, so that dX holds dlogX/dlogP
-	dX = dX*(-exp(4.*logr-logm)/Pscale);
+	//calculate the derivatives -- dX/dzee
+	double dXO1 = -bo1*XO1*exp(bo1*(zee-zo1))/(1.+exp(bo1*(zee-zo1)));
+	double dXO2 = -bo2*XO2*exp(bo2*(zee-zo2))/(1.+exp(bo2*(zee-zo2)));
+	dX.O16 = dXO1 + dXO2;
+	if(zee>zy) dX.O16=0.0;
+	dX.O16 = -bo*Xc.O16*exp(bo*(zee-zo))/(1.+exp(bo*(zee-zo)));
+	dX.C12 = -bc*Xc.C12*exp(bc*(zee-zc))/(1.+exp(bc*(zee-zc)));
+	dX.He4 = -by*Xc.He4*exp(by*(zee-zy))/(1.+exp(by*(zee-zy)));//*/
+	// change derivatives -- with respect to P, so that dX holds dX/dP
+	// dX/dP = (dX/dzee)*(dzee/dm)*(dm/dP)
+	//       = (dX/dzee)* exp(zee)*(-r^4/m)
+	dX = dX*exp(zee)*(-exp(4.*logr-logm)/Pscale);
 	
 	//adjust derivatives ensuring abundances always sum to zero
 	dX.H1  =-dX.He4 - dX.C12 - dX.O16;
 	dX.He4 = dX.He4 - dX.C12;
 	dX.C12 = dX.C12 - dX.O16;
+	dX.O16 = dX.O16;
 	
 	XX.enforce();
-	XX.e = chemical::h;
-//	XX.e = (XX.He4 > 0.5 | XX.H1 >= 0.5 ? chemical::h : chemical::c);
+	XX.e = chemical::h; //must use H to eliminate, since it is determined by constraint
 		
 	return XX;
 }
@@ -2166,15 +2182,15 @@ void SimpleWD::writeStar(char *c){
 	double logR = logY[Ntot-1][radi];
 	fprintf(fp, "num\tq\trho\tradius\tP\tm\tT\tL\tm\n");
 	for(int X=0; X< Ntot; X++){
-		fprintf(fp, "%d\t", X);
-		fprintf(fp, "%0.16le\t", (1.-exp(logQ[X])));	//col 2
-		fprintf(fp, "%0.16le\t", exp(logY[X][dens]));	//col 3
-		fprintf(fp, "%0.16le\t", exp(logY[X][radi]));	//col 4
-		fprintf(fp, "%0.16le\t", exp(logY[X][pres]));	//col 5
-		fprintf(fp, "%0.16le\t", exp(logY[X][mass]));	//col 6
-		fprintf(fp, "%0.16le\t", exp(logY[X][temp]));	//col 7
-		fprintf(fp, "%0.16le\t", exp(logY[X][lumi]));	//col 8
-		fprintf(fp, "%0.16le\n", exp(logQ[X]));			//col 9
+		fprintf(fp, "%6d\t", X);
+		fprintf(fp, "%22.16le\t", (1.-exp(logQ[X])));	//col 2
+		fprintf(fp, "%22.16le\t", exp(logY[X][dens]));	//col 3
+		fprintf(fp, "%22.16le\t", exp(logY[X][radi]));	//col 4
+		fprintf(fp, "%22.16le\t", exp(logY[X][pres]));	//col 5
+		fprintf(fp, "%22.16le\t", exp(logY[X][mass]));	//col 6
+		fprintf(fp, "%22.16le\t", exp(logY[X][temp]));	//col 7
+		fprintf(fp, "%22.16le\t", exp(logY[X][lumi]));	//col 8
+		fprintf(fp, "%22.16le\n", exp(logQ[X]));			//col 9
 		//fflush(fp);
 	}
 	fclose(fp);	

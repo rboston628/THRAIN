@@ -340,7 +340,7 @@ double ChandrasekharWD::Schwarzschild_A(int X, double GamPert){
 
 double ChandrasekharWD::getAstar(int X, double GamPert){
 	if(GamPert==0.0) return -dmue[X]/mue[X]*xi[X];
-	else        	 return -dmue[X]/mue[X]*xi[X] + z[X]*xi[X]*(8.*pow(x[X],3)/f[X]/GamPert-3.*xi[X]*y[X]/pow(x[X],2));
+	else        	 return -dmue[X]/mue[X]*xi[X] + z[X]*xi[X]*(8.*pow(x[X],3)/f[X]/GamPert-3.*y[X]/pow(x[X],2));
 }
 
 double ChandrasekharWD::Ledoux(int X, double GamPert){

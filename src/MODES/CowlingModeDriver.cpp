@@ -140,8 +140,8 @@ int CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l
 		
 	double yy[num_var][central_bc_order/2+1];//0,2,4
 	//the zero-order terms are simple
-	yy[0][0] = y0[0];
-	yy[1][0] = y0[0]*C[0]*omeg2/double(l);
+	yy[y1][0] = y0[y1];
+	yy[y2][0] = y0[y1]*C[0]*omeg2/double(l);
 	
 	double L2 = double(l*l+l);
 	double Gam1 = adiabatic_index;

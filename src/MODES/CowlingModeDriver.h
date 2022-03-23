@@ -30,6 +30,7 @@ private:
 	int len;		//number of grid points for mode
 	int len_star;	//number of grid points in star
 	double adiabatic_index;	//adiabatic index; set to 0 to use star's Gamma1
+	enum VarNames {y1=0, y2};
 	
 	//perturbation quantities
 	double *r, *A, *U, *C, *V;

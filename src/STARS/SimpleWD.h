@@ -102,7 +102,7 @@ private:
 	//the physics
 	double opacity(const StellarVar&, const Abundance&);
 	double energyProduction(const StellarVar&, const Abundance&);
-	double equationOfState( const StellarVar&, const Abundance&, double& rholast);
+	double equationOfState( const StellarVar&, const Abundance&, double& rholast, int X=0);
 	double energyTransport( const StellarVar&, const Abundance&);
 	
 	//abundances

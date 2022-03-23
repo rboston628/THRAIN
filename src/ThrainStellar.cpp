@@ -62,9 +62,9 @@ int create_classical_CHWD(CalculationOutputData& data){
 	}
 	
 	//adjust inputs to match the actual values
-	data.units = units::CGS;
-	data.mass = data.star->Mass();
-	data.radius = data.star->Radius();
+	data.mass = data.star->Mass()/data.unitset.base_mass;
+	data.radius = data.star->Radius()/data.unitset.base_length;
+	data.params = units::pmass|units::pradius;
 	format_units(data);
 
 	//calculate error estimate for this model
@@ -82,9 +82,8 @@ int create_classical_MESA(CalculationOutputData& data){
 	data.star = new MESA(inputname, data.Ngrid);
 	
 	//adjust the inputs around the fact this is a MESA object
-	data.units = units::CGS;			//MESA uses CGS units
-	data.mass = data.star->Mass();		//the mass is determined by model
-	data.radius = data.star->Radius();	//the radius is determined by model
+	data.mass = data.star->Mass()/data.unitset.base_mass;		//the mass is determined by model
+	data.radius = data.star->Radius()/data.unitset.base_length;	//the radius is determined by model
 	data.Ngrid = data.star->length();
 	data.params = units::pmass|units::pradius;
 	format_units(data);
@@ -107,9 +106,8 @@ int create_classical_SWD(CalculationOutputData& data){
 	);
 
 	//adjust inputs to match the actual values
-	data.units = units::CGS;
-	data.mass = data.star->Mass();
-	data.radius = data.star->Radius();
+	data.mass = data.star->Mass()/data.unitset.base_mass;
+	data.radius = data.star->Radius()/data.unitset.base_length;
 	//calculate zsurf, logg
 	data.params = units::pmass|units::pradius;
 	format_units(data);
