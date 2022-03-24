@@ -17,6 +17,8 @@
 # the source code itself
 !lib/
 !src/
+!src/MODES/
+!src/STARS/
 !lib/*
 !src/*
 
