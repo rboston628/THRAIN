@@ -10,20 +10,26 @@
 
 
 # sample input files
-!sampleinput4.txt
-!sampleinput7.txt
+!sampleinput*.txt
+!mesa_*.dat
 
 
 # the source code itself
+!lib/
+!src/
 !lib/*
 !src/*
 
 ## DOCUMENTATION
 # include the documentation
+!documentation/
 !documentation/*
+!documentation/mathematica/
+!documentation/mathematica/*
 # but not the text source files or aux files
 documentation/*.tex
 documentation/*.aux
 documentation/*.toc
 documentation/*.log
-documentation/*.synctex.gz
+documentation/*.gz
+

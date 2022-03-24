@@ -1,4 +1,5 @@
 # THRAIN
+By S. Reece Boston
 ## The Mighty White Dwarf Code
 
 A parametric white dwarf asteroseismology code for rapid model testing.
@@ -11,7 +12,7 @@ This work was used in my thesis work, and will be explained in an upcoming instr
 
 ````
 @PHDTHESIS{Boston2022,
-	title = {The Relativistic Pulsations and Tidal Excitations of White Dwarfs},
+	title = {Newtonian and Relativistic White Dwarf Asteroseismology},
 	author = {Boston, S.~Reece},
 	school = {University of North Carolina},
 	year = {2022}
