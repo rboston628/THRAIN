@@ -3,6 +3,7 @@
 //	Main program.  All other functionality is called from here.
 //	This program is not necessary to use the stellar models or the mode functions
 //		defined in the src files, but provides a single and simple access to them
+//  Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #include "ThrainMain.h"

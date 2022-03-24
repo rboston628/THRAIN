@@ -4,6 +4,7 @@
 //		A virtual class star for later models to inherit
 //		Serves as the basis in code for other stellar models
 //		Can be used in code as a generic star, without regard to particular physics
+// Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #ifndef STARH

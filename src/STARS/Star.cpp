@@ -3,8 +3,8 @@
 // Star.cpp
 //		Implements the output and sum-square residual functions for equilibrium stars
 //		These methods are general enough to work with any sub-class of star
+// Reece Boston, Mar 24, 2022
 //**************************************************************************************
-//EQUILIBRIUM STAR
 
 #ifndef STARCLASS
 #define STARCLASS

@@ -4,6 +4,8 @@
 //
 //**************************************************************************************
 
+//  By Reece Boston, Mar 24 2022
+
 //basic template classes
 #include "constants.h"
 #include "STARS/Star.h"

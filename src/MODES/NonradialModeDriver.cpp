@@ -1,8 +1,9 @@
 //**************************************************************************************
 //						NONRADIAL PULSATION nlm MODE DRIVER
-// NonradialModeDriver.cpp
-//		Solves the Newtonian LAWE in Dziembowski variables
-//		Includes perturbtations to gravitational field, making 4th-order modes
+//  NonradialModeDriver.cpp
+//	 	Solves the Newtonian LAWE in Dziembowski variables
+//	 	Includes perturbtations to gravitational field, making 4th-order modes
+//  Reece Boston, Mar 24, 2022
 //***************************************************************************************
 
 #ifndef FULLMODEDRIVERCLASS

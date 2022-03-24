@@ -3,8 +3,11 @@
 // ZAMS.h
 //	A Newtonian star at the beginning of the main sequence lifetime
 //	Chemically homogeneous (X,Y,Z)
-//	Need specifications for things like opacity, energy production, EOS, etc.
 //	Integrates with Schwarzschild's dimensionless logarithmic variables
+//  This code draws on inspiration from:
+//		ZAMS.f by C.J. Hansen & S.D. Kawaler -- http://astro.if.ufrgs.br/evol/evolve/hansen/
+//  	StatStar by Bradley W. Carroll & Dale A. Ostlie,  2007.
+//  Reece Boston, Mar 24, 2022
 // **************************************************************************************/
 
 #ifndef ZAMSH

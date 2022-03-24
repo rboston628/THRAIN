@@ -3,6 +3,7 @@
 // Cowling ModeDriver.cpp
 //		Solves the Newtonian LAWE in Dziembowski variables in the Cowling approximation
 //		Does not consider perturbtations to gravitational field, making 2nd-order modes
+//  Reece Boston, Mar 24, 2022
 //***************************************************************************************
 
 #ifndef COWLINGMODEDRIVERCLASS

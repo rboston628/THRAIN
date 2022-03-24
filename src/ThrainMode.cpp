@@ -1,7 +1,8 @@
 //**************************************************************************************
 //							THRAIN MODE
-// ThrainMode.cpp
-//		Handles all functionality with finding modes and calculating their properies
+//  ThrainMode.cpp
+//	 	Handles all functionality with finding modes and calculating their properies
+//  Reece Boston, Mar 24 2022
 //**************************************************************************************
 
 

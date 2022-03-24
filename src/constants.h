@@ -1,7 +1,8 @@
 // **************************************************************************************
 // constants.h
-//		This file describes dependencies, and constants, and certain broadly-used
-//		mathematical functions for the THRAIN code.  
+//  	This file describes dependencies, and constants
+//  	Many constant taken from https://physics.nist.gov/cuu/Constants/index.html	
+//  Reece Boston, Mar 24, 2022
 // **************************************************************************************
 
 //constants and dependencies

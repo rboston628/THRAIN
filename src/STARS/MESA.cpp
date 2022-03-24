@@ -1,8 +1,6 @@
 //Class to read in MESA data for pulsation calculations
-//*****
-// WARNING: must have at least one interpolated step at a midpoint, or the RK4 method
-//	being used in the Mode class will NOT work.
-//*****
+// Reece Boston, Mar 24, 2022
+
 
 #ifndef MESACLASS
 #define MESACLASS
@@ -320,9 +318,6 @@ void MESA::getVgCenter(double *Vc, int& maxPow, double g){
 }
 
 void MESA::getUCenter(double *Uc, int& maxPow){
-//	if(maxPow>=0) Uc[0] = 3.0;
-//	if(maxPow>=2) Uc[1] = 6.*nc/5.*ac[2];
-//	if(maxPow>=4) Uc[2] = 12./7.*nc*ac[4]+(24./175.*nc-6./7.)*nc*ac[2]*ac[2];
 	if(maxPow>=0) Uc[0] = U0[0];
 	if(maxPow>=2) Uc[1] = U0[1];
 	if(maxPow>=4) Uc[2] = U0[2];
@@ -330,10 +325,6 @@ void MESA::getUCenter(double *Uc, int& maxPow){
 }
 
 void MESA::getC1Center(double *cc, int& maxPow){
-//	double term = 1./(4.*m_pi*dens->interp(0.0));
-//	if(maxPow>=0) cc[0] = 3.*term;
-//	if(maxPow>=2) cc[1] = -9.*nc/5.*ac[2]*term;
-//	if(maxPow>=4) cc[2] = ((9./14.+153.*nc/350.)*nc*ac[2]*ac[2] - 9.*nc/7.*ac[4])*term;
 	if(maxPow>=0) cc[0] = c0[0];
 	if(maxPow>=2) cc[1] = c0[1];
 	if(maxPow>=4) cc[2] = c0[2];
@@ -465,15 +456,11 @@ void MESA::setupSurface(){
 	V1[O+3] =  3.*ps[1]*ps[2] - pow(ps[1],3)*(1.+ps[1]) + 4.*ps[1]*ps[1]*ps[2]
 				-2.*ps[2]*ps[2] - 3.*ps[3] - 4.*ps[1]*ps[3] + 4.*ps[4];
 	// A*
-	//ds[1] /= ds[0];
-	//ds[2] /= ds[0];
-	//ds[3] /= ds[0];
-	//ds[4] /= ds[0];
 	//using the Brassard relation
 	double N21 = BVfq->interp(1.0);
 	A1[O-1] = 0.0;
 	A1[O+0] = N21*c1[0];
-	A1[O+1] = N21*c1[1];//-aSpline->deriv(radi[len-2]);//N21*c1[1];
+	A1[O+1] = N21*c1[1];
 	A1[O+2] = N21*c1[2];
 	A1[O+3] = N21*c1[3];
 	for(int i=1; i<=4; i++) { /*ds[i] *= ds[0];*/ ps[i]*=ps[0];}		
@@ -494,11 +481,6 @@ void MESA::getAstarSurface(double *As, int& maxPow, double g){
 void MESA::getVgSurface(double *Vs, int& maxPow, double g){
 	double gam1 = (g==0.0 ? Gam1->interp(radi[len-1]) : g);
 	int O=1;
-//	if(maxPow>= -1) Vs[O-1] = (1.5+1.)/gam1;
-//	if(maxPow>=  0) Vs[O  ] = 0.0;
-//	if(maxPow>=  1) Vs[O+1] = 0.0;
-//	if(maxPow>=  2) Vs[O+2] = -315./16./gam1;
-//	if(maxPow>=  3) Vs[O+3] = 1575./32./gam1;
 	if(maxPow>= -1) Vs[O-1] = V1[O-1]/gam1;
 	if(maxPow>=  0) Vs[O  ] = V1[O  ]/gam1;
 	if(maxPow>=  1) Vs[O+1] = V1[O+1]/gam1;

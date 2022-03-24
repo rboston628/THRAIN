@@ -1,16 +1,15 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.cpp                                                           S Reece Boston
-// Uses simple C/O core with He/H envelope and atmosphere
+// SimpleWD.cpp                                                           Reece Boston
+// Uses simple C/O core with He/H envelope and atmosphere                 Mar 24, 2022
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 
-//		- Wood 1990
-//		- Tassoul, Fontaine & Winget 1990
-//		- Arcoragi & Fontaine 1980
+//		- Reece Boston, PhD Thesis UNC, 2022
+//  	- Boston, Clemens, Evans (2022)
 //  The interior equation of state includes pressure contributions from
 //		P = P_deg + P_ions + P_coulomb + P_rad
 //		the electron degeneracy is approximated as T=0 in the core
-//		in atmosphere, uses partial degeneracy (see Cox and Giuli)
+//      in atmosphere, only ideal gas and radiation
 //	Integrates with Schwarzschild's dimensionless logarithmic variables (Schwarzschild 1958)
 //  This code draws on inspiration from:
 //		ZAMS.f by C.J. Hansen & S.D. Kawaler -- http://astro.if.ufrgs.br/evol/evolve/hansen/
@@ -26,10 +25,11 @@
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
-	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16;
+	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16; // average <Z^2/A>
+	//electron (Thomson) scattering
 	double ke = 0.195*(1.+X.H1);
 	//see Schwarzschild 1958 (pg 237 or eq16.2), Schwarzschild 1946 (eq9), and Shapiro & Teuskolsky (eq4.1.8)
-	//note assumption of guillotine (Gaunt) factor ~ 10
+	//note assumption of guillotine (Gaunt) factor g ~ 10
 	double kbf = 4.34e24*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
 	//see Schearzschild 1858, or Hansen and Kawaler eq4.37
 	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
@@ -316,7 +316,7 @@ void SimpleWD::initFromChandrasekhar(){
 	printf("Preparing starting values from Chandrasekhar model\n");
 	Mstar = Msolar*MSOLAR;
 	int Ntest = 500;
-	double y0 = 1.58,  ymin = 1.0, ymax = 2.0;
+	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
 	double Mtry = 0.0, Mmin = 0.0, Mmax = 2.02;
 	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
 	Mtry = testStar->Mass()/MSOLAR-Msolar;
@@ -368,25 +368,26 @@ void SimpleWD::initFromChandrasekhar(){
 //        in their ZAMS.f program
 //    the core is considered to comprise the inner 99% of the star's mass
 //        within the core, we assume a constant step size
-//    both the atmospher (He4) and envelope (H1) use a decreasing step size
-//        the step size is modelled after a geometric series, and slowly approaches 0.9999
+//    both the atmosphere uses a log-constant step size in 1-m
+//        resulting in gradually tapering step size in m towars surface
 //**************************************************************************************/
 void SimpleWD::setupGrid(double Qcore, int Ncenter){	
 	int n=0;
 	double q = 0.0; //the center
 	logQ[0] = log(q);
 	
+	//core
 	double dx = pow(3.*Qcore,1./3.)/Ncenter;
 	double dx3 = pow(dx,3)/3.;
 	double dq = dx3;
-	double logq = log(q);
-	
+	double logq = log(q);	
 	for(n=0 ; n<Ncenter; n++){
 		dq = (3.*n*n + 3.*n + 1.)*dx3;
 		q = q + dq;
 		logQ[n] = log(q);
 	}
-			
+	
+	//atmosphere
 	logq = log(1.-q); //q = 1 - m, start at surface
 	dq = (logq-log(1e-14))/(Ntot-n);
 	logq = log(1e-14);
@@ -544,9 +545,6 @@ void SimpleWD::rescaleR(){
 //  The SimpleWD Core
 //    the EOS will assume completely degenerate electron gas at zero temperature
 //    temperature in core is finite, allowed to vary through conduction to surface
-//    luminosity in core is constant
-//    the opacity is taken to be some constant small value, entirely due to conduction
-//    the composition is a mixture of Carbon and Oxygen
 //**************************************************************************************/
 double SimpleWD::calculateCore(const double x[numv], int Nmax){
 	//prepare variables for RK4
@@ -669,9 +667,6 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 
 //**************************************************************************************/
 //  The SimpleWD Atmosphere
-//    the EOS incudes electrons, ions, Coulomb corrections, partial ionization, and radiation
-//    either radiative or convective heat transport allowed to take place
-//    the composition is a mixture of Helium, Carbon, and Hydrogen
 //	Must integrate from surface (photosphere) to the core
 //**************************************************************************************/
 void SimpleWD::calculateAtmosphere(const double x[numv]){	
@@ -1162,14 +1157,10 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 	Prad = radiation_a/3.*pow(y[temp],4);
 	if(Prad > y[pres]) {
 		printf("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
-		printf("r=%le m=%le P=%le\n", exp(logy[radi]), exp(logy[mass]), exp(logy[pres]));
-	//	y[temp] = 0.0;
-		Ystart0[dens] *= 1.5;
-		Ystart0[pres] *= 1.5;
-		double xx[numv] = {Ystart0[pres]/Pscale, y[temp]/Tscale, 1.e-3};
-		calculateCore(xx,X+1);
-		y = exp(logY[X]+logYscale);
-		printf("r=%le m=%le P=%le\n", exp(logY[X][radi]), exp(logY[X][mass]), exp(logY[X][pres]));
+		printf("X %d:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
+		//do something to try to recover
+		y[pres] += Prad;
+		logY[X][pres] = std::log(y[pres]);
 	}
 	
 	

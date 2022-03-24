@@ -1,12 +1,11 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.h                                                             S Reece Boston
-// Uses simple C/O core with He/H envelope and atmosphere
+// SimpleWD.h                                                             Reece Boston
+// Uses simple C/O core with He/H envelope and atmosphere                 Mar 24, 2022
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 
-//		- Wood 1990
-//		- Tassoul, Fontaine & Winget 1990
-//		- Arcoragi & Fontaine 1980
+//		- Reece Boston, PhD Thesis UNC, 2022
+//  	- Boston, Clemens, Evans (2022)
 //  The interior equation of state includes pressure contributions from
 //		P = P_deg + P_ions + P_coulomb + P_rad
 //		the electron degeneracy is approximated as T=0
@@ -36,9 +35,9 @@ public:
 	int length(){return Ntot;}
 	//these three functions specify units
 	double Radius();	//total radius
-	double Mass();	//total mass
+	double Mass();	    //total mass
 	double Gee();
-	//in Newtonian, light speed is infinity... just use the max value to represent this
+	//in Newtonian, light speed is infinity...
 	virtual double light_speed2();
 	
 	double rad(int);
@@ -87,7 +86,7 @@ private:
 	StellarVar Ysolar;
 	StellarVar Ystar;
 	
-	//methods to calculate each of the three sections
+	//methods to calculate the two regions
 	static const int numv=3;
 	void   joinAtCenter(double x[numv], double f[numv], double& F);
 	double calculateCore( const double x[numv], int Nmax);

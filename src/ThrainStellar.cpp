@@ -2,6 +2,7 @@
 //							THRAIN STELLAR
 //  ThrainStellar.cpp
 //		Handles all functionality with finding background models
+//  Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 

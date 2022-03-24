@@ -6,6 +6,7 @@
 //				P~rho^Gamma
 //		Solves Lane-Emden equation, y=theta, x=xi, z=dy/dxi in more usual notation
 //		See Hansen & Kawaler Chapter 7 for further information
+// Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #ifndef POLYTROPECLASS

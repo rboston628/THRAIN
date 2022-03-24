@@ -1,4 +1,5 @@
 //Class to calculate read in MESA data for pulsation calculations d
+//Reece Boston, Mar 24, 2022
 
 #ifndef MESACLASSH
 #define MESACLASSH
@@ -14,8 +15,6 @@ public:
 	double Radius();
 	double Gee();
 	double light_speed2();
-	//return a scale factor to put frequencies in seconds
-	//double getF0(){ return F0;}
 	void graph_title(char* buff){
 		sprintf(buff, "MESA model w/ Mass=%lg", Mtot);
 	}
@@ -43,8 +42,6 @@ private:
 		double*, double*
 	);
 	void getSplineCoefficients(const int, double*, const double *const, const double *const);
-	
-	//void printBruntVaisala(const char*);
 		
 	int Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
@@ -67,10 +64,6 @@ private:
 	double ds[5], ps[5], ts[5], dels;
 	double A1[5], V1[5], c1[5], U1[5];
 	
-	//double as[6]; //coefficients of theta near surface
-	//double Vs[5];
-	//double cs[4];
-	//double Us[4];
 	void setupCenter();
 	void setupSurface();
 	

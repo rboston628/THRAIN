@@ -1,6 +1,7 @@
 //**************************************************************************************
 //  ThrainUnits.cpp
 //	This file contains all fuctions for handling unit conversions for the program
+//  Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #include "ThrainMain.h"

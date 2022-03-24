@@ -4,6 +4,7 @@
 //		Equation agnostic 
 //			-- all information specific to physics supplied by the driver
 // 		Capable of nonradial, Cowling, 1PN modes by supplying different drivers
+//  Reece Boston Mar 24, 2022
 //  NOTE: If you make ANY changes to this file, you MUST make clean and recompile
 //**************************************************************************************
 
@@ -110,7 +111,6 @@ Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 		sig1 = sig1*exp(-0.4*sqrt(-k));
 		//now convert freq back to sigma2
 		omega2 = (sig1*sig1)/nug; //sigma^2
-		//omega2 = omega2/sig2omeg;
 	}
 
 	//now we  converge to solution
@@ -379,8 +379,6 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 	double bb[numvar] = {0.0}; //for(int i=0; i<num_var; i++) bb[i] = 0.0;
 	invertMatrix(A, bb, aa);
 	
-	//for(int i=0; i<numvar; i++) printf("%lf ", aa[i]);
-	//printf("\n");
 	//for the basis BCs we chose, this will be the properly scaled physical solution
 	//if we change the BCs, we must change these results to match
 	for(int a=0; a<numvar/2; a++){
@@ -487,6 +485,7 @@ void Mode<numvar>::RK4in( int xmin, double w2, double ys[numvar]){
 }
 
 //integrates from both edges toward center and returns Wronskian
+//this approach based on Christensen-Dalsgaard, Astrophys.SpaceSci.316:113-120,2008
 template <size_t numvar> 
 double Mode<numvar>::RK4center(double w2, double y0[numvar], double ys[numvar]){		
 	//prepare a matrix
@@ -572,9 +571,7 @@ void Mode<numvar>::writeMode(char *c){
 	fprintf(gnuplot, "set ylabel 'log|y|'\n");
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	//fprintf(gnuplot, "set xrange [-8:0]\n");
 	std::string varname[numvar]; driver->varnames(varname);
-	//fprintf(gnuplot, "set arrow 1 from 5e3,1e-6 to 2e5,15.6e-12 lc rgb 'red' nohead\n");
 	fprintf(gnuplot, "set arrow 1 from %le, graph 0 to %le, graph 1 lc rgb 'red' nohead\n", rad[xfit]/R, rad[xfit]/R);
 	fprintf(gnuplot, "plot ");
 	for(int a=0; a<numvar; a++){

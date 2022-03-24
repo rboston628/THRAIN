@@ -7,7 +7,7 @@ chemical parameters:
 	he	10.0	3.0	1.0
 	c	3.0	4.0	1.0
 	o	2.0	2.0	0.7
-Params: mass 0.608	teff 1.2e4
+Params: mass 1.0	teff 1.2e4
 Units:	astro
 
 Frequencies:	nonradial	0

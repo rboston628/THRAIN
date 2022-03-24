@@ -1,17 +1,15 @@
 //**************************************************************************************
 //							ZERO AGE MAIN SEQUENCE STAR
 // ZAMS.cpp
-// Uses simple C/O core with He/H envelope and atmosphere
-//  User must specify total H, He, C, and O fractions within the star
-//  Layer stratification is determined using the method described in 
-//		- Wood 1990
-//		- Tassoul, Fontaine & Winget 1990
-//		- Arcoragi & Fontaine 1980
+//	A Newtonian star at the beginning of the main sequence lifetime
+//	Chemically homogeneous (X,Y,Z)
 //  The interior equation of state includes pressure contributions from
-//		P = P_deg + P_ions + P_coulomb + P_rad
-//		the electron degeneracy is approximated as T=0 in the core
-//		in atmosphere, uses partial degeneracy (see Cox and Giuli)
+//		P = P_ions + P_rad
 //	Integrates with Schwarzschild's dimensionless logarithmic variables
+//  This code draws on inspiration from:
+//		ZAMS.f by C.J. Hansen & S.D. Kawaler -- http://astro.if.ufrgs.br/evol/evolve/hansen/
+//  	StatStar by Bradley W. Carroll & Dale A. Ostlie,  2007.
+//  Reece Boston, Mar 24, 2022
 // **************************************************************************************/
 
 #ifndef ZAMSCLASS
@@ -21,57 +19,28 @@
 #include "Polytrope.cpp"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
-//	static const double kappa0 = 4.34e24*(X.C12+X.O16)*(1.+X.H1); //Schwarzschild 1946, Cox&Giuli, Shapiro & Teuskolsky 1983 eq 4.1.8
-//	return kappa0*exp(ly[dens]-3.5*ly[temp]);// Shapiro & Teukolsky 1983 eq 4.1.3
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
-	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16;
-	double ke = 0.195*(1+X.H1);
-	double kbf = 4.34e25*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16; // average <Z^2/A>
+	//electron (Thomson) scattering
+	double ke = 0.195*(1.+X.H1);
+	//see Schwarzschild 1958 (pg 237 or eq16.2), Schwarzschild 1946 (eq9), and Shapiro & Teuskolsky (eq4.1.8)
+	//note assumption of guillotine (Gaunt) factor g ~ 10
+	double kbf = 4.34e24*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	//see Schearzschild 1858, or Hansen and Kawaler eq4.37
 	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	if(X.H1<1e-3){
-		double t6 = ly[temp]-6.*log(10.0);
-		double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
-		double Ap = 1. + C*(1.+C/24.55);
-		double mu = meanZA - 1.;
-		double B  = 3.86 + 0.252*mu*mu + 0.018*mu;
-		double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
-		double lr = -A + B*t6;
-		double k  = 0.67*(ly[dens]-lr) + log(Ap);
-		return k + ke + kbf + kff;
-//	}//*/
-//	else{ //if(X.H1<0.8){
-//	double kbf = 4.34e25*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	double k_ff = 0.645e23*(X.mean_Z()*X.mean_Z()*X.mu_e()/X.mean_A())*exp(ly[dens]-3.5*ly[temp]);
-//	double k_e  = 0.195*(1.+X.H1);
-//	double k_H  = 2.5e-31*(X.C12+X.O16)/0.02*exp(0.5*ly[dens]+9.*ly[temp]);
-//	double k_K  = (4.3e25*(X.C12+X.O16) + 3.7e22*(X.H1+X.He4))*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	return k_e+k_ff+k_bf;
-//	return k_bf+k_e+k_ff;//*/
-//  the below is from .... Henyey et al 1959, or Bodenheimer 1965
-/*	double lt7 = ly[temp] - 7.0*log(10.0), t7 = exp(lt7);
-	double rho = exp(ly[dens]), rho1X = rho*(1.+X.H1);
-	double k1 = 6.48e-3*X.H1*rho1X*exp(-4.25*lt7);
-	double k2 = 186.0*rho1X*X.He4*( 1.05e-3*exp(-3.*lt7)/(1.+10*t7) + (2.-X.He4)*pow(0.15 + t7*(300.0*t7-7.),-4.));
-	double k3 = 4.38e3*(X.C12+X.O16)/sqrt( (0.455*sqrt(rho1X)+1.)*(5.38*t7*t7/rho1X+1.)*(1.34e5*exp(5*lt7)/rho1X+1.)*(1.44*t7*t7 + 0.1*exp(-1.5*lt7)));
-	return ( (k1+k2)*(k3+ke) + k3*ke )/(k1+k2+k3+ke) + k1 + k2 + k3 + ke;
-//	}//*/
-/*	else{
-		double Pe = pressure_deg_partial(exp(ly[dens]),exp(ly[temp]), X);
-		double V  = exp(-ly[dens]);
-		double T  = exp(ly[temp] - 4.*log(10.));
-		double k1 = 0.194*(1.+X.H1);//5.4e-13*V/T;
-		double k2 = X.H1/(4.5*pow(T,6) + 1./T/( 4.e-3/pow(T,4)+2.e-4*pow(V,0.25) ));
-		double k3 = X.He4/(1.4e3*T+pow(T,6));
-		double k4 = (X.C12+X.O16)*sqrt(T)/(20.*T+5.*pow(T,4)+pow(T,5));
-		return Pe*(k1+(k2+k3+k4)*exp(ly[dens]));
-	}//*/
+	//from Iben 1975, Appendix B
+	double t6 = ly[temp]-6.*log(10.0);
+	double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
+	double Ap = 1. + C*(1.+C/24.55);
+	double mu = meanZA - 1.;
+	double B  =  3.86 + 0.252*sqrt(mu) + 0.018*mu;
+	double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
+	double lr = -A + B*t6;
+	double k = Ap*exp(0.67*(ly[dens]-lr));
+	return k + ke + kbf + kff;
 }
 
 double conductive_opacity(const StellarVar& ly, const Abundance& X){
-//	return 4.e-8*pow(X.mu_e()*X.mean_Z(),2)/X.mean_A()*exp(2.*(ly[temp]-ly[dens]));
-//	double t7 = ly[temp] - 7.0*log(10.0);
-//	return 301.8*exp(-t7)/(1. + pow(0.004364*(1.+X.H1)*exp(ly[dens]-1.5*t7),5./3.) );
 // below is based on Cassis 2007, which relies on Yakovlev & Urpin 1980 and Potekhin et al 1999
 	double rho = exp(ly[dens]);
 	double x = pow(rho/Chandrasekhar::B0/X.mu_e(), 1./3.);
@@ -89,11 +58,7 @@ double conductive_opacity(const StellarVar& ly, const Abundance& X){
 double ZAMS::opacity(const StellarVar& ly, const Abundance& X){
 	double k_rad = radiative_opacity(ly,X);
 	double k_cond= conductive_opacity(ly,X);
-//	double Pcore = core_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	double Patm  =  atm_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	if(exp(ly[dens]) < 1e-3) k_cond=1e24;
 	return 1./(1./k_rad+1./k_cond);
-//	else return k_rad;
 }
 
 //initalize ZAMS model
@@ -354,7 +319,7 @@ void ZAMS::initFromPolytrope(){
 //        in their ZAMS.f program
 //    the core is considered to comprise the inner 85% of the star's mass
 //        within the core, we assume a constant step size
-//    both the atmospher (He4) and envelope (H1) use a decreasing step size
+//    the atmosphere uses a decreasing step size
 //        the step size is modelled after a geometric series, and slowly approaches 0.9999
 //**************************************************************************************/
 void ZAMS::setupGrid(double Qcore, int Ncenter){
@@ -362,7 +327,7 @@ void ZAMS::setupGrid(double Qcore, int Ncenter){
 	double dq = Qcore/(Ncenter-1);
 	double logQcore = log(Qcore);
 		
-	//now we define the core with constant step sizes
+	//in the core, use constant step size
 	double q = 0.0; //the center
 	int n=0;
 	for( ; n<Ncenter; n++){
@@ -370,7 +335,7 @@ void ZAMS::setupGrid(double Qcore, int Ncenter){
 		q = q + dq;
 	}
 	
-	//in the envelope, use a decreasing step size based on geometric series
+	//in the atmosphere, use a decreasing step size based on geometric series
 	double dq1 = 1. - dq/(1.-Qcore);
 	// fixed-point iteration to ensure self-consistency of dx1
 	for(int a=0;a<20;a++) dq1 = 1.0 - dq/(1.-Qcore)*(1.-pow(dq1, (Ntot-Ncenter-1)/2));
@@ -390,11 +355,7 @@ void ZAMS::setupGrid(double Qcore, int Ncenter){
 
 //**************************************************************************************/
 //  The ZAMS Core
-//    the EOS will assume completely degenerate electron gas at zero temperature
-//    temperature in core is finite, allowed to vary through conduction to surface
-//    luminosity in core is constant
-//    the opacity is taken to be some constant small value, entirely due to conduction
-//    the composition is a mixture of Carbon and Oxygen
+//    the opacity is taken to be some constant small value, entirely due to conduction.
 //**************************************************************************************/
 double ZAMS::calculateCore(const double x[numv], int Nmax){
 	//prepare variables for RK4
@@ -458,8 +419,6 @@ int ZAMS::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
 
 	//set initial conditions
-	//printf("Core dens: %le\t%le\t%le\n", Ystart0[dens], sqrt(P0*Pscale), 3.9308846494269581E+06);
-	//printf("Core pres: %le\t%le\t%le\n", x[0]*Pscale,  Ystart0[pres], 2.0782717264828863E+23);
 	rholast = Ystart0[dens]; //sqrt(P0*Pscale); //an initial guess
 	StellarVar Ycenter(rholast/Dscale, 0.0, P0, 0.0, T0, 0.0);
 	StellarVar logYcenter = log(Ycenter);
@@ -744,7 +703,10 @@ StellarVar ZAMS::dlogYdlogM(  const StellarVar& logy, const double& nabla, const
 //  Constitutive Physics
 //**************************************************************************************/
 
-// EPSILON  the source of luminosityZAMS
+// EPSILON  the source of luminosity
+// Borrows from 
+//		ZAMS.f by C.J. Hansen & S.D. Kawaler -- http://astro.if.ufrgs.br/evol/evolve/hansen/
+//  	StatStar by Bradley W. Carroll & Dale A. Ostlie,  2007.
 double ZAMS::energyProduction(const StellarVar& logy, const Abundance& X){
 	//in our setting, dm/dr = rho*r^2,     with BCs 0 and 1
 	//but also,       dL/dr = rho*r^2*eps, with BCs 0 and 1
@@ -850,20 +812,7 @@ Abundance ZAMS::findAbundance(
 }
 
 Abundance ZAMS::massFraction(){
-	Abundance massTot(0.,0.,0.,0.);
-	Abundance Xint1=Xtot, Xint2=Xtot;
-	
-	//first integrate the core
-	massTot = massTot + (Xint1+Xint2)*(exp(logQ[1]))*0.5;
-	Xint2 = Xtot*exp(logQ[1]);
-	for(int x=1; x<Ntot-1; x++){
-		if(exp(logQ[x+1]) >1.0) break;
-		Xint1 = Xint2;
-		Xint2 = Xtot*exp(logQ[x+1]);
-		massTot = massTot + (Xint1+Xint2)*(logQ[x+1]-logQ[x])*0.5;
-	}
-	massTot.enforce();
-	return massTot;
+	return Xtot;
 }
 
 //**************************************************************************************/

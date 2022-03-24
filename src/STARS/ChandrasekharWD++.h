@@ -7,6 +7,7 @@
 //		This model assumes T=0, and ignores Coulombic and other effects
 //		The surface is not treated in any special way
 //		Updated to include a chemical profile, indicated by mu_electron
+// Reece Boston, Mar 24, 2022
 // **************************************************************************************/
 
 #ifndef ChandrasekharWDH

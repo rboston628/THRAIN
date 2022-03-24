@@ -29,13 +29,15 @@
 ## DOCUMENTATION
 # include the documentation
 !documentation/
-!documentation/*
+!documentation/*.pdf
+!documentation/*.png
 !documentation/mathematica/
-!documentation/mathematica/*
+!documentation/mathematica/*.nb
 # but not the text source files or aux files
 documentation/*.tex
 documentation/*.aux
 documentation/*.toc
 documentation/*.log
+documentation/*.out
 documentation/*.gz
 

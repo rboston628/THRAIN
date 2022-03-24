@@ -5,6 +5,7 @@
 //	Will take a filename form the commandline, uses as input
 //		The input files need to be formatted in the expected way to function
 //      See documentation, or sample input, to see how to use
+//  Rece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #include "ThrainMain.h"

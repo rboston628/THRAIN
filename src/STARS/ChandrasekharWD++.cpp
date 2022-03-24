@@ -1,12 +1,13 @@
 //**************************************************************************************
 //							CHANDRASEKHAR WHITE DWARF
-// ChandrasekharWD++.h
-// 		This is a model of a WD based on the equation (13)  of Chandrasekhar 1935
-//			based on a cold degenerate electron gas equation of state
-//			Chandrasekhar defines a variable y in equation (12)
-//		This model assumes T=0, and ignores Coulombic and other effects
-//		The surface is not treated in any special way
-//		Updated to include composition gradient, indicated by mu_e
+//  ChandrasekharWD++.h
+//  		This is a model of a WD based on the equation (13)  of Chandrasekhar 1935
+//	 		based on a cold degenerate electron gas equation of state
+//	 		Chandrasekhar defines a variable y in equation (12)
+//	 	This model assumes T=0, and ignores Coulombic and other effects
+//	 	The surface is not treated in any special way
+//	 	Updated to include composition gradient, indicated by mu_e
+//  Reece Boston, Mar 24, 2022
 // **************************************************************************************/
 
 #ifndef ChandrasekharWDCLASS

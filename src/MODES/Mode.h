@@ -1,9 +1,11 @@
 //**************************************************************************************
 //							The MODE Object
 //	Mode.h
+//  	Inhereits form ModeBase, contained in ModeDriver.g
 //		Equation agnostic 
 //			-- all information specific to physics supplied by the driver
 // 		Capable of nonradial, Cowling, 1PN modes by supplying different drivers
+//  Reece Boston Mar 24, 2022
 //**************************************************************************************
 
 #ifndef MODEH
