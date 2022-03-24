@@ -21,6 +21,7 @@
 !src/STARS/
 !lib/*
 !src/*
+!src/*/*
 
 ## DOCUMENTATION
 # include the documentation
