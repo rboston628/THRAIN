@@ -17,11 +17,14 @@
 # the source code itself
 !lib/
 !src/
-!src/MODES/
-!src/STARS/
-!lib/*
-!src/*
-!src/*/*
+!src/*/
+!lib/*.h
+!lib/*.cpp
+!src/*.h
+!src/*.cpp
+!src/*/*.h
+!src/*/*.cpp
+
 
 ## DOCUMENTATION
 # include the documentation
