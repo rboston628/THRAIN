@@ -14,10 +14,8 @@
 #define ChandrasekharWDH
 
 #include "Star.h"
-//#ifndef CHANDRACONST
-//#define CHANDRACONST
-	#include "../../lib/chandra.h"
-//#endif
+#include "../../lib/chandra.h"
+
 
 class ChandrasekharWD : public Star {
 public:

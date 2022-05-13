@@ -1,10 +1,11 @@
 # THRAIN
-By S. Reece Boston
 ## The Mighty White Dwarf Code
 
 A parametric white dwarf asteroseismology code for rapid model testing.
 
 Built with numerical precision in mind.
+
+S. Reece Boston
 
 ## Citation
 

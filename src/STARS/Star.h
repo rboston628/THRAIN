@@ -62,7 +62,6 @@ public:
 	//print relevant values of the star in .txt and gnuplot
 	virtual void writeStar(char *c = NULL);
 	virtual void printStar(char *c = NULL);
-	//virtual void printBruntVaisala(char *c=NULL);
 	virtual double SSR();
 	
 	//allow Modes to access private members of Star

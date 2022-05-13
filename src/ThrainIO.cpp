@@ -65,6 +65,7 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
+	printf(" MAKING A %s\n", input_buffer);
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
 	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
@@ -146,7 +147,7 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 				printf("using logistic composition\n");
 				break;
 		}
-		fscanf(input_file, "%lf", &calcdata.input_params[2]);	//read in the grid size
+		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[2]);
 		//fscanf(input_file, "%s\n", input_buffer);   //read in chemical gradient
 		//calcdata.str_input_param = std::string(input_buffer);
@@ -762,6 +763,10 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	//for this, we need the k=0 mode for each value of l
 	//produce a list of the different L asked for
 	int lastl=0, minl=100, maxl=-1;
+	//find min, max
+	int l_current = calcdata.l[0];
+	if(l_current < minl) minl=l_current;
+	if(l_current > maxl) maxl=l_current;
 	int num = calcdata.mode_done;
 	int l_list[num];
 	printf("\tpreparing mode list...\t");

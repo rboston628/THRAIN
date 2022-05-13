@@ -68,7 +68,6 @@ const double JCD4_0[3][35] = {
 // requires a mode driver type (the <class>)
 //  defined below
 template <class MODE> int mode_finder(CalculationOutputData&);
-//template <class MODE> int search_list(CalculationOutputData&);
 
 //this will create the correct mode driver and pass the correct driver type to the mode_finder
 int create_modes(CalculationOutputData &data_out){	

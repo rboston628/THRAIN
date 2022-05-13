@@ -39,7 +39,7 @@ void Mode<numvar>::basic_setup(){
 	for(int i=0;i<len-1;i++) if(star->rad(2*i) > R80) {imax=i;break;}
 	double b = double(l)/double(l+1);
 	//based on l, set the fit infex at an intermediary point between stellar index and R80
-	xfit = star->indexFit;//int( b*imax + (1.0-b)*star->indexFit );
+	xfit = star->indexFit;
 	//set the arrays that define the perturbation
 	rad = new double[len];
 	y = new double*[numvar];
@@ -97,7 +97,6 @@ Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 		if(Gamma1==0.0) Dn = star->Gamma1(0)*( ks*(ks+ell+0.5) ) - 2.0;
 		//omega^2 = Dn + sqrt( Dn^2 + l(l+1) )
 		omega2 = Dn + sqrt( Dn*Dn + ell*(ell+1.0) );
-		//if(omega2 < 0) omega2 = Dn - sqrt( Dn*Dn + ell*(ell+1.0) );
 		//from dimensional considerations, sigma^2 = (GM/R^3) *omega^2
 	}
 	//for g-modes
@@ -269,8 +268,6 @@ void Mode<numvar>::convergeBisect(double tol){
 				if(wdx<w1) wdx *= 0.99;
 			}
 			//limit amount of change allowed in single step
-			//if(wdx > 1.1*w2) wdx = 1.1*w2;	//if we increased, don't increase too much
-			//if(wdx < 0.9*w2) wdx = 0.9*w2;	//if we decreased, don't decrease too much
 			Wdx = W2;
 			W2 = RK4center(wdx, yCenter, ySurface);
 			w2 = wdx;
@@ -375,8 +372,8 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 		for(int j=numvar/2; j<numvar; j++) A[i][j] =-DY[j][i]; // inward solutions -
 	}
 	
-	double aa[numvar] = {0.0}; //for(int i=0; i<num_var; i++) aa[i] = 0.0;
-	double bb[numvar] = {0.0}; //for(int i=0; i<num_var; i++) bb[i] = 0.0;
+	double aa[numvar] = {0.0};
+	double bb[numvar] = {0.0};
 	invertMatrix(A, bb, aa);
 	
 	//for the basis BCs we chose, this will be the properly scaled physical solution
@@ -555,7 +552,6 @@ void Mode<numvar>::writeMode(char *c){
 	double M = star->Mass();
 	for(int x=0; x<len; x++){
 		fprintf(fp, "%0.16le", rad[x]/R);
-		//fprintf(fp, "%0.16le", log(1.-star->mr(x)/M));
 		for(int a=0; a<num_var; a++) fprintf(fp, "\t%0.16le", y[a][x]);
 		fprintf(fp, "\n");
 	}

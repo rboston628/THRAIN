@@ -53,7 +53,7 @@ int create_classical_polytrope(CalculationOutputData& data){
 int create_classical_CHWD(CalculationOutputData& data){
 	switch((int)data.input_params[1]){
 		case 0:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 1.,1.,1.,1.);
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2.,1.,1.,1.);
 			break;
 		case 1:
 			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2., 100, 0.6, 0.95);

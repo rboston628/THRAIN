@@ -26,7 +26,7 @@ void ChandrasekharWD::chemical_gradient(const double xi, const double dx, double
 	double xswap = dx*(aswap*len);
 	double EXP = exp(k*(xi-xswap));
 	if(xi<xcore){
-		mu = 2.0;
+		mu = mu0;
 		dmu= 0.0;
 	}
 	else {
@@ -115,13 +115,8 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	//now set physical properties of the white dwarf
 	
 	//set initial density, pressure
-	//double mu_electron = 1.0;//assuming pure hydrogen -- needs to be fixed
-	//A0 = m_pi*pow(electron.mass_CGS,4)*pow(C_CGS,5)/3.*pow(plank_h_CGS,-3);
-	//B0 = 8.*m_pi*pow(electron.mass_CGS,3)*pow(C_CGS,3)*proton.mass_CGS*mu_electron/3.*pow(plank_h_CGS,-3);
 	//A0 = 6.0406e22;
 	//B0 = 9.8848e5;
-	//A0 = 6.01e22;	//this value taken from Chandraeskhar's book
-	//B0 = 9.82e5;	//this value taken from Chandrasekhar's book
 	Rn = sqrt(2.*Chandrasekhar::A0/(m_pi*Gee()))/Chandrasekhar::B0;
 	
 	mass = new double[len];
@@ -132,7 +127,6 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	x[0] = sqrt(Y0*Y0-1.);
 	f[0] = Chandrasekhar::factor_f(x[0]);
 	for(int X=1; X<len; X++){
-		//mu_electron[X] = 1./(2.*C12_abundance[X]+2.*He4_abundance[X]+H1_abundance[X] );
 		x[X] = sqrt(y[X]*y[X]-1.);
 		if(y[X]<1.) x[X] = 0.0;	
 		f[X] = Chandrasekhar::factor_f(x[X]);
@@ -176,10 +170,6 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, const double dx, double mu0, 
 	//now set physical properties of the white dwarf
 	
 	//set initial density, pressure
-	//A0 = 6.01e22;	//this value taken from Chandraeskhar's book
-	//B0 = 9.82e5;	//this value taken from Chandrasekhar's book
-	//A0 = 1.0;
-	//B0 = 1.0;
 	Rn = sqrt(2.*Chandrasekhar::A0/(m_pi*Gee()))/Chandrasekhar::B0;	//the radial scale factor
 	
 	mass = new double[len];
@@ -359,13 +349,12 @@ double ChandrasekharWD::getVg(int X, double GamPert){
 }
 
 double ChandrasekharWD::getC(int X){
-	if(X==0) return z[len-1]*xi[len-1]/2./yc[1]*mue[0]/mue[len-1];//-3.*z[len-1]/xi[len-1]/X02/X0;
+	if(X==0) return z[len-1]*xi[len-1]/2./yc[1]*mue[0]/mue[len-1];
 	return (z[len-1]/z[X])*(xi[X]/xi[len-1])*(mue[X]/mue[len-1]);
 }
 
 double ChandrasekharWD::Gamma1(int X){
 	return 8.*pow(x[X],5)/(3.*y[X]*f[X]);
-	//return 8.*mue[X]*pow(x[X],5)*z[X]/f[X]/(dmue[X]/dx*pow(x[X],2) + 3.*mue[X]*y[X]*z[X]);
 }
 
 double ChandrasekharWD::sound_speed2(int X, double GamPert){
@@ -453,9 +442,9 @@ void ChandrasekharWD::getC1Center(double *cc, int& maxPow){
 	double x1 = xi[len-1];
 	double z1 = z[len-1];
 	double murat = mue[0]/mue[len-1];
-	if(maxPow>=0) cc[0] = z1*x1/2./yc[1]*murat;//-3.*z1/x1/X02/X0;//
-	if(maxPow>=2) cc[1] = -z1*x1*yc[2]/yc[1]/yc[1]*murat;//-9.*z1*x1*Y0/10./X02;//
-	if(maxPow>=4) cc[2] = -z1*x1*(1.5*yc[1]*yc[3]-2.*yc[2]*yc[2])/pow(yc[1],3)*murat;//-3.*z1*pow(x1,3)*(31.*Y02+25.)/1400./X0;//
+	if(maxPow>=0) cc[0] = z1*x1/2./yc[1]*murat;
+	if(maxPow>=2) cc[1] = -z1*x1*yc[2]/yc[1]/yc[1]*murat;
+	if(maxPow>=4) cc[2] = -z1*x1*(1.5*yc[1]*yc[3]-2.*yc[2]*yc[2])/pow(yc[1],3)*murat;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }
@@ -574,9 +563,7 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'rho/rho_c, P/P_c, m/M, g/g_S'\n");
 	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname);
-	//fprintf(gnuplot, ", '%s' u 1:3 w l t '|drho/dr|'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname);
-	//fprintf(gnuplot, ", '%s' u 1:5 w l t '|dP/dr|'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname);
 	fprintf(gnuplot, "\n");
@@ -625,12 +612,8 @@ void ChandrasekharWD::writeStar(char *c){
 	for(int X=1; X< length()-1; X++){
 		//N^2 = -g*A
 		N2 = -dPhidr(X)*Schwarzschild_A(X,0.);
-		//if(N2<0.0) N2 = 0.0;	//show a drop for negative N^2
-		//else N2 = log10(N2);
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
-			//1./(1.-mr(X)/Mass()),
 			P(X),
-			//xi[X]/xi[len-1],
 			N2,
 			2.*sound_speed2(X,0.)*pow(Rn*xi[X],-2));
 	}
@@ -665,7 +648,7 @@ void ChandrasekharWD::writeStar(char *c){
 		He = 2.*(mue[X]-1.)/mue[X];
 		H = 1.-He;
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
-			1./(1.-mr(X)/Mass()),
+			(1.-mr(X)/Mass()),
 			H,
 			He
 		);
@@ -674,15 +657,16 @@ void ChandrasekharWD::writeStar(char *c){
 	//plot file in png in gnuplot
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
-	fprintf(gnuplot, "set term png size 800,800\n");
+	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname);
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title);
 	fprintf(gnuplot, "set logscale x 10\n");
-	fprintf(gnuplot, "set format x '10^{%%L}'\n");
-	fprintf(gnuplot, "set xlabel '-log_{10} (1-m/M)\n");
+	fprintf(gnuplot, "set format x '%%L'\n");
+	fprintf(gnuplot, "set xlabel 'log_{10} (1-m/M)\n");
 	fprintf(gnuplot, "set ylabel 'abundance\n");
 	fprintf(gnuplot, "set yrange [-0.01: 1.01]\n");
+	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
 	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'X (H1)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'Y (He4)'", txtname);
 	fprintf(gnuplot, "\n");

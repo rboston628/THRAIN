@@ -463,7 +463,7 @@ void MESA::setupSurface(){
 	A1[O+1] = N21*c1[1];
 	A1[O+2] = N21*c1[2];
 	A1[O+3] = N21*c1[3];
-	for(int i=1; i<=4; i++) { /*ds[i] *= ds[0];*/ ps[i]*=ps[0];}		
+	for(int i=1; i<=4; i++) { ps[i]*=ps[0];}		
 }
 
 void MESA::getAstarSurface(double *As, int& maxPow, double g){
@@ -658,14 +658,12 @@ void MESA::printCoefficients(char *c){
 	}
 	fclose(fp);	
 	//plot file in png in gnuplot
-	//gnuplot = popen("gnuplot -persist", "w");
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname);
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
-	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -769,7 +767,6 @@ void MESA::writeStar(char *c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	//fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname);
 	char title[256]; graph_title(title);
 	fprintf(gnuplot, "set title 'Profile for %s'\n", title);
@@ -777,9 +774,7 @@ void MESA::writeStar(char *c){
 	fprintf(gnuplot, "set ylabel 'rho/rho_c, P/P_c, m/M, g/g_S'\n");
 	fprintf(gnuplot, "set xrange [0:1]\n");
 	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname);
-	//fprintf(gnuplot, ", '%s' u 1:3 w l t '|drho/dr|'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname);
-	//fprintf(gnuplot, ", '%s' u 1:5 w l t '|dP/dr|'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname);
 	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname);
 	fprintf(gnuplot, "\n");
