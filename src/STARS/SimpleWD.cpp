@@ -862,7 +862,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		dlogY[X-1] = dlogYdlogR(logY[X-1], nabla);
 		dlogY[X-1][dens] = (logY[X-1][dens]-logY[X][dens])/(logY[X-1][radi]-logY[X][radi]);
 	}
-	return start;/
+	return start;
 }
 
 
