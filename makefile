@@ -7,38 +7,33 @@ ODIR=obj
 .SUFFIXES:
 .SUFFIXES: .cpp .o
 
-CC=g++ -std=c++11
-CFLAGS=-I$(IDIR) -Wuninitialized -Weffc++
-
-#VPATH = src include lib
+CC=g++ --std=c++14
+CFLAGS=-I$(IDIR) -Wuninitialized -Weffc++ --pedantic-errors
 
 ## files needed to compile stellar models
 #  dependencies
-_STARDEPS = constants.h\
-		STARS/Star.h \
-		STARS/Polytrope.h \
-		STARS/ChandrasekharWD++.h \
-		STARS/MESA.h\
-		STARS/SimpleWD.h
-STARDEPS = $(patsubst %, $(IDIR)/%, $(_STARDEPS))
-#  source
-_STARSRC = STARS/Star.cpp \
-		STARS/Polytrope.cpp\
-		STARS/ChandrasekharWD++.cpp\
-		STARS/MESA.cpp\
-		STARS/SimpleWD.cpp
-STARSRC  = $(patsubst %, $(SDIR)/%, $(_STARSRC))
+_STARTYPES = \
+	STARS/Star \
+		STARS/Polytrope \
+		STARS/ChandrasekharWD++ \
+		STARS/MESA \
+		STARS/SimpleWD
+_STARDEPS = constants.h 
+
+STARDEPS = $(patsubst %, $(IDIR)/%.h, $(_STARTYPES)) $(patsubst %, $(IDIR)/%, $(_STARDEPS))
+STARSRC  = $(patsubst %, $(IDIR)/%.cpp, $(_STARTYPES))
 
 ## files needed to compile mode drivers
 #  dependencies
-_DRVDEPS = constants.h\
-  STARS/Star.h\
-  MODES/Mode.h MODES/Mode.cpp\
-  MODES/ModeDriver.h MODES/NonradialModeDriver.h MODES/CowlingModeDriver.h
-DRVDEPS = $(patsubst %, $(IDIR)/%, $(_DRVDEPS))
-#  source
-_DRVSRC  = MODES/NonradialModeDriver.cpp MODES/CowlingModeDriver.cpp
-DRVSRC   = $(patsubst %, $(SDIR)/%, $(_DRVSRC))
+_DRVTYPES = \
+	MODES/NonradialModeDriver.h \
+	MODES/CowlingModeDriver.h
+_DRVDEPS = \
+	constants.h\
+	STARS/Star.h\
+	MODES/ModeDriver.h 
+DRVDEPS = $(patsubst %, $(IDIR)/%.h, $(_DRVTYPES)) $(patsubst %, $(IDIR)/%, $(_DRVDEPS))
+DRVSRC  = $(patsubst %, $(SDIR)/%.cpp, $(_DRVTYPES))
 
 ## files needed to compile the mode object
 #  dependencies
@@ -52,26 +47,23 @@ MODESRC  = $(patsubst %, $(SDIR)/%, $(_MODESRC))
 
 ## files needed to compile main program
 #  dependencies
-_MAINDEPS = constants.h ThrainMain.h ThrainIO.h\
-  STARS/Star.h STARS/Polytrope.h STARS/ChandrasekharWD++.h\
-  MODES/Mode.h\
-  MODES/ModeDriver.h MODES/NonradialModeDriver.h
-MAINDEPS = $(patsubst %, $(IDIR)/%, $(_MAINDEPS))
+_MAINDEPS = constants.h ThrainMain.h ThrainIO.h 
+MAINDEPS = $(patsubst %, $(IDIR)/%, $(_MAINDEPS)) $(STARDEPS) $(MODEDEPS) $(DRVDEPS)
 #  soure
 _MAINSRC = ThrainMain.cpp ThrainIO.cpp ThrainStellar.cpp ThrainMode.cpp ThrainUnits.cpp
 MAINSRC  = $(patsubst %, $(SDIR)/%, $(_MAINSRC))
 
 
 ## prepare object names
-STAROBJ = $(patsubst %.cpp,$(ODIR)/%.o, $(_STARSRC))
-DRVOBJ  = $(patsubst %.cpp,$(ODIR)/%.o, $(_DRVSRC))
-MODEOBJ = $(patsubst %.cpp,$(ODIR)/%.o, $(_MODESRC))
-MAINOBJ = $(patsubst %.cpp,$(ODIR)/%.o, $(_MAINSRC))
+STAROBJ = $(patsubst %, $(ODIR)/%.o, $(_STARTYPES))
+DRVOBJ  = $(patsubst %, $(ODIR)/%.o, $(_DRVTYPES))
+MODEOBJ = $(patsubst %.cpp, $(ODIR)/%.o, $(_MODESRC))
+MAINOBJ = $(patsubst %.cpp, $(ODIR)/%.o, $(_MAINSRC))
 
 
 ## Main rule for THRAIN program
-thrain:  $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ) |library
-	$(CC) -o $@ $^ $(CFLAGS) $(LDIR)/mylib.a
+thrain:  $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ) # |library
+	$(CC) -o $@ $^ $(CFLAGS) $(LDIR)/mylib.a -lm
 
 ## Rules for each subsection -- only update if their dependencies change
 $(STAROBJ): $(ODIR)/%.o: $(SDIR)/%.cpp $(STARDEPS) |obj/STARS
@@ -93,12 +85,9 @@ mode: $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ)
 	$(CC) -c -o $(ODIR)/MODES/Mode.o $(IDIR)/MODES/Mode.cpp $(CFLAGS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDIR)/mylib.a
 
-library: 
-	$(CC) -c -o lib/Splinor.o lib/Splinor.cpp
-	$(CC) -c -o lib/chandra.o lib/chandra.cpp
-	$(CC) -c -o lib/stellar.o lib/stellar.cpp
-	ar rcs lib/mylib.a lib/Splinor.o lib/chandra.o lib/stellar.o
-
+# these will create the necessary directories
+# see solution 4 here: 
+#    https://www.cmcrossroads.com/article/making-directories-gnu-make
 obj/:
 	mkdir -p obj
 obj/STARS:
@@ -107,7 +96,16 @@ obj/MODES:
 	mkdir -p obj/MODES
 
 
-.PHONY: clean
+.PHONY: clean pull library
+
+library:
+	rm -f lib/*.o
+	rm -f lib/*.a
+	$(MAKE) -C lib --makefile=makelib library
+
+## this command is used on my local machine to handle centralized versioning
+pull:
+	$(MAKE) -f pull
 
 clean:
 	rm -f $(ODIR)/*.o $(ODIR)/STARS/*.o $(ODIR)/MODES/*.o

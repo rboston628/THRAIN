@@ -925,7 +925,7 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
-	fprintf(output_file, "\n");fflush(output_file);
+	fprintf(output_file, "\n");
 	int ll=l_list[0];
 	for(int j=0; j<calcdata.mode_done; j++){
 		if(calcdata.l[j]<2) continue;
@@ -939,9 +939,9 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 			fprintf(output_file, "unable to find mode\n");
 			continue;
 		}
-		fprintf(output_file, "%0.12le \t", sqrt(calcdata.mode[j]->getOmega2())); fflush(output_file);
-		fprintf(output_file, "%3.16le \t", fabs(calcdata.mode[j]->tidal_overlap())); fflush(output_file);
-		fprintf(output_file, "%0.12le \n", 
+		fprintf(output_file, "%0.12le \t%3.16le \t%0.12le \n", 
+			sqrt(calcdata.mode[j]->getOmega2()), 
+			fabs(calcdata.mode[j]->tidal_overlap()),
 			fabs(calcdata.driver->innerproduct(calcdata.mode[j],fmode[jforl[calcdata.l[j]]]))
 		);
 		fflush(output_file);
