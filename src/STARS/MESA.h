@@ -1,5 +1,4 @@
 //Class to calculate read in MESA data for pulsation calculations d
-//Reece Boston, Mar 24, 2022
 
 #ifndef MESACLASSH
 #define MESACLASSH
@@ -42,7 +41,7 @@ private:
 		double*, double*
 	);
 	void getSplineCoefficients(const int, double*, const double *const, const double *const);
-		
+	
 	int Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
 	//in units of g, cm, erg/s, respectively

@@ -8,6 +8,9 @@
 //  Rece Boston, Mar 24, 2022
 //**************************************************************************************
 
+#include <set>
+#include <unordered_map>
+
 #include "ThrainMain.h"
 #include "ThrainIO.h"
 
@@ -759,174 +762,33 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	print_splash(output_file, splashy, WIDTH);
 	fflush(output_file);
 		
-	//a useful error measurement is to calculate c0 -- see Fuller & Lai 2011 A
-	//for this, we need the k=0 mode for each value of l
-	//produce a list of the different L asked for
-	int lastl=0, minl=100, maxl=-1;
-	//find min, max
-	int l_current = calcdata.l[0];
-	if(l_current < minl) minl=l_current;
-	if(l_current > maxl) maxl=l_current;
-	int num = calcdata.mode_done;
-	int l_list[num];
-	printf("\tpreparing mode list...\t");
-	l_list[0] = calcdata.l[0];
-	for(int j=1; j<num; j++){
-		int l_current = calcdata.l[j];
-		if(l_current == l_list[lastl]) continue;
-		// do not calculate overlap for dipole or radial modes
-		if(l_current < 2) {l_list[lastl]=l_current; continue;}
-		else{
-			//check if we already counted this l value
-			bool already = false;
-			for(int i=0; (i<=lastl) & !already; i++){
-				already |= (l_current == l_list[i]);
-			}
-			if(already) continue;
-			else {
-				lastl++;
-				l_list[lastl] = l_current;
-			}
-		}
-		//find min, max
-		if(l_current < minl) minl=l_current;
-		if(l_current > maxl) maxl=l_current;
-	}
-	//extra increment to align with zero-indexing
-	lastl++;
-	for(int j=lastl; j<num; j++) l_list[j]=-1;
-	printf("done\n");
+	//produce a list of the different L asked for, each represented once
+	// this is easily handled using an ordered set
+	std::set<int> l_list;
+	for(int j=0; j<calcdata.mode_done; j++)
+		l_list.insert(calcdata.l[j]);
 	
-	//an array to allow indexing of fmodes by l
-	int jforl[maxl-minl+1];
-	for(int l=minl; l<=maxl; l++){
-		for(int j=0; j<lastl; j++){
-			if(l==l_list[j]) jforl[l] = j;
-		}
-	}
-		
-	//now make the fundamental mode for each of those l
-	ModeBase *fmode[lastl];
-	printf("\tpreparing f-modes...\n");fflush(stdout);
-	for(int j=0; j<lastl; j++){
-		printf("\t\tl=%d\t", l_list[j]);
-		//for dipole (l=1) modes, there is no f-mode-- skip!
-		if(l_list[j]<2) {
-			fmode[j] = NULL;
+	//now find the fundamental mode for each L
+	std::unordered_map<int, ModeBase*> fmode;
+	for(auto lt = l_list.begin(); lt!=l_list.end(); lt++){
+		if(*lt<2){
 			printf("no tidal response at this order\n");
 			continue;
 		}
-		//check if the f-mode has already been found earlier
-		bool inlist=false;
-		for(int i=0; i<num; i++){
-			if(calcdata.l[i]==l_list[j] & calcdata.k[i]==0) {
-				inlist=true;
-				fmode[j] = calcdata.mode[i];	
-			}
-		}
-		//if so, we don't need to calculate it, move on to next l
-		if(inlist) {
-			printf("already found!\n");
-			continue;
-		}
-		//if not, then keep searching until we find it
-		printf("searching ...\t");fflush(stdout);
-
-		fmode[j] = new Mode<4>(0,l_list[j],0, calcdata.driver);	
-		int kk = fmode[j]->modeOrder();
-		if(kk!=0){
-			//use a bisection search to find the desired mode
-			double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0, w2out=0.0;
-			int kmax=0, kmin=0;
-			//first we create brackets
-			//bracket search when discovered mode is HIGHER than desired mode
-			if(kk > 0){		
-				//use the current mode as a max bracket (since it is high)
-				kmax  = kk;
-				w2max = fmode[j]->getOmega2();
-				//use an absolute minimum as a min bracket
-				// (note: this puts limits on allowed gmodes at -999999999)
-				w2min = 0.0;
-				kmin = -1000000000;
-			}
-			//bracket search when discovered mode is LOWER than desired mode
-			else if(kk < 0){
-				//use the current mode as a min bracket
-				kmin  = kk;
-				w2min = fmode[j]->getOmega2();
-				dw2 = w2min;
-				//if the max bracket was not found in list, search for it
-				//start at current mode and increase
-				kmax  = kk;
-				w2max = w2min+dw2;
-				//increase and search until we find a max bracket
-				while(kmax < 0){
-					delete fmode[l_list[j]];
-					w2max = w2max + dw2;
-
-					//fmode[l_list[j]] = new Mode<NV1>(w2max, l_list[j],0,calcdata.driver);
-					kmax = fmode[j]->modeOrder();
-					//if we found it, quit
-					if(kmax == 0){
-						kk=kmax;
-						break;
-					}
-				}
-			}
-			if(kmax==0) break;
-			//swap brackets if backward
-			if(kmin >= kmax){
-				int tk = kmax;
-				kmax = kmin;
-				kmin = tk;
-				double tw = w2max;
-				w2max = w2min;
-				w2min = tw;
-			}
-		
-			//now we have brackets -- these SHOULD put bounds in frequency
-			//for w2 in (w2min, w2max), will produce k in (kmin, kmax)
-			double prevmin=w2min, prevmax=w2max; //value of previous frequency
-			int stop=0; //integer to limit number of iterations
-			while(kk != 0){
-				w2in = 0.5*(w2min+w2max); //bisect the brackets
-				//create a trial mode
-				delete fmode[j];
-				fmode[j] = new Mode<4>(w2in, l_list[j],0,calcdata.driver);
-				kk = fmode[j]->modeOrder();
-				w2out = fmode[j]->getOmega2();
-			
-				//if we found it, then great.  move on to next
-				if(kk == 0) {
-					break;
-				}
-				//if we didn't find it, see if either bracket can be moved
-				if(     kk > 0 & kk <= kmax & w2max >w2out & w2out>0.0){
-					kmax = kk;
-					w2max = w2out;
-				}
-				else if(kk < 0 & kk >= kmin & w2min<w2out & w2out>0.0){
-					kmin = kk;
-					w2min = w2out;
-				}
-											
-				//if we are just unable to find the mode, say so
-				if(fabs(w2max-w2min) < 1e-10){
-					printf("too close\t%le\n", fabs((w2max-w2min)/w2max) );
-					break;
-				}
-				//update past values
-				prevmin = w2min, prevmax=w2max;
+		for(int i=0; i<calcdata.mode_done; i++){
+			if(calcdata.l[i]==*lt & calcdata.k[i]==0){
+				fmode[*lt] = calcdata.mode[i];
+				break;
 			}
 		}
 	}
-	printf("\tdone\n");
-	
+		
+			
 	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
 	fprintf(output_file, "\n");
-	int ll=l_list[0];
+
 	for(int j=0; j<calcdata.mode_done; j++){
 		if(calcdata.l[j]<2) continue;
 		//print the mode numbers L,K
@@ -942,13 +804,13 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 		fprintf(output_file, "%0.12le \t%3.16le \t%0.12le \n", 
 			sqrt(calcdata.mode[j]->getOmega2()), 
 			fabs(calcdata.mode[j]->tidal_overlap()),
-			fabs(calcdata.driver->innerproduct(calcdata.mode[j],fmode[jforl[calcdata.l[j]]]))
+			fabs(calcdata.driver->innerproduct(calcdata.mode[j],fmode[calcdata.l[j]]))
 		);
 		fflush(output_file);
 	}
 	fclose(output_file);
-	for(int j=0; j<lastl; j++){
-		delete fmode[j];
+	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
+		delete fmode[*lt];
 	}
 	printf("\tdone\n");
 	printf("done!\n");

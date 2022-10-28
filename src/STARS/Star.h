@@ -4,7 +4,6 @@
 //		A virtual class star for later models to inherit
 //		Serves as the basis in code for other stellar models
 //		Can be used in code as a generic star, without regard to particular physics
-// Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #ifndef STARH
@@ -43,7 +42,7 @@ public:
 	virtual double  mr(int) =0;
 	//Schwarzschild discriminant
 	virtual double Schwarzschild_A(int, double g=0.0) =0;
-	virtual double getAstar(int, double g=0.0) =0;
+	virtual double getAstar(int, double g=0.0) = 0;
 	virtual double getU( int) = 0;
 	virtual double getVg(int, double g=0.0) = 0;
 	virtual double getC( int) = 0;
@@ -62,6 +61,8 @@ public:
 	//print relevant values of the star in .txt and gnuplot
 	virtual void writeStar(char *c = NULL);
 	virtual void printStar(char *c = NULL);
+	virtual void printBV(  char *c = NULL, double const gam1=0.0);
+	virtual void printCoefficients(char *c = NULL, double const gam1=0.0);
 	virtual double SSR();
 	
 	//allow Modes to access private members of Star
