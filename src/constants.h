@@ -1,7 +1,8 @@
 // **************************************************************************************
 // constants.h
-//		This file describes dependencies and includes many broadly-used 
-//      physical constants, and certain broadly-used for the GRPulse code.  
+//  	This file describes dependencies, and constants
+//  	Many constant taken from https://physics.nist.gov/cuu/Constants/index.html	
+//  Reece Boston, Mar 24, 2022
 // **************************************************************************************
 
 //constants and dependencies
@@ -27,6 +28,7 @@ const double C_CGS = 2.99792458e10;// in CGS
 // previous value G = 6.6725985e-8 taken from: https://iopb.res.in/~somen/constants0.html
 // new value taken from: https://physics.nist.gov/cuu/Constants/index.html
 const double G_CGS = 6.67430e-8; // in CGS
+
 //Avogagro's number
 const double N_Avogadro = 6.02214076e23;
 

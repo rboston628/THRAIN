@@ -34,16 +34,6 @@ StellarVar log(const StellarVar &x){
 	return val;
 }
 
-/*//some opacities
-double radiative_opacity(StellarVar ly, Abundance const &X){
-	//Schwarzschild 1946, Cox&Giuli, Shapiro & Teuskolsky 1983 eq 4.1.8
-	const double kappa0 = 4.34e24*(X.C12+X.O16)*(1.+X.H1); 
-	return kappa0*exp(ly[dens]-3.5*ly[temp]);// Shapiro & Teukolsky 1983 eq 4.1.3
-}
-double conductive_opacity(StellarVar ly, Abundance const &X){
-	return 4.e-8*pow(X.mu_e()*X.mean_Z(),2)/X.mean_A()*exp(2.*(ly[temp]-ly[dens]));
-}*/
-
 
 int EOS::rando(39);
 double EOS::U(double rho, double T, Abundance const &chem){

@@ -1,17 +1,20 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.cpp
-// Uses simple C/O core with He/H envelope and atmosphere
+// SimpleWD.cpp                                                           Reece Boston
+// Uses simple C/O core with He/H envelope and atmosphere                 Mar 24, 2022
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 
-//		- Wood 1990
-//		- Tassoul, Fontaine & Winget 1990
-//		- Arcoragi & Fontaine 1980
+//		- Reece Boston, PhD Thesis UNC, 2022
+//  	- Boston, Clemens, Evans (2022)
 //  The interior equation of state includes pressure contributions from
 //		P = P_deg + P_ions + P_coulomb + P_rad
 //		the electron degeneracy is approximated as T=0 in the core
-//		in atmosphere, uses partial degeneracy (see Cox and Giuli)
-//	Integrates with Schwarzschild's dimensionless logarithmic variables
+//      in atmosphere, only ideal gas and radiation
+//	Integrates with Schwarzschild's dimensionless logarithmic variables (Schwarzschild 1958)
+//  This code draws on inspiration from:
+//		ZAMS.f by C.J. Hansen & S.D. Kawaler -- http://astro.if.ufrgs.br/evol/evolve/hansen/
+//  	StatStar by Bradley W. Carroll & Dale A. Ostlie,  2007.
+//  	WDEC, now maintained by A. Kim-Bischoff and M. Montgomery at UT Austin (see 2018 ApJ 155:187)
 // **************************************************************************************/
 
 #ifndef SIMPLEWDCLASS
@@ -21,56 +24,28 @@
 #include "ChandrasekharWD++.h"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
-//	static const double kappa0 = 4.34e24*(X.C12+X.O16)*(1.+X.H1); //Schwarzschild 1946, Cox&Giuli, Shapiro & Teuskolsky 1983 eq 4.1.8
-//	return kappa0*exp(ly[dens]-3.5*ly[temp]);// Shapiro & Teukolsky 1983 eq 4.1.3
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
-	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16;
-	double ke = 0.195*(1+X.H1);
-	double kbf = 4.34e25*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	double meanZA = X.H1 + X.He4 + 3.*X.C12 + 4.*X.O16; // average <Z^2/A>
+	//electron (Thomson) scattering
+	double ke = 0.195*(1.+X.H1);
+	//see Schwarzschild 1958 (pg 237 or eq16.2), Schwarzschild 1946 (eq9), and Shapiro & Teuskolsky (eq4.1.8)
+	//note assumption of guillotine (Gaunt) factor g ~ 10
+	double kbf = 4.34e24*(X.C12+X.O16)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
+	//see Schearzschild 1858, or Hansen and Kawaler eq4.37
 	double kff = 3.68e22*(X.H1 +X.He4 + (X.C12+X.O16)*meanZA)*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	return kbf + kff + ke;
-//	if(X.H1<1e-3){ //from Iben 1975
-		double t6 = ly[temp]-6.*log(10.0);
-		double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
-		double Ap = 1. + C*(1.+C/24.55);
-		double mu = meanZA - 1.;
-		double B  =  3.86 + 0.252*sqrt(mu) + 0.018*mu;
-		double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
-		double lr = -A + B*t6;
-//		double k  = 0.67*(ly[dens]-lr) + log(Ap);
-		double k = Ap*exp(0.67*(ly[dens]-lr));
-		return k + ke + kbf + kff;
-//	}//*/
-//	else{ //if(X.H1<0.8){
-//	double kff = 0.645e23*(X.mean_Z()*X.mean_Z()*X.mu_e()/X.mean_A())*exp(ly[dens]-3.5*ly[temp]);
-//	double k_H  = 2.5e-31*(X.C12+X.O16)/0.02*exp(0.5*ly[dens]+9.*ly[temp]);
-//	double k_K  = (4.3e25*(X.C12+X.O16) + 3.7e22*(X.H1+X.He4))*(1.+X.H1)*exp(ly[dens]-3.5*ly[temp]);
-//	return ke+kff+kbf + k_K + k;
-//	return k_bf+k_e+k_ff;//*/
-//  the below is from .... Henyey et al 1959, or Bodenheimer 1965
-/*	double lt7 = ly[temp] - 7.0*log(10.0), t7 = exp(lt7);
-	double rho = exp(ly[dens]), rho1X = rho*(1.+X.H1);
-	double k1 = 6.48e-3*X.H1*rho1X*exp(-4.25*lt7);
-	double k2 = 186.0*rho1X*X.He4*( 1.05e-3*exp(-3.*lt7)/(1.+10*t7) + (2.-X.He4)*pow(0.15 + t7*(300.0*t7-7.),-4.));
-	double k3 = 4.38e3*(X.C12+X.O16)/sqrt( (0.455*sqrt(rho1X)+1.)*(5.38*t7*t7/rho1X+1.)*(1.34e5*exp(5*lt7)/rho1X+1.)*(1.44*t7*t7 + 0.1*exp(-1.5*lt7)));
-	return ( (k1+k2+ kbf + kff)*(k3+ke) + k3*ke )/(k1+k2+k3+ke + kbf + kff) + k1 + k2 + k3 + ke;
-//	}//*/
-//	else{
-/*		double Pe = pressure_deg_partial(exp(ly[dens]),exp(ly[temp]), X);
-		double V  = exp(-ly[dens]);
-		double T  = exp(ly[temp] - 4.*log(10.));
-		double k1 = 0.194*(1.+X.H1);//5.4e-13*V/T;
-		double k2 = X.H1/(4.5*pow(T,6) + 1./T/( 4.e-3/pow(T,4)+2.e-4*pow(V,0.25) ));
-		double k3 = X.He4/(1.4e3*T+pow(T,6));
-		double k4 = (X.C12+X.O16)*sqrt(T)/(20.*T+5.*pow(T,4)+pow(T,5));
-		return Pe*(k1+(k2+k3+k4)*exp(ly[dens]));
-//	}//*/
+	//from Iben 1975, Appendix B
+	double t6 = ly[temp]-6.*log(10.0);
+	double C  = pow(2.019 + 1e-4*exp(ly[dens]-1.7*t6),2.425);
+	double Ap = 1. + C*(1.+C/24.55);
+	double mu = meanZA - 1.;
+	double B  =  3.86 + 0.252*sqrt(mu) + 0.018*mu;
+	double A  = (1.25 + 0.488*sqrt(mu) + 0.092*mu)/0.67;
+	double lr = -A + B*t6;
+	double k = Ap*exp(0.67*(ly[dens]-lr));
+	return k + ke + kbf + kff;
 }
 
 double conductive_opacity(const StellarVar& ly, const Abundance& X){
-//	return 4.e-8*pow(X.mu_e()*X.mean_Z(),2)/X.mean_A()*exp(2.*(ly[temp]-ly[dens]));
-//	double t7 = ly[temp] - 7.0*log(10.0);
-//	return 301.8*exp(-t7)/(1. + pow(0.004364*(1.+X.H1)*exp(ly[dens]-1.5*t7),5./3.) );
 // below is based on Cassis 2007, which relies on Yakovlev & Urpin 1980 and Potekhin et al 1999
 	double rho = exp(ly[dens]);
 	double x = pow(rho/Chandrasekhar::B0/X.mu_e(), 1./3.);
@@ -80,7 +55,7 @@ double conductive_opacity(const StellarVar& ly, const Abundance& X){
 	double Coulomb_Logarithm = log(2.*m_pi*X.mean_Z()/3.)/3. + log(1.5+3./GC)/2. - 0.5*x*x/(1.+x*x); 
 	// now get opacity, by combining Cassisi 2007 eq 1, 2, 8
 	double opaccoeff = 512.*boltzmann_sigma*pow(electron.mass_CGS,2)*pow(electron.charge_CGS,4)
-				*proton.mass_CGS/(3.*pow(planck_h_CGS,3)*pow(boltzmann_k,2));
+				*proton.mass_CGS/(3.*pow(plank_h_CGS,3)*pow(boltzmann_k,2));
 	double opacity = opaccoeff*X.mean_A()*sqrt(1.+x*x)*exp(2.*(ly[temp]-ly[dens]))*Coulomb_Logarithm;
 	return opacity;//*/
 }
@@ -88,9 +63,6 @@ double conductive_opacity(const StellarVar& ly, const Abundance& X){
 double SimpleWD::opacity(const StellarVar& ly, const Abundance& X){
 	double k_rad = radiative_opacity(ly,X);
 	double k_cond= conductive_opacity(ly,X);
-//	double Pcore = core_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	double Patm  =  atm_pressure(exp(ly[dens]), exp(ly[temp]), X);
-//	if(exp(ly[dens]) < 1e-3) k_cond=1e24;
 	return 1./(1./k_rad+1./k_cond);
 //	else return k_rad;
 }
@@ -115,12 +87,8 @@ SimpleWD::SimpleWD(
 	//set indices for different regions
 	//the boundary of the core
 	Ncore = (int) (0.8*double(Ntot));
-	//if( Ncore%2==0) Ncore = Ncore+1;
 	Natm = Ntot - Ncore;
 	if( Ncore%2==0) {Ncore = Ncore+1; Natm = Natm-1;}
-	//the boundary of atmosphre
-	//if( Natm%2==0) Natm = Natm+1;
-	//Ntot = Ncore + Natm;
 	
 	double Mcore = 0.99;
 	//initilize the log-radial grid
@@ -153,7 +121,7 @@ SimpleWD::SimpleWD(
 			
 	//begin the calculation to find values for P0, T0, and Rstar = (1+qs)*R
 	printf("Converging model to P0, T0, R\n");
-	double P0 = Ystart0[pres]/Pscale;//1.e24/Pscale;// //dimensionless
+	double P0 = Ystart0[pres]/Pscale;//dimensionless
 	double T0 = 1.e3*Teff/Tscale; //dimensionless
 	double qs = 1.e-3;
 	//variables of the Newtonian gradient-descent method
@@ -200,7 +168,7 @@ SimpleWD::SimpleWD(
 
 		bool failed = false;
 		for(int i=0; i<numv; i++) if(isnan(dx[i])) failed=true;
-		//if(failed) for(int i=0; i<numv; i++) dx[i] = dxsave[i];
+		if(failed) for(int i=0; i<numv; i++) dx[i] = dxsave[i];
 		bool allzero = true;
 		for(int i=0; i<numv; i++) allzero &= (dx[i] == 0.0);
 		if(allzero) for(int i=0; i<numv; i++) {
@@ -300,7 +268,6 @@ void SimpleWD::setup(){
 	line_size = getline(&input_buffer, &buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
 	while(line_size > 0){
-		//fscanf(input_file, "%s\n", input_buffer);
 		line_size = getline(&input_buffer, &buffer_size, input_file);
 		if(line_size >1) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
@@ -324,8 +291,6 @@ void SimpleWD::setup(){
 					pres->push_back(deg_finite);
 				else if(!strcmp(pressure, "deg_trap"))
 					pres->push_back(deg_trap);
-				//else if(!strcmp(pressure, "deg_large"))
-				//	pres->push_back(pressure_deg_large);
 				else printf("ERROR: partial pressure term unrecognized!\n");
 				pressure = strtok(NULL, " \t\n");
 			}
@@ -347,7 +312,7 @@ void SimpleWD::initFromChandrasekhar(){
 	printf("Preparing starting values from Chandrasekhar model\n");
 	Mstar = Msolar*MSOLAR;
 	int Ntest = 500;
-	double y0 = 1.58,  ymin = 1.0, ymax = 2.0;
+	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
 	double Mtry = 0.0, Mmin = 0.0, Mmax = 2.02;
 	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
 	Mtry = testStar->Mass()/MSOLAR-Msolar;
@@ -388,13 +353,7 @@ void SimpleWD::initFromChandrasekhar(){
 	
 	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
 	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
-	
-	//use the Chandrasekhar model to handle the central mode BCs
-//	int CBC = 4;
-//	testStar->getAstarCenter(A0, CBC, 0);
-//	testStar->getVgCenter(   V0, CBC, 0); 
-//	testStar->getUCenter(    U0, CBC); 
-//	testStar->getC1Center(   c0, CBC); 
+
 	return;
 }
 
@@ -404,56 +363,26 @@ void SimpleWD::initFromChandrasekhar(){
 //        in their ZAMS.f program
 //    the core is considered to comprise the inner 99% of the star's mass
 //        within the core, we assume a constant step size
-//    both the atmospher (He4) and envelope (H1) use a decreasing step size
-//        the step size is modelled after a geometric series, and slowly approaches 0.9999
+//    both the atmosphere uses a log-constant step size in 1-m
+//        resulting in gradually tapering step size in m towars surface
 //**************************************************************************************/
-void SimpleWD::setupGrid(double Qcore, int Ncenter){
-	//in the core, just use constant step size
-/*	double dq = Qcore/(Ncenter-1);
-	double logQcore = log(Qcore);
-		
-	//now we define the core with constant step sizes
-	double q = 0.0; //the center
-	int n=0;
-	for( ; n<Ncenter; n++){
-		logQ[n] = log(q);
-		q = q + dq;
-	}
-	
-	//in the envelope, use a decreasing step size based on geometric series
-	double dq1 = 1. - dq/(1.-Qcore);
-	// fixed-point iteration to ensure self-consistency of dx1
-	for(int a=0;a<20;a++) dq1 = 1.0 - dq/(1.-Qcore)*(1.-pow(dq1, (Ntot-Ncenter-1)/2));
-	//now form the grid, starting at end of core
-	for( ; n<=Ntot-1; n++){
-		logQ[n] = log(q);
-		if(n%2==0) dq = dq*dq1;
-		q = q + dq;
-	}
-	
-	// FOR SOME REASON, THIS HAS SLIGHTLY WRONG LIMIT
-	for(n=0; n<Ntot; n++){
-		logQ[n] = logQ[n]-logQ[Ntot-1];
-	}
-	*/
-	
+void SimpleWD::setupGrid(double Qcore, int Ncenter){	
 	int n=0;
 	double q = 0.0; //the center
+	logQ[0] = log(q);
 	
-	double Ndenom = double(Ncenter*(Ncenter-1.)*(2.*Ncenter-1.));
-	double dx = pow(6.*Qcore/Ndenom,1./3.);
-	double dx3 = pow(dx,3);
+	//core
+	double dx = pow(3.*Qcore,1./3.)/Ncenter;
+	double dx3 = pow(dx,3)/3.;
 	double dq = dx3;
-	double logq = log(q);
-	logQ[0] = logq;
-	q = q + 0.5*dx3;
-	logQ[1] = log(q);
-	for(n=2 ; n<Ncenter; n++){
-		dq = n*n*dx3;
+	double logq = log(q);	
+	for(n=0 ; n<Ncenter; n++){
+		dq = (3.*n*n + 3.*n + 1.)*dx3;
 		q = q + dq;
 		logQ[n] = log(q);
 	}
-			
+	
+	//atmosphere
 	logq = log(1.-q); //q = 1 - m, start at surface
 	dq = (logq-log(1e-14))/(Ntot-n);
 	logq = log(1e-14);
@@ -461,15 +390,7 @@ void SimpleWD::setupGrid(double Qcore, int Ncenter){
 		logQ[n] = log(1.-exp(logq));
 		logq = logq + dq;
 	}
-	//logQ[Ntot-1] = 0.0;//*/
 				
-	FILE *fp = fopen("grid.txt", "w");
-	for(int n=0; n<Ntot; n++){
-		fprintf(fp, "%d\t%0.16le\t%0.16le\n", n, exp(logQ[n]), (1.-exp(logQ[n])));
-	}
-	fclose(fp);
-
-
 	indexFit = Ncenter;
 }
 
@@ -551,8 +472,6 @@ void SimpleWD::expandGrid(int Ntrue){
 		Y[x+1][dens] = (K[0][dens]+2.*K[1][dens]+2.*K[2][dens]+K[3][dens])/6.;
 		//calculate the log versions
 		logY[x+1] = log(Y[x+1]);
-		//logY[x+1][dens] = equationOfState(logY[x+1], Xelem[x+1], rholast);
-		//Y[x+1][dens] = exp(logY[x+1][dens]);
 		//fill in other properties at half-grid
 		logQ[x+1] = logY[x+1][mass];
 		Xelem[x+1] = findAbundance(logY[x+1][mass], logY[x+1][radi], dXelem[x+1]);
@@ -575,9 +494,9 @@ void SimpleWD::expandGrid(int Ntrue){
 		logy2 = logY[x+1] - dlogYdlogR(logY[x+1],nabla)*dlogr;
 		logy2[dens] = equationOfState(logy2, Xelem[x+1], rholast);
 		//average guesses
-		logY[x] = (logy1+logy2)*0.5;//(logY[x-1]+logY[x+1])*0.5; //
+		logY[x] = (logy1+logy2)*0.5;
 		//fill in other properties at half-grid
-		logQ[x]  = logY[x][mass];
+		logQ[x]  = (logQ[x+1]+logQ[x-1])*0.5;
 		Xelem[x] = findAbundance(logY[x][mass], logY[x][radi], dXelem[x]);
 		nabla = energyTransport(logY[x], Xelem[x]);
 		dlogY[x] = dlogYdlogR(logY[x],nabla);
@@ -585,7 +504,7 @@ void SimpleWD::expandGrid(int Ntrue){
 	}
 	int x=Ntrue-2;
 	logY[x] = (logY[x+1]+logY[x-1])*0.5;
-	logQ[x] = logY[x][mass];
+	logQ[x] = (logQ[x+1]+logQ[x-1])*0.5;
 	Xelem[x] = findAbundance(logY[x][mass], logY[x][radi], dXelem[x]);
 	dlogY[x] = dlogYdlogR(logY[x],nabla);
 	dlogY[x][dens] = (logY[x+1][dens]-logY[x-1][dens])/(logY[x+1][radi]-logY[x-1][radi]);
@@ -618,9 +537,6 @@ void SimpleWD::rescaleR(){
 //  The SimpleWD Core
 //    the EOS will assume completely degenerate electron gas at zero temperature
 //    temperature in core is finite, allowed to vary through conduction to surface
-//    luminosity in core is constant
-//    the opacity is taken to be some constant small value, entirely due to conduction
-//    the composition is a mixture of Carbon and Oxygen
 //**************************************************************************************/
 double SimpleWD::calculateCore(const double x[numv], int Nmax){
 	//prepare variables for RK4
@@ -649,14 +565,14 @@ double SimpleWD::calculateCore(const double x[numv], int Nmax){
 			K[a] = dlogYdlogM(logYC, nabla)*dlogQ;
 			//calculate "corrected" positions using previous shift vectors
 			logYC = logY[X] + K[a]*B[a];
-			chemC = findAbundance(logYC[mass], logYC[radi], dXelem[X+1]);
-			logYC[dens] = equationOfState(logYC, chemC, rholast);
+			chemC = findAbundance(logYC[mass], logYC[radi], dXelem[X]);
+			logYC[dens] = equationOfState(logYC, chemC, rholast, X);
 		}
 		//update the structure variables
 		logY[X+1] = logY[X] + K[0]/6.0 + K[1]/3.0 + K[2]/3.0 + K[3]/6.0;
 		//update the chemical abundances and calculate the density from EOS
 		Xelem[X+1] = findAbundance(logY[X+1][mass], logY[X+1][radi], dXelem[X+1]);
-		logY[X+1][dens] = equationOfState(logY[X+1], Xelem[X+1],rholast);
+		logY[X+1][dens] = equationOfState(logY[X+1], Xelem[X+1],rholast, X+1);
 		//save the derivatives
 		nabla = energyTransport(logY[X+1], Xelem[X+1]);
 		dlogY[X+1] = dlogYdlogR(logY[X+1], nabla);
@@ -687,8 +603,6 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
 
 	//set initial conditions
-	//printf("Core dens: %le\t%le\t%le\n", Ystart0[dens], sqrt(P0*Pscale), 3.9308846494269581E+06);
-	//printf("Core pres: %le\t%le\t%le\n", x[0]*Pscale,  Ystart0[pres], 2.0782717264828863E+23);
 	rholast = Ystart0[dens]; //sqrt(P0*Pscale); //an initial guess
 	StellarVar Ycenter(rholast/Dscale, 0.0, P0, 0.0, T0, 0.0);
 	StellarVar logYcenter = log(Ycenter);
@@ -728,8 +642,6 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 		logY[X+1] = log(Y[X+1]);
 		logY[X+1][mass] = logQ[X+1];
 		Xelem[X+1] = findAbundance(logY[X+1][mass], logY[X+1][radi], dXelem[X+1]);
-		//logY[X+1][dens] = equationOfState(logY[X+1], Xelem[X+1], rholast);
-		//Y[X+1][dens] = exp(logY[X+1][dens]);
 		//calculte derivatives at this location
 		nabla = energyTransport(logY[X+1], Xelem[X+1]);
 		dlogY[X+1] = dlogYdlogR(logY[X+1], nabla);
@@ -740,9 +652,6 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 
 //**************************************************************************************/
 //  The SimpleWD Atmosphere
-//    the EOS incudes electrons, ions, Coulomb corrections, partial ionization, and radiation
-//    either radiative or convective heat transport allowed to take place
-//    the composition is a mixture of Helium, Carbon, and Hydrogen
 //	Must integrate from surface (photosphere) to the core
 //**************************************************************************************/
 void SimpleWD::calculateAtmosphere(const double x[numv]){	
@@ -795,6 +704,7 @@ void SimpleWD::calculateAtmosphere(const double x[numv]){
 //    this must be done using non-log variables, beause log variables are singular
 //**************************************************************************************/
 int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
+	rholast = 0.0;
 	//prepare variables
 	double rs = (1.0 + x[2]);
 	double ms = (1.0);
@@ -827,7 +737,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	double b = radiation_a*exp(4.*lyp[temp])/6.;
 	double kp = radiative_opacity(lyp, Xsurf);
 	lyp[pres] = log(a/kp+b);	// refine guess for PS
-	//prepare a Newton method to find photosphere
+	//prepare a Newton method to find surface value of rho
 	double f1 = atm_pressure(Yphoto[dens], Yphoto[temp], Xsurf)-a/kp-b, f2=1.0e2;
 	double x1=1e2, x2 = Yphoto[dens], dx;
 	while(fabs(x1-x2)/x1 > 1e-10){
@@ -856,7 +766,6 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	Yphoto[pres] = a/kp+b;
 	lyp = log(Yphoto);
 	kp = radiative_opacity(lyp, Xsurf);
-//	printf("first guess photosphere : %le %le\n", Yphoto[dens], Yphoto[pres]);
 		
 	//now find values of P, rho, T at the true surface, tau=0.0
 	Ysurf[temp] = pow(3./4.*(taus + 2./3.),0.25)*Teff; // surface temperature from Eddington
@@ -867,26 +776,20 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	Ysurf[lumi] = Lstar*LS;
 	lys = log(Ysurf);
 	double ks = radiative_opacity(lys, Xsurf);
-//	printf("first guess surface     : %le %le\n", Ysurf[dens], Ysurf[pres]);
 		
 	mf = exp(logQ[Ntot-1]);
 	tauf = kp/(4.*m_pi)*exp(lys[mass]-2.*lyp[radi])*(1.-mf);
-//	printf("tauf=%le\t", tauf);
-//	printf("kp =%le\tks = %le\n", kp, ks);
 	StellarVar Y1, Y2, dYdt, ly1;
 	double tau1, tau2, dtau;
 	double g, kappa, nabla;
 	tau1 = taup;
 	dtau = (tauf - tau1)/100.0;
 	Y1 = Yphoto;
-//	printf("integrating first grid:\t%le %le %le %le %le %le\n", tau1, Y1[dens], Y1[pres], Y1[temp], Y1[radi], 1.-mf);
-	//while(tau1 < tauf){
 	while(Y1[mass] > mf*Mstar){
 		ly1 = log(Y1);
 		g = G_CGS*exp(ly1[mass]-2.*ly1[radi]);
 		kappa = radiative_opacity(ly1, Xsurf);
 		nabla = atm_pressure.nabla_ad(Y1[dens],Y1[temp],Xsurf);
-	//	printf("g=%le\tk=%le\tD=%le\n", g, kappa, nabla);
 		//
 		tau2 = tau1 + dtau;
 		dYdt[pres] = g/kappa;
@@ -900,19 +803,12 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		//
 		Y1 = Y2;
 		tau1 = tau2;		
-	//	printf("integrating first grid:\t%le %le %le %le %le %le\n", tau1, Y1[dens], Y1[pres], Y1[temp], Y1[radi], 1.-Y1[mass]/Mstar);
 	}
-//	printf("integrating first grid:\t%le %le %le %le %le %le\n", tau1, Y1[dens], Y1[pres], Y1[temp], Y1[radi], 1.-Y1[mass]/Mstar);
 	Yfirst = Y1;
 	Yfirst[mass] = Mstar*ms*mf;
 	Yfirst[lumi] = Lstar*LS*mf;
-	//printf("integrating first grid:\t%le %le %le %le %le %le\n", tau1, Yfirst[dens], Yfirst[pres], Yfirst[temp], Yfirst[radi], 1.-Yfirst[mass]/Mstar);
-	
+		
 	Ysurf = StellarVar(Yfirst[dens],Rstar*rs,Yfirst[pres],Mstar*ms,Ysurf[temp],Lstar*LS);
-	
-	//int start = Ntot-1, first = Ntot-1;
-	//StellarVar Y[(Ntot-start)];
-	
 	
 	const int npoints = 2, start = Ntot-npoints+1, first = Ntot-1;
 	StellarVar Y[npoints];
@@ -923,6 +819,8 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	logY[Ntot-2] = log(Y[1]) - logYscale;
 	Y[0] = exp(logY[Ntot-1]);
 	Y[1] = exp(logY[Ntot-2]);
+	rholast = Y[1][dens];
+
 	//calculate surface derivatives
 	nabla = atm_pressure.nabla_ad( Y[1][dens], Y[1][temp], Xsurf);
 	dlogY[Ntot-1] = dlogYdlogR(logY[Ntot-1], nabla); 
@@ -964,148 +862,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		dlogY[X-1] = dlogYdlogR(logY[X-1], nabla);
 		dlogY[X-1][dens] = (logY[X-1][dens]-logY[X][dens])/(logY[X-1][radi]-logY[X][radi]);
 	}
-	return start;//*/
-
-/*//this will create "correct" convection zone for Ntot=1000... save in case needed
-
-	//prepare variables
-	double rs = (1.0 + x[2]);
-	double ms = (1.0);
-	double LS = (1.0);
-	
-	//set our initial conditions
-	//set the surface values of logY
-	Xelem[Ntot-1] = findAbundance(0.0, 0.0, dXelem[Ntot-1]);
-	Abundance Xsurf = Xelem[Ntot-1];
-		
-	//begin by finding values of P, rho, T at the true surface, tau=0.0
-	rholast = 1e-10;    // a first guess
-	double To = pow(0.5,0.25)*Teff; //surface temperature from Eddington equation
-	double PS = atm_pressure(rholast, To, Xsurf);	// a first guess
-	StellarVar Ysurf(rholast/Dscale, rs,  PS, ms, To/Tscale, LS);
-	StellarVar ly = log(Ysurf)+logYscale; //dimensional log version
-	double tau = 1.e-5;//
-	double gs = G_CGS*Mstar*pow(Rstar*rs,-2); //the surface gravity
-	double A = Xsurf.mean_A()/(N_Avogadro*boltzmann_k*To);
-	double a = gs*tau;
-	double b = radiation_a*pow(Teff,4)/6.;
-	double kp = radiative_opacity(ly, Xsurf);
-	ly[pres] = log(a/kp+b);	// refine guess for PS
-	//prepare a Newton method to find surface value of rho
-	double f1 = atm_pressure(rholast, To, Xsurf)-a/kp-b, f2=1.0e2;
-	double x1=1e2, x2 = rholast;//A*(a/kp - b);
-	printf("rho guess: %le %le %le\n", x1, x2, f1);
-	while(fabs(x1-x2)/x1 > 1e-10){
-		x1 = x2;
-		x2 = 1.01*x1;
-	//  perturb
-		ly[dens] = log(x2);
-		kp = radiative_opacity(ly,Xsurf);
-		f2 = atm_pressure(x2,To,Xsurf) - a/kp-b;
-	//  correct
-		x2 = x1 - f1*(x2-x1)/(f2-f1);
-	//  find new
-		ly[dens] = log(x2);
-		kp = radiative_opacity(ly,Xsurf);
-		f1 = atm_pressure(x2,To,Xsurf) - a/kp-b;
-	//
-		printf("rho guess: %le %le %le\n", x1, x2, f1);
-	}	
-	rholast = x2;
-	PS = a/kp+b;
-	printf("P   guess: %le\n", PS);
-	
-	if(isnan(PS)) return 0;
-	
-	double mp = exp(logQ[Ntot-2]);
-	double taup = kp*Mstar/4./m_pi*pow(Rstar*rs,-2)*(1.-mp);
-	printf("taup = %le\n", taup);
-	
-	//now integrate from the true surface to the photosphere
-	double T1, P1, rho1, T2, P2, rho2;
-	double dtau = 1e-2, tau2, tau1;
-	//double taup = 20.;//2./3.; //the photospheric value, where integration stops
-	tau1 = 0.0;
-	P1 = gs*tau1/kp + b;
-	T1 = pow(3./4.*(tau1 + 2./3.),0.25)*Teff;
-	rho1 = rholast;
-	printf("integrating photosphere:\t%le %le %le %le\n", tau1, rho1, P1, T1);
-	while(tau2 < taup){
-		ly[dens] = log(rho1);
-		ly[temp] = log(T1);
-		ly[pres] = log(P1);
-	//	kp = radiative_opacity(ly, Xsurf);
-		tau2 = tau1 + dtau;
-		P2 = P1 + gs/kp*dtau;
-		T2 = pow(3./4.*(tau1 + 2./3.),0.25)*Teff;
-		rho2 = atm_pressure.invert(rho1, P2,T2,Xsurf);
-		tau1 = tau2;
-		P1 = P2;
-		rho1 = rho2;
-		T1 = T2;
-	}
-	printf("integrating photosphere:\t%le %le %le %le\n", tau2, rho2, P2, T2);
-	PS = P1;
-	rholast = rho1;
-	
-	//oldie but goodie
-	//PS = (1.e9);			//an initial guess
-	//rholast = sqrt(PS);   //an initial guess
-				
-	//set surface variables
-	Ysurf = StellarVar( rholast/Dscale, rs, PS/Pscale, ms, Teff/Tscale, LS );
-	
-	logY[Ntot-1] = log(Ysurf);
-	logY[Ntot-1][dens] = equationOfState(logY[Ntot-1], Xsurf, rholast);
-	Ysurf[dens] = exp(logY[Ntot-1][dens]);
-	//calculate surface derivative
-	double nabla = energyTransport(log(Ysurf), Xsurf);
-	dlogY[Ntot-1] = dlogYdlogR(logY[Ntot-1], nabla);
-
-	//set up RK4 integration
-	double dQ;
-	StellarVar YC, logYC;
-	Abundance chemC;
-	//the array K contains the corrections to logY to be applied
-	//    when generating the next step of the correction
-	StellarVar K[4];
-	//Butcher tableau for RK4
-	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
-
-	int start = Ntot-2;
-	StellarVar Y[(Ntot-start)];
-	Y[0] = Ysurf;
-	for(int X = Ntot-1; X > start; X--){
-		YC = Y[Ntot-1-X];
-		chemC = Xelem[X];
-		dQ = exp(logQ[X-1]) - exp(logQ[X]);
-		for(int a = 0; a<4; a++){
-			nabla = energyTransport(log(YC), chemC);
-			//now from these, calculate next shift
-			K[a] = dYdM(YC, nabla)*dQ;
-			//calculate "corrected" positions using previous shift vectors
-			YC = Y[Ntot-1-X] + K[a]*B[a];
-			chemC = findAbundance(log(YC)[mass], log(YC)[radi], dXelem[X-1]);
-			YC[dens] = exp(equationOfState(log(YC), chemC, rholast));
-			if(isnan(YC[pres])) printf("%d %d NAN pres\n", X, a);
-			if(isnan(YC[dens])) printf("%d %d NAN dens\n", X, a);
-			if(isnan(YC[mass])) printf("%d %d NAN mass\n", X, a);
-			if(isnan(YC[temp])) printf("%d %d NAN temp\n", X, a);
-			if(isnan(YC[lumi])) printf("%d %d NAN lumi\n", X, a);
-		}
-		//update the chemical composition and the density
-		Y[Ntot-X] = Y[Ntot-X-1] + K[0]/6.0 + K[1]/3.0 + K[2]/3.0 + K[3]/6.0;
-		//calculate the log versions
-		logY[X-1] = log(Y[Ntot-X]);
-		Xelem[X-1] = findAbundance(logY[X-1][mass], logY[X-1][radi], dXelem[X-1]);
-		logY[X-1][dens] = equationOfState(logY[X-1], Xelem[X-1], rholast);
-		Y[Ntot-X][dens] = exp(logY[X-1][dens]);
-		//calculate the derivatives at this location
-		nabla = energyTransport(logY[X-1], Xelem[X-1]);
-		dlogY[X-1] = dlogYdlogR(logY[X-1], nabla);
-		dlogY[X-1][dens] = (logY[X-1][dens]-logY[X][dens])/(logY[X-1][radi]-logY[X][radi]);
-	}
-	return start;//*/
+	return start;
 }
 
 
@@ -1227,14 +984,17 @@ EOS* SimpleWD::getEOS(const StellarVar &y, const Abundance& X){
 	else return &core_pressure; //*/
 }
 
-double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, double& rho_last){
+double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, double& rho_last, int X){
 	StellarVar y = exp(logy+logYscale);
 	//find the radiation pressure
 	double Prad, rho=0.0;
 	Prad = radiation_a/3.*pow(y[temp],4);
 	if(Prad > y[pres]) {
 		printf("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
-	//	y[temp] = 0.0;
+		printf("X %d:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
+		//do something to try to recover
+		y[pres] += Prad;
+		logY[X][pres] = std::log(y[pres]);
 	}
 	
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
@@ -1269,7 +1029,14 @@ Abundance SimpleWD::findAbundance(
 	double zee = -log(1.-exp(logm));	
 	Xc.He4 = my/(1.+exp(by*(zee-zy)));
 	Xc.C12 = mc/(1.+exp(bc*(zee-zc)));
-	Xc.O16 = mo/(1.+exp(bo*(zee-zo)));//*/
+	//the oxygen profile should be a double-step function
+	double mo1 = 0.5*mo, bo1 = 4.*bo, zo1 = 0.25*zo;
+	double mo2 = 0.5*mo, bo2 = 4.*bo, zo2 = 1.25*zo;
+	double XO1 = mo1/( 1.+exp(bo1*(zee-zo1)) );
+	double XO2 = mo2/( 1.+exp(bo2*(zee-zo2)) );
+	Xc.O16 = XO1 + XO2;
+	
+	Xc.O16 = mo/(1.+exp(bo*(zee-zo)));
 	
 	//any values are are negligibly small, set to zero
 	for(int i=0; i<4; i++) if(Xc[i]<=tol) Xc[i]=0.0;
@@ -1280,21 +1047,27 @@ Abundance SimpleWD::findAbundance(
 	XX.He4 = Xc.He4 - Xc.C12;
 	XX.H1  = 1.0 - XX.He4 - XX.C12 - XX.O16;
 	
-	//calculate the derivatives -- with respect to zee
-	dX.O16 = -bo*Xc.O16*exp(bo*(zee-zo))/(1.+exp(bo*(zee-zo)))*exp(zee);
-	dX.C12 = -bc*Xc.C12*exp(bc*(zee-zc))/(1.+exp(bc*(zee-zc)))*exp(zee);
-	dX.He4 = -by*Xc.He4*exp(by*(zee-zy))/(1.+exp(by*(zee-zy)))*exp(zee);//*/
-	// change derivatives -- with respect to P, so that dX holds dlogX/dlogP
-	dX = dX*(-exp(4.*logr-logm)/Pscale);
+	//calculate the derivatives -- dX/dzee
+	double dXO1 = -bo1*XO1*exp(bo1*(zee-zo1))/(1.+exp(bo1*(zee-zo1)));
+	double dXO2 = -bo2*XO2*exp(bo2*(zee-zo2))/(1.+exp(bo2*(zee-zo2)));
+	dX.O16 = dXO1 + dXO2;
+	if(zee>zy) dX.O16=0.0;
+	dX.O16 = -bo*Xc.O16*exp(bo*(zee-zo))/(1.+exp(bo*(zee-zo)));
+	dX.C12 = -bc*Xc.C12*exp(bc*(zee-zc))/(1.+exp(bc*(zee-zc)));
+	dX.He4 = -by*Xc.He4*exp(by*(zee-zy))/(1.+exp(by*(zee-zy)));//*/
+	// change derivatives -- with respect to P, so that dX holds dX/dP
+	// dX/dP = (dX/dzee)*(dzee/dm)*(dm/dP)
+	//       = (dX/dzee)* exp(zee)*(-r^4/m)
+	dX = dX*exp(zee)*(-exp(4.*logr-logm)/Pscale);
 	
 	//adjust derivatives ensuring abundances always sum to zero
 	dX.H1  =-dX.He4 - dX.C12 - dX.O16;
 	dX.He4 = dX.He4 - dX.C12;
 	dX.C12 = dX.C12 - dX.O16;
+	dX.O16 = dX.O16;
 	
 	XX.enforce();
-	XX.e = chemical::h;
-//	XX.e = (XX.He4 > 0.5 | XX.H1 >= 0.5 ? chemical::h : chemical::c);
+	XX.e = chemical::h; //must use H to eliminate, since it is determined by constraint
 		
 	return XX;
 }
@@ -1475,13 +1248,7 @@ void SimpleWD::setupCenter(){
 	pc[2] = -dc[0]*dc[1]*2./15.;
 	dc[2] = (2.*pc[2]-2.*tc[2]*dPdt
 			-tc[1]*tc[1]*dPdtt-2.*tc[1]*dc[1]*dPddt-dc[1]*dc[1]*dPddd)/(2.*dPdd);
-	//dc[2] = dc[0]*(nc*ac[4] + 0.5*nc*(nc-1)*ac[2]*ac[2]);
 	printf("x^4:\t%le %le %le\n", dc[2], pc[2], tc[2]);
-	
-	FILE *fp = fopen("./development_tests/testSimpleWD/testCenter/center.txt", "w");
-	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\n", dc[0],dc[1],dc[2]);
-	fprintf(fp, "pres:\t%0.16le\t%0.16le\t%0.16le\n", pc[0],pc[1],pc[2]);
-	fprintf(fp, "temp:\t%0.16le\t%0.16le\t%0.16le\n", tc[0],tc[1],tc[2]);
 	
 	//now make the actual terms
 	// c
@@ -1500,12 +1267,6 @@ void SimpleWD::setupCenter(){
 	V0[0] = 0.0;
 	V0[1] = -2.*pc[1]/pc[0];
 	V0[2] =  2.*pc[1]*pc[1]/pc[0]/pc[0] - 4.*pc[2]/pc[0];	
-	//
-	fprintf(fp, "A*:\t%0.16le\t%0.16le\t%0.16le\n", A0[0],A0[1],A0[2]);
-	fprintf(fp, "U :\t%0.16le\t%0.16le\t%0.16le\n", U0[0],U0[1],U0[2]);
-	fprintf(fp, "Vg:\t%0.16le\t%0.16le\t%0.16le\n", V0[0],V0[1],V0[2]);
-	fprintf(fp, "c1:\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
-	fclose(fp);
 }
 
 void SimpleWD::getAstarCenter(double *Ac, int& maxPow, double g){
@@ -1588,7 +1349,6 @@ void SimpleWD::setupSurface(){
 		- 2.0*ps[0]*ps[0]*ts[1]*ds[0]*ds[0] - 4.0*ps[0]*ps[0]*ts[0]*ds[1]
 		+ 2.0*ps[0]*ps[1]*ts[0]*ds[1] - 2.*ps[0]*ps[0]*ts[1]*ds[1]
 		+ 3.0*ps[0]*ps[0]*ts[0]*ds[0]*ds[1] - 2.0*ps[0]*ps[0]*ts[0]*ds[2]);
-		//2.*del*ps[1]*ts[1]*ds[1]-del*ps[2]*ts[1]*ds[1]+del*ps[1]*ts[2]*ds[1] + del*ps[1]*ts[1]*ds[2])/(3.*ps[1]*ps[1]);
 	ps[3] = ds[0] - ds[0]*ds[0]/3. + 2.*ds[1]/3. - 0.5*ds[0]*ds[1] + ds[2]/3.;
 	ds[3] = (ps[3]
 		- Crad*(4.*ts[0]*ts[1]*ts[1]*ts[1]+12.*ts[0]*ts[0]*ts[1]*ts[2]+4.*ts[0]*ts[0]*ts[0]*ts[3])
@@ -1744,7 +1504,6 @@ void SimpleWD::printChem(char *c){
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
 	for(int X=Ntot-1; X >= 0; X--){
-	//	if(isnan(Xelem[X].H1)) {MM=logY[X-1][mass]; continue;};
 		fprintf(fp, "%d", X);									//col 1
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3
@@ -1763,18 +1522,14 @@ void SimpleWD::printChem(char *c){
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'mass fraction\n");
-	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
-	//fprintf(gnuplot, "set xtics 1.0\n set ytics 0.1\n");
-	//fprintf(gnuplot, "set hidden3d noundefined\n");
 	fprintf(gnuplot, "set yrange [-0.01: 1.01]\n");
 	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname);
-	//fprintf(gnuplot, ",    '%s' u 3:($9/4) w l t 'excl'", txtname);
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "set output '%s/chem_log.png'\n", filename);
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
@@ -1784,7 +1539,6 @@ void SimpleWD::printChem(char *c){
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
 	fprintf(gnuplot, "set yrange [1e-8:1.01]\n");
 	fprintf(gnuplot, "set ytics 10\n");
-	//fprintf(gnuplot, "set xtics 0.1\n");
 	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname);
 	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname);
@@ -1819,7 +1573,6 @@ void SimpleWD::printBV(char *c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	//fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname);
 	fprintf(gnuplot, "set title 'Brunt-Vaisala and Lamb for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
@@ -1828,12 +1581,9 @@ void SimpleWD::printBV(char *c){
 	fprintf(gnuplot, "set logscale y 10\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-//	fprintf(gnuplot, "set xrange [1e-14:1e0]\n");
-//	fprintf(gnuplot, "set yrange [1e-8:1e2]\n");
 	fprintf(gnuplot, "set ytics 10\n");
 	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname);
 	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname);
-	//fprintf(gnuplot, ",    '%s' u 1:(-$2) w l t '-N^2'", txtname);
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 }
@@ -1881,7 +1631,6 @@ void SimpleWD::printOpacity(char *c){
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set logscale y 10\n");
 	fprintf(gnuplot, "set xrange [1e-14:1e0]\n");
-//	fprintf(gnuplot, "set yrange [1e-5:1e2]\n");
 	fprintf(gnuplot, "set y2range [0:1]\n");
 	fprintf(gnuplot, "set ytics 10 nomirror\n");
 	fprintf(gnuplot, "set y2tics 0.1 nomirror\n");
@@ -2013,7 +1762,6 @@ void SimpleWD::printCoefficients(char *c){
 	fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname);
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
-	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -2065,8 +1813,6 @@ void SimpleWD::printCoefficients(char *c){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname);
 	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname);
 	fprintf(gnuplot, "\n");
-	
-	//now leave gnuplot
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
 }
@@ -2244,16 +1990,15 @@ void SimpleWD::writeStar(char *c){
 	double logR = logY[Ntot-1][radi];
 	fprintf(fp, "num\tq\trho\tradius\tP\tm\tT\tL\tm\n");
 	for(int X=0; X< Ntot; X++){
-		fprintf(fp, "%d\t", X);
-		fprintf(fp, "%0.16le\t", (1.-exp(logQ[X])));	//col 2
-		fprintf(fp, "%0.16le\t", exp(logY[X][dens]));	//col 3
-		fprintf(fp, "%0.16le\t", exp(logY[X][radi]));	//col 4
-		fprintf(fp, "%0.16le\t", exp(logY[X][pres]));	//col 5
-		fprintf(fp, "%0.16le\t", exp(logY[X][mass]));	//col 6
-		fprintf(fp, "%0.16le\t", exp(logY[X][temp]));	//col 7
-		fprintf(fp, "%0.16le\t", exp(logY[X][lumi]));	//col 8
-		fprintf(fp, "%0.16le\n", exp(logQ[X]));			//col 9
-		//fflush(fp);
+		fprintf(fp, "%6d\t", X);
+		fprintf(fp, "%22.16le\t", (1.-exp(logQ[X])));	//col 2
+		fprintf(fp, "%22.16le\t", exp(logY[X][dens]));	//col 3
+		fprintf(fp, "%22.16le\t", exp(logY[X][radi]));	//col 4
+		fprintf(fp, "%22.16le\t", exp(logY[X][pres]));	//col 5
+		fprintf(fp, "%22.16le\t", exp(logY[X][mass]));	//col 6
+		fprintf(fp, "%22.16le\t", exp(logY[X][temp]));	//col 7
+		fprintf(fp, "%22.16le\t", exp(logY[X][lumi]));	//col 8
+		fprintf(fp, "%22.16le\n", exp(logQ[X]));		//col 9
 	}
 	fclose(fp);	
 	//plot file in png in gnuplot, and open png
@@ -2267,8 +2012,6 @@ void SimpleWD::writeStar(char *c){
 	fprintf(gnuplot, "set ylabel 'rho, P'\n");
 	fprintf(gnuplot, "set logscale y 10\n set ytics 10 nomirror\nset format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set logscale x 10\n set format x '%%L'\n");
-	//fprintf(gnuplot, "set yrange [1e0:1e24]\n");
-	//fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
 	fprintf(gnuplot, "set y2range [-0.01:1.01]\nset y2tics 0.2 nomirror\n");
 	fprintf(gnuplot, "set y2label 'normalized temperature, radius'\n");
 	fprintf(gnuplot, "plot ");
@@ -2299,7 +2042,6 @@ double SimpleWD::SSR(){
 	checkPoiss = 0.0;
 	double d2Phi = 0.0;
 	double e1, e2, n1, n2;
-	FILE *fp = fopen("SSR.txt", "w");
 	for(int X=4; X<len-4; X++){
 		//Euler equation
 		e1 = fabs(dPdr(X) + rho(X)*dPhidr(X) );
@@ -2312,28 +2054,9 @@ double SimpleWD::SSR(){
 		//add absolute error
 		e1 = e1/n1;
 		e2 = e2/n2;
-		fprintf(fp, "%d\t%le\t%le\n", X, e1, e2);
 		checkEuler += e1*e1;
 		checkPoiss += e2*e2;
 	}
-	fclose(fp);
-	FILE *gnuplot = popen("gnuplot -persist", "w");
-	fprintf(gnuplot, "reset\n");
-	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", "SSR.png");
-	char title[256]; graph_title(title);
-	fprintf(gnuplot, "set title 'error for %s'\n", title);
-	fprintf(gnuplot, "set xlabel 'gird point'\n");
-	fprintf(gnuplot, "set ylabel 'error'\n");
-	fprintf(gnuplot, "set logscale y 10\n");
-	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "set arrow 1 from %d, graph 0 to %d, graph 1 lc rgb 'red' nohead\n", Ncore, Ncore);
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'Euler error'", "SSR.txt");
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'Poisson error'", "SSR.txt");
-	fprintf(gnuplot, "\n");
-	fprintf(gnuplot, "exit\n");
-	pclose(gnuplot);
 	return sqrt((checkPoiss+checkEuler)/double(2*len));
 }
 
