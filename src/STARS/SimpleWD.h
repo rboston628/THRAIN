@@ -1,14 +1,15 @@
 //**************************************************************************************
 //							SIMPLE WHITE DWARF STAR
-// SimpleWD.h                                                             Reece Boston
-// Uses simple C/O core with He/H envelope and atmosphere                 Mar 24, 2022
+// SimpleWD.h
+// Uses simple C/O core with He/H envelope and atmosphere
 //  User must specify total H, He, C, and O fractions within the star
 //  Layer stratification is determined using the method described in 
-//		- Reece Boston, PhD Thesis UNC, 2022
-//  	- Boston, Clemens, Evans (2022)
+//		- Wood 1990
+//		- Tassoul, Fontaine & Winget 1990
+//		- Arcoragi & Fontaine 1980
 //  The interior equation of state includes pressure contributions from
 //		P = P_deg + P_ions + P_coulomb + P_rad
-//		the electron degeneracy is approximated as T=0
+//		the electron degeneracy is approximated as T=0, while the others use finite temperature
 //	Integrates with Schwarzschild's dimensionless logarithmic variables
 // **************************************************************************************/
 
@@ -35,9 +36,9 @@ public:
 	int length(){return Ntot;}
 	//these three functions specify units
 	double Radius();	//total radius
-	double Mass();	    //total mass
+	double Mass();	//total mass
 	double Gee();
-	//in Newtonian, light speed is infinity...
+	//in Newtonian, light speed is infinity... just use the max value to represent this
 	virtual double light_speed2();
 	
 	double rad(int);
@@ -86,7 +87,18 @@ private:
 	StellarVar Ysolar;
 	StellarVar Ystar;
 	
-	//methods to calculate the two regions
+	double opacity(const StellarVar&, const Abundance&);
+	
+	//abundances
+	Abundance  Xtot;
+	Abundance *Xelem, *dXelem;
+	Abundance massFraction();
+	//
+	EOS core_pressure, atm_pressure;
+	EOS* getEOS(const StellarVar& Y, const Abundance& X);
+	
+	
+	//methods to calculate each of the three sections
 	static const int numv=3;
 	void   joinAtCenter(double x[numv], double f[numv], double& F);
 	double calculateCore( const double x[numv], int Nmax);
@@ -99,18 +111,9 @@ private:
 	StellarVar dlogYdlogM( const StellarVar&, const double& delta, const double epsilon=1.0);
 	
 	//the physics
-	double opacity(const StellarVar&, const Abundance&);
 	double energyProduction(const StellarVar&, const Abundance&);
-	double equationOfState( const StellarVar&, const Abundance&, double& rholast, int X=0);
+	double equationOfState( const StellarVar&, const Abundance&, double& rholast);
 	double energyTransport( const StellarVar&, const Abundance&);
-	
-	//abundances
-	Abundance  Xtot;
-	Abundance *Xelem, *dXelem;
-	Abundance massFraction();
-	//
-	EOS core_pressure, atm_pressure;
-	EOS* getEOS(const StellarVar& Y, const Abundance& X);
 	
 	double zy, zc, zo;
 	double by, bc, bo;

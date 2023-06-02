@@ -1,9 +1,8 @@
 //**************************************************************************************
 //						NONRADIAL PULSATION nlm MODE DRIVER
-//  NonradialModeDriver.cpp
-//	 	Solves the Newtonian LAWE in Dziembowski variables
-//	 	Includes perturbtations to gravitational field, making 4th-order modes
-//  Reece Boston, Mar 24, 2022
+// NonradialModeDriver.cpp
+//		Solves the Newtonian LAWE in Dziembowski variables
+//		Includes perturbtations to gravitational field, making 4th-order modes
 //***************************************************************************************
 
 #ifndef FULLMODEDRIVERCLASS
@@ -163,7 +162,7 @@ void NonradialModeDriver::setupBoundaries() {
 //	For the derivation of this algorithm, see Mathematica notebook NewtonianBCs.nb
 //	The expansions must be in terms of x = r/R
 int NonradialModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){
-	double yy[num_var][central_bc_order/2+1];//0,2,4
+	double yy[num_var][BC_C/2+1];//0,2,4
 	//the zero-order terms are simple
 	yy[y1][0] = y0[0];
 	yy[y2][0] = y0[0]*C[0]*omeg2/double(l);
@@ -225,7 +224,7 @@ int NonradialModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int
 int NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l, int m){
 	//int surface_bc_order = 4;
 	//specify initial conditions at surface
-	double yy[num_var][surface_bc_order+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
+	double yy[num_var][BC_S+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
 	double yyn[num_var]; for(int i=0;i<num_var;i++) yyn[i]=0.0;
 	yy[0][0] = ys[0];
 	yy[1][0] = ys[0] + ys[2];
@@ -290,6 +289,7 @@ int NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int
 		for(int i=0; i<num_var; i++){
 			ymode[i][X] = yy[i][0];
 			for(int k=1; k<=surface_bc_order; k++) ymode[i][X] += yy[i][k]*pow(t,k);
+			//ymode[i][X] += yyn[i]*pow(t, n+1);
 		}
 	}
 	return start;
@@ -360,9 +360,9 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(1,X+3)-mode->getY(y3,X+3));
 		dDP = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1)/Pscale*Rstar;
 		
-		if(std::isnan(d2Phi)) d2Phi = 0.0;
-		if(std::isnan(difxi)) difxi = 0.0;
-		if(std::isnan(dDP)) dDP = 0.0;
+		if(isnan(d2Phi)) d2Phi = 0.0;
+		if(isnan(difxi)) difxi = 0.0;
+		if(isnan(dDP)) dDP = 0.0;
 		
 		//Now calculate residuals
 		//Perturbed Poisson equation
@@ -388,9 +388,9 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		e1 = e1/n1;
 		e2 = e2/n2;
 		e3 = e3/n3;
-		if(std::isnan(e1)) e1 = 0.0;
-		if(std::isnan(e2)) e2 = 0.0;
-		if(std::isnan(e3)) e3 = 0.0;
+		if(isnan(e1)) e1 = 0.0;
+		if(isnan(e2)) e2 = 0.0;
+		if(isnan(e3)) e3 = 0.0;
 		//collect residuals
 		checkPois += e1*e1;
 		checkCont += e2*e2;

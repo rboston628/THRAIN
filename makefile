@@ -26,8 +26,8 @@ STARSRC  = $(patsubst %, $(IDIR)/%.cpp, $(_STARTYPES))
 ## files needed to compile mode drivers
 #  dependencies
 _DRVTYPES = \
-	MODES/NonradialModeDriver.h \
-	MODES/CowlingModeDriver.h
+	MODES/NonradialModeDriver \
+	MODES/CowlingModeDriver
 _DRVDEPS = \
 	constants.h\
 	STARS/Star.h\

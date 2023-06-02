@@ -1,6 +1,8 @@
 //Class to read in MESA data for pulsation calculations
-// Reece Boston, Mar 24, 2022
-
+//*****
+// WARNING: must have at least one interpolated step at a midpoint, or the RK4 method
+//	being used in the Mode class will NOT work.
+//*****
 
 #ifndef MESACLASS
 #define MESACLASS
@@ -222,7 +224,7 @@ double MESA::Schwarzschild_A(int X, double GamPert){
 }
 
 double MESA::getAstar(int X, double GamPert){
-	if(GamPert==0.0) return radi[X]*aSpline->interp(radi[X]);
+	if(GamPert==0.0) return aSpline->interp(radi[X]);
 	else             return radi[X]*pres->deriv(radi[X])/pres->interp(radi[X])/GamPert
 						  - radi[X]*dens->deriv(radi[X])/dens->interp(radi[X]);
 }
@@ -261,7 +263,6 @@ double MESA::sound_speed2(int X, double GamPert){
 //	We can use general expressions for c1, A*, Vg, U in terms of coefficients of rho, P, T,
 //  The coefficients of rho, P, T are found by assuming a polytrope equation of state, P=P(rho)
 //  Then coefficients for rho can be found in terms of the polytrope solution
-//  This method allows for more flexibility, if we choose a different approximate EOS in center
 void MESA::setupCenter(){
 	nc = 1./(Gamma1(0)-1.);
 	double rho0 = dens->interp(0.0);
@@ -463,11 +464,10 @@ void MESA::setupSurface(){
 	A1[O+1] = N21*c1[1];
 	A1[O+2] = N21*c1[2];
 	A1[O+3] = N21*c1[3];
-	for(int i=1; i<=4; i++) { ps[i]*=ps[0];}		
+	for(int i=1; i<=4; i++) { /*ds[i] *= ds[0];*/ ps[i]*=ps[0];}		
 }
 
 void MESA::getAstarSurface(double *As, int& maxPow, double g){
-//	double gam1 = (g==0.0 ? Gam1->interp(radi[len-2]) : g);
 	int O=1;
 	if(maxPow>= -1) As[O-1] = A1[O-1];
 	if(maxPow>=  0) As[O  ] = A1[O  ];
@@ -492,7 +492,6 @@ void MESA::getVgSurface(double *Vs, int& maxPow, double g){
 
 void MESA::getUSurface(double *Us, int& maxPow){
 // coefficients of U must extend up to order maxPow	
-//	for(int a=0; a<=maxPow; a++) Us[a] = 0.0;
 	if(maxPow>= 0) Us[0] = U1[0];
 	if(maxPow>= 1) Us[1] = U1[1];
 	if(maxPow>= 2) Us[2] = U1[2];
@@ -713,8 +712,6 @@ void MESA::printCoefficients(char *c){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'Vg'", txtname);
 	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'c1'", txtname);
 	fprintf(gnuplot, "\n");
-	
-	//now leave gnuplot
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 }

@@ -167,7 +167,7 @@ SimpleWD::SimpleWD(
 		}
 
 		bool failed = false;
-		for(int i=0; i<numv; i++) if(std::isnan(dx[i])) failed=true;
+		for(int i=0; i<numv; i++) if(isnan(dx[i])) failed=true;
 		if(failed) for(int i=0; i<numv; i++) dx[i] = dxsave[i];
 		bool allzero = true;
 		for(int i=0; i<numv; i++) allzero &= (dx[i] == 0.0);
@@ -612,7 +612,7 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	Ystart0[dens] = rholast;
 	
 	//begin RK4 at center
-	int start = 1;	//number of points to compute in this way
+	const int start = 1;	//number of points to compute in this way
 	StellarVar Y[start+1];		//the array of points computed this way
 	//begin at the center
 	Y[0]     = Ycenter;			//the central values
@@ -810,8 +810,8 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		
 	Ysurf = StellarVar(Yfirst[dens],Rstar*rs,Yfirst[pres],Mstar*ms,Ysurf[temp],Lstar*LS);
 	
-	int start = Ntot-1, first = Ntot-1;
-	StellarVar Y[(Ntot-start)];
+	const int npoints = 2, start = Ntot-npoints+1, first = Ntot-1;
+	StellarVar Y[npoints];
 	Y[0] = Ysurf;
 	Y[1] = Yfirst;
 	rholast = Y[1][dens];
@@ -961,7 +961,7 @@ double SimpleWD::energyTransport( const StellarVar& logy, const Abundance& X)
 	double kappa = opacity(ly, X);
 	double D_coeff = 3./(16.*m_pi*radiation_a*C_CGS*G_CGS);
 	double delta = D_coeff*kappa*exp(ly[lumi]+ly[pres]-ly[mass]-4.*ly[temp]);
-	if(std::isnan(delta)) delta = D_coeff*kappa*exp(ly[pres]-4.*ly[temp])*Lstar/Mstar;
+	if(isnan(delta)) delta = D_coeff*kappa*exp(ly[pres]-4.*ly[temp])*Lstar/Mstar;
 	
 	double delta_ad = getEOS(exp(ly), X)->nabla_ad(exp(ly[dens]), exp(ly[temp]), X);
 		
@@ -997,12 +997,11 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 		logY[X][pres] = std::log(y[pres]);
 	}
 	
-	
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
 	
 	if(rho<0.0) rho = -rho;
-	if(std::isnan(rho)) printf("RHO IS NAN!\n");
-	if(std::isnan(log(rho))){
+	if(isnan(rho)) printf("RHO IS NAN!\n");
+	if(isnan(log(rho))){
 		printf("%le %le %le %le %le %le\n", exp(logy[radi]), y[pres], y[temp], rho, rho/Dscale, log(rho/Dscale));
 	}
 	
@@ -1183,7 +1182,7 @@ void SimpleWD::populateBruntVaisala(){
 		kappa[X] = opacity(ly, Xelem[X]);
 		
 		nabla[X] = D_coeff*kappa[X]*exp(ly[pres]+ly[lumi]-ly[mass]-4.*ly[temp]);
-		if(std::isnan(nabla[X])) nabla[X] = D_coeff*kappa[0]*exp(ly[pres] - 4.*ly[temp])*Lstar/Mstar;
+		if(isnan(nabla[X])) nabla[X] = D_coeff*kappa[0]*exp(ly[pres] - 4.*ly[temp])*Lstar/Mstar;
 		myEOS = getEOS(YY, Xelem[X]);
 
 		adiabatic_1[X] = myEOS->Gamma1(  YY[dens],YY[temp],Xelem[X]);
@@ -1192,7 +1191,7 @@ void SimpleWD::populateBruntVaisala(){
 		chiT           = myEOS->chiT(    YY[dens],YY[temp],Xelem[X]);
 		chir           = myEOS->chiRho(  YY[dens],YY[temp],Xelem[X]);
 		if(nabla_ad[X] < nabla[X]) nabla[X] = nabla_ad[X];
-		if(std::isnan(ledoux[X])) ledoux[X]=0.0;
+		if(isnan(ledoux[X])) ledoux[X]=0.0;
 		brunt_vaisala[X] = exp(2.*logY[X][mass]-4.*logY[X][radi]+logY[X][dens]-logY[X][pres])
 				*chiT/chir*(nabla_ad[X]-nabla[X]+ledoux[X]);
 	}

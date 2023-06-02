@@ -3,11 +3,10 @@
 // Cowling ModeDriver.h
 //		Solves the Newtonian LAWE in Dziembowski variables in the Cowling approximation
 //		Does not consider perturbtations to gravitational field, making 2nd-order modes
-//  Reece Boston Mar 24, 2022
 //***************************************************************************************
 
-#ifndef COWLINGMODEDRIVERH
-#define COWLINGMODEDRIVERH
+#ifndef COWLINGDRIVERH
+#define COWLINGDRIVERH
 
 #include "ModeDriver.h"
 
@@ -31,7 +30,6 @@ private:
 	int len;		//number of grid points for mode
 	int len_star;	//number of grid points in star
 	double adiabatic_index;	//adiabatic index; set to 0 to use star's Gamma1
-	enum VarNames {y1=0, y2};
 	
 	//perturbation quantities
 	double *r, *A, *U, *C, *V;
