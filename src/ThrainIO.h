@@ -7,30 +7,42 @@
 #ifndef GRPULSEIOH
 #define GRPULSEIOH
 
-#include "ThrainMain.h"
+namespace Calculation {
+    struct InputData;
+    struct OutputData;
+}
+
+namespace io {
 
 //will read user input from the specified file and organize the input data
-int read_input(char input_file_name[128], CalculationInputData&);
+int read_input(const char input_file_name[128], Calculation::InputData&);
+// individual parts of input file
+int read_calcname(FILE* fp, Calculation::InputData&);
+int read_model(FILE* fp, Calculation::InputData&);
+int read_units(FILE* fp, Calculation::InputData&);
+int read_frequencies(FILE* fp, Calculation::InputData&);
 
 //will re-print the user input in order to re-run the same calculation
-int echo_input(CalculationInputData &);
+int echo_input(Calculation::InputData &);
 
 //prepare to write output
-int setup_output(CalculationInputData&, CalculationOutputData&);
+int setup_output(Calculation::InputData&, Calculation::OutputData&);
 
 //just prints a boc around certain parts of the output file
 void print_splash(FILE *fp, char*, int WIDTH);
 
 //write output information about the star itself
-int write_stellar_output(CalculationOutputData&);
+int write_stellar_output(Calculation::OutputData&);
 
 //write output data about the calculated modes
-int write_mode_output(CalculationOutputData&);
+int write_mode_output(Calculation::OutputData&);
 
 //write both stellar and mode output
-int write_output(CalculationInputData&);
+int write_output(Calculation::InputData&);
 
 //write tidal overlap coefficients in separate file
-int write_tidal_overlap(CalculationOutputData&);
+int write_tidal_overlap(Calculation::OutputData&);
+
+} // namespace io
 
 #endif

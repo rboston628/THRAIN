@@ -1,0 +1,29 @@
+## Make this with 
+##   make -f makelib
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o
+
+CC=g++ --std=c++14
+
+## files needed to compile stellar models
+#  dependencies
+LIBDEPS = Splinor.h  chandra.h   stellar.h   rootfind.h
+#  source
+LIBSRC = Splinor.cpp chandra.cpp stellar.cpp rootfind.cpp
+
+## prepare object names
+LIBOBJ = $(patsubst %.cpp, %.o, $(LIBSRC))
+
+# link all objects of library together
+library: $(LIBOBJ)
+	ar rcs mylib.a $(LIBOBJ)
+
+# for each library object needed above, compile from the source
+$(LIBOBJ): %.o: %.cpp
+	$(CC) -c -o $@ $<
+
+.PHONY: clean
+
+clean:
+	rm -f *.o

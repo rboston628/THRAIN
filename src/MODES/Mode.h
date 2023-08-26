@@ -15,7 +15,8 @@
 #include "../STARS/Star.h"
 #include "../MODES/ModeDriver.h"
 
-template <size_t numvar> class Mode : public ModeBase {
+template <size_t numvar> 
+class Mode : public ModeBase {
 public:
 	static const unsigned int  num_var = numvar;
 	//retrieve quantum numbers of pulsation
@@ -83,9 +84,7 @@ public:
 
 };
 
-
 //template classes in C++ cannot be split into multiple files, so we must include Mode.pp
 #include "Mode.cpp"
-
 
 #endif

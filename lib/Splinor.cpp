@@ -3,19 +3,14 @@
 
 #include "Splinor.h"
 
-Splinor::Splinor(const double *const x, const double *const y, const int L){
-	len = L;
-	xlast = 0;
-	incr = +1;
-	xa = x[0];
-	xb = x[L-1];
-	
+Splinor::Splinor(const double *const x, const double *const y, const int L) :
+	len(L), xlast(0), incr(+1), xa(x[0]), xb(x[L-1])
+{	
 	S = new double[len];
 	xarr = new double[len];
 	yarr = new double[len];
 	
-	
-	//the coefficient and interpolatio methods assume that x is strictly increasing
+	//the coefficient and interpolation methods assume that x is strictly increasing
 	//if x is decreasing, then read it in backwards.
 	if(xa<xb){
 		for(int i=0; i<len; i++){
@@ -54,7 +49,6 @@ double Splinor::interp(double xpos){
 	else if (xpos == xa) return yarr[0];		//if at beginning, give beginning
 	else if (xpos  < xa) xind = 0;
 	else if (xpos  > xb) xind = len-2;
-	//if(xpos > xb || xpos < xa) return 0.0;//outside range, return 0
 	else {
 		while(xarr[xind] <= xpos){	//scan through range until we pass it	
 			xind += incr;
@@ -64,7 +58,6 @@ double Splinor::interp(double xpos){
 				if(!wrap) xind = (xind >=0 ? 0 : len-2);
 				//if we've already wrapped, quit with error
 				else if (wrap){
-					//printf("ERROR: could not find that value, you cad!\n");
 					return nan("array wrap");
 				}
 				//set flag to note we've wrapped through array once

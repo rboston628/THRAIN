@@ -15,8 +15,14 @@
 #include <limits>
 #include "Star.h"
 
+namespace Calculation {
+	struct InputData;
+}
+
 class Polytrope : public Star {
 public:
+
+	static int read_star_input(Calculation::InputData&, FILE* input_file);
 
 	void graph_title(char* buff){
 		sprintf(buff, "polytrope n=%1.2f", n);

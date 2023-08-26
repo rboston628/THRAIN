@@ -47,10 +47,10 @@ MODESRC  = $(patsubst %, $(SDIR)/%, $(_MODESRC))
 
 ## files needed to compile main program
 #  dependencies
-_MAINDEPS = constants.h ThrainMain.h ThrainIO.h 
+_MAINDEPS = constants.h ThrainMain.h ThrainIO.h ThrainUnits.h
 MAINDEPS = $(patsubst %, $(IDIR)/%, $(_MAINDEPS)) $(STARDEPS) $(MODEDEPS) $(DRVDEPS)
 #  soure
-_MAINSRC = ThrainMain.cpp ThrainIO.cpp ThrainStellar.cpp ThrainMode.cpp ThrainUnits.cpp
+_MAINSRC = ThrainMain.cpp ThrainIO.cpp ThrainUnits.cpp ThrainStellar.cpp ThrainMode.cpp
 MAINSRC  = $(patsubst %, $(SDIR)/%, $(_MAINSRC))
 
 
@@ -95,8 +95,11 @@ obj/STARS:
 obj/MODES:
 	mkdir -p obj/MODES
 
+tests: thrain tests/*.h
+	cxxtestgen --error-printer -o tests/tests.cpp tests/*.h
+	$(CC) -o tests/tests.out $(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(MODEOBJ) $(STAROBJ) $(DRVOBJ) tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
 
-.PHONY: clean pull library
+.PHONY: clean pull library clean-test
 
 library:
 	rm -f lib/*.o
