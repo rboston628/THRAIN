@@ -11,6 +11,7 @@
 #ifndef POLYTROPECLASS
 #define POLYTROPECLASS
 
+#include "ThrainMain.h"
 #include "Polytrope.h"
 
 //initalize polytrope from index and length, fit to mass M, radius R
@@ -512,6 +513,67 @@ void Polytrope::writeStar(char *c){
 	printStar(pathname);
 	printBV(pathname, 5./3.);
 	printCoefficients(pathname, 5./3.);
+}
+
+
+int Polytrope::read_star_input(Calculation::InputData& calcdata, FILE* input_file){
+	char input_buffer[128];
+	std::string instring;
+	
+	calcdata.input_params.reserve(2);
+	double index=0.0, grid_size=0.0;
+	fscanf(input_file, " %lf", &index);	//read in the index
+	fscanf(input_file, "%lf\n", &grid_size);	//read in the grid size
+	calcdata.input_params.push_back(index);
+	calcdata.input_params.push_back(grid_size);
+	printf("n=%lf\n", calcdata.input_params[0]);
+	calcdata.Ngrid = int(calcdata.input_params[1]);
+	
+	//now read in desired physical properties of star -- specify two at a time
+	//for a polytrope, can specify two of mass, radius, logg, or surface z
+	double temp;
+	//read in first physical parameter -- name as string, value as double
+	fscanf(input_file, "Params: %s %lf\t", input_buffer, &temp);
+	instring=std::string(input_buffer);
+	//save value in appropriate slot use bit-masking to keep track of variables
+	if(     !instring.compare("mass"))   {calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
+	else if(!instring.compare("radius")) {calcdata.radius=temp; calcdata.params|=units::ParamType::pradius;}
+	else if(!instring.compare("zsurf"))  {calcdata.zsurf =temp; calcdata.params|=units::ParamType::pzsurf;}
+	else if(!instring.compare("logg"))   {calcdata.logg  =temp; calcdata.params|=units::ParamType::plogg;}
+	char tempparam = calcdata.params;	//value after first read-in, for comparison later
+	//read in second physical parameters -- name as string, value as double
+	fscanf(input_file, "%s %lf\n", input_buffer, &temp);
+	instring=std::string(input_buffer);
+	//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
+	if(     !instring.compare("mass"))   {calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
+	else if(!instring.compare("radius")) {calcdata.radius=temp; calcdata.params|=units::ParamType::pradius;}
+	else if(!instring.compare("zsurf"))  {calcdata.zsurf =temp; calcdata.params|=units::ParamType::pzsurf;}
+	else if(!instring.compare("logg"))   {calcdata.logg  =temp; calcdata.params|=units::ParamType::plogg;}
+	else {
+		printf("ERROR IN INPUT: invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
+		printf("This error is fatal.  Quitting.\n");
+		return 1;
+	}
+	//make sure we did not specify the same parameter twice
+	if(calcdata.params == tempparam){
+		printf("ERROR IN INPUT: double specification of stellar parameters, star underdefined\n");
+		printf("This error is fatal.  Quitting.\n");
+		switch(units::ParamType(calcdata.params)){
+			case units::ParamType::pmass:   printf("\tmass given twice\n"); break;
+			case units::ParamType::pradius: printf("\tradius given twice\n"); break;
+			case units::ParamType::pzsurf:  printf("\tzsurf given twice\n"); break;
+			case units::ParamType::plogg:   printf("\tlog g given twice\n"); break;
+			case units::ParamType::pteff:   printf("\tteff given twice\n"); break;
+		}
+		return 1;
+	}	
+	if((calcdata.params&units::ParamType::pteff)){
+		printf("ERROR IN INPUT: polytropes cannot be assigned temperature\n");
+		printf("This error is fatal.  Quitting.\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 

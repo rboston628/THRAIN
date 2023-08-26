@@ -11,24 +11,27 @@
 #include <set>
 #include <unordered_map>
 
+#include "ThrainUnits.h"
 #include "ThrainMain.h"
 #include "ThrainIO.h"
 
+class Polytrope;
+
+namespace io {
+
 //this function reads in user input from the specified file to create calculation data
-int read_input(char input_file_name[128], CalculationInputData &calcdata){
+int read_input(const char input_file_name[128], Calculation::InputData &calcdata){
 	//open file
-	FILE* input_file;
-	try {
-			input_file = fopen(input_file_name, "r");
-	} catch (std::exception& e) {
-			printf("Input file not found.\n");
-			return 1;
-	};
+
+	FILE* input_file = fopen(input_file_name, "r");
+	if(!input_file){
+		perror("Input file not found");
+		return 1;
+	}
 	
 	//The following properties of the calculation are defined in the input file
 	char input_buffer[128];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
-	char calculation_name[128];	//a label for this calculation
 	regime::Regime regime;		//the physics to be used (Newtonian, 1PN, GR)
 	model::StellarModel model;	//the model of star to be used
 	units::Units units;			//the units of the calculation
@@ -42,7 +45,6 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	int startofline=ftell(input_file);
 	int lines=0;
 	char chr = getc(input_file);
-	printf("%c\n", chr);
 	while(chr=='#' | chr=='\n'){
 		if(chr=='#') fgets(input_buffer, 128, input_file);
 		chr = getc(input_file);
@@ -53,91 +55,20 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	
 	
 	//Now we shall extract info from the input file
-	fscanf(input_file, "Name: %s\n", calculation_name);
-	calcdata.calcname = std::string(calculation_name);
-	printf("calculation name: %s\n", calcdata.calcname.c_str());
+	if(read_calcname(input_file, calcdata)) return 1;
 	
 	//read the type of physics to be used in calculation
-	fscanf(input_file, "Model: %s\t", input_buffer);
-	instring = std::string(input_buffer);
-	if(!instring.compare("newtonian")) calcdata.regime = regime::PN0;
-	else{
-		printf("ERROR IN INPUT: THRAIN only knows Newtonian physics!\n");
-		printf("This error is recoverable!  Setting to proper regime.\n");
-		calcdata.regime = regime::PN0;
-	}
-	//read the background stellar model to be used in calculation
-	fscanf(input_file, "%s\t", input_buffer);
-	printf(" MAKING A %s\n", input_buffer);
-	instring = std::string(input_buffer);
-	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
-	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
-	else if(!instring.compare("MESA")) calcdata.model = model::MESA;
-	else if(!instring.compare("SWD"))  calcdata.model = model::SWD;
-	else {
-		printf("ERROR IN INPUT: THRAIN can only work with polytrope, CHWD, MESA, or SWD\n");
-		printf("This error is fatal.  Quitting.");
-		return 1;
-	}
+	if(read_model(input_file, calcdata)) return 1;
 	
 	//handle the use of different parameters that help construct the stellar model
 	//POLYTROPE INPUT
 	if(calcdata.model==model::polytrope){
-		calcdata.num_input_params = 2;
-		calcdata.input_params = new double[calcdata.num_input_params];
-		fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the index
-		printf("n=%lf\n", calcdata.input_params[0]);
-		fscanf(input_file, "%lf\n", &calcdata.input_params[1]);	//read in the grid size
-		calcdata.Ngrid = int(calcdata.input_params[1]);
-		
-		//now read in desired physical properties of star -- specify two at a time
-		//for a polytrope, can specify two of mass, radius, logg, or surface z
-		double temp;
-		//read in first physical parameter -- name as string, value as double
-		fscanf(input_file, "Params: %s %lf\t", input_buffer, &temp);
-		instring=std::string(input_buffer);
-		//save value in appropriate slot use bit-masking to keep track of variables
-		if(     !instring.compare("mass"))   {calcdata.mass = temp; calcdata.params|=units::pmass;}
-		else if(!instring.compare("radius")) {calcdata.radius=temp; calcdata.params|=units::pradius;}
-		else if(!instring.compare("zsurf"))  {calcdata.zsurf =temp; calcdata.params|=units::pzsurf;}
-		else if(!instring.compare("logg"))   {calcdata.logg  =temp; calcdata.params|=units::plogg;}
-		char tempparam = calcdata.params;	//value after first read-in, for comparison later
-		//read in second physical parameters -- name as string, value as double
-		fscanf(input_file, "%s %lf\n", input_buffer, &temp);
-		instring=std::string(input_buffer);
-		//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
-		if(     !instring.compare("mass"))   {calcdata.mass = temp; calcdata.params|=units::pmass;}
-		else if(!instring.compare("radius")) {calcdata.radius=temp; calcdata.params|=units::pradius;}
-		else if(!instring.compare("zsurf"))  {calcdata.zsurf =temp; calcdata.params|=units::pzsurf;}
-		else if(!instring.compare("logg"))   {calcdata.logg  =temp; calcdata.params|=units::plogg;}
-		else {
-			printf("ERROR IN INPUT: invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
-			printf("This error is fatal.  Quitting.\n");
-			return 1;
-		}
-		//make sure we did not specify the same parameter twice
-		if(calcdata.params == tempparam){
-			printf("ERROR IN INPUT: double specification of stellar parameters, star underdefined\n");
-			printf("This error is fatal.  Quitting.\n");
-			switch(calcdata.params){
-				case units::pmass:   printf("\tmass given twice\n"); break;
-				case units::pradius: printf("\tradius given twice\n"); break;
-				case units::pzsurf:  printf("\tzsurf given twice\n"); break;
-				case units::plogg:   printf("\tlog g given twice\n"); break;
-			}
-			return 1;	
-		}	
-		if((calcdata.params&units::pteff)){
-			printf("ERROR IN INPUT: polytropes cannot be assigned temperature\n");
-			printf("This error is fatal.  Quitting.\n");
-			return 1;
-		}
+		if(Polytrope::read_star_input(calcdata, input_file)) return 1;
 	}
 	
 	//CHANDRASEKHAR WD INPUT
 	else if(calcdata.model==model::CHWD){
-		calcdata.num_input_params = 3;
-		calcdata.input_params = new double[calcdata.num_input_params];
+		calcdata.input_params.reserve(3);
 		fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the central y value
 		printf("y0=%lf\n", calcdata.input_params[0]);
 		//read in an integer designating the chemical composition to use for mu
@@ -152,14 +83,11 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		}
 		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[2]);
-		//fscanf(input_file, "%s\n", input_buffer);   //read in chemical gradient
-		//calcdata.str_input_param = std::string(input_buffer);
 	}
 	
 	//MESA INPUT
 	else if(calcdata.model==model::MESA){
-		calcdata.num_input_params = 1;
-		calcdata.input_params = new double[calcdata.num_input_params];
+		calcdata.input_params.reserve(1);
 		fscanf(input_file, "%s ", input_buffer);    //read in the filename
 		calcdata.str_input_param=std::string(input_buffer);
 		printf("source=%s.dat\n", calcdata.str_input_param.c_str());
@@ -169,9 +97,7 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	
 	//SIMPLE WD INPUT
 	else if(calcdata.model==model::SWD){
-		calcdata.num_input_params = 10;
-		calcdata.input_params = new double[calcdata.num_input_params];
-		
+		calcdata.input_params.reserve(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
 		printf("Ngrid=%d\n", calcdata.Ngrid);
@@ -211,7 +137,7 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		printf("%s %lf\n", input_buffer, temp);
 		instring=std::string(input_buffer);
 		//save value in appropriate slot use bit-masking to keep track of variables
-		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::pmass;}
+		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
 		else {
 			printf("ERROR IN INPUT: first parameter to SimpleWD must be mass\n");
 			printf("This error is fatal.  Quitting.\n");
@@ -221,15 +147,15 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		fscanf(input_file, "%s %lf\n", input_buffer, &temp);
 		instring=std::string(input_buffer);
 		//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
-		if(!instring.compare("teff")){ calcdata.teff = temp; calcdata.params|=units::pteff;}
+		if(!instring.compare("teff")){ calcdata.teff = temp; calcdata.params|=units::ParamType::pteff;}
 		else {
 			printf("ERROR IN INPUT: second parameter to SimpleWD must be teff\n");
 			printf("This error is recoverable.  Using teff = 12 000 K\n");
 			calcdata.teff = 12000.0;
-			calcdata.params|=units::pteff;
+			calcdata.params|=units::ParamType::pteff;
 		}
 		//double check we have both mass and effective temperature
-		char tempparam = units::pmass|units::pteff;
+		char tempparam = units::ParamType::pmass|units::ParamType::pteff;
 		if(calcdata.params != tempparam){
 			printf("ERROR IN INPUT: a SimpleWD needs both mass and teff\n");
 			printf("This error is fatal.  Quitting.\n");
@@ -241,12 +167,68 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	}
 		
 	//read the units to be used in calculation
+	if(read_units(input_file, calcdata)) return 1;
+
+	//read in the type of mode calculation to be performed
+	if(read_frequencies(input_file, calcdata)) return 1;
+
+	//we are now finished reading in the input
+	fclose(input_file);
+	return 0;
+}
+
+int read_calcname(FILE* input_file, Calculation::InputData& calcdata){
+	char calculation_name[128];	//a label for this calculation
+	int filled = fscanf(input_file, "Name: %s\n", calculation_name);
+	calcdata.calcname = std::string(calculation_name);
+	printf("calculation name: %s\n", calcdata.calcname.c_str());
+	if(!filled || filled==EOF) {
+		printf("ERROR IN INPUT: no calculation name given.\n");
+		return 1;
+	}
+	else return 0;
+}
+
+int read_model(FILE* input_file, Calculation::InputData& calcdata){
+	char input_buffer[128];		//for read-in from file and text processing
+	std::string instring;		//for more read-in from file
+	
+	int filled = fscanf(input_file, "Model: %s\t", input_buffer);
+	instring = std::string(input_buffer);
+	if(!instring.compare("newtonian")) calcdata.regime = regime::PN0;
+	else{
+		printf("ERROR IN INPUT: THRAIN only knows Newtonian physics!\n");
+		printf("This error is recoverable!  Setting to proper regime.\n");
+		calcdata.regime = regime::PN0;
+	}
+	//read the background stellar model to be used in calculation
+	fscanf(input_file, "%s\t", input_buffer);
+	printf(" MAKING A ");
+	instring = std::string(input_buffer);
+	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
+	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
+	else if(!instring.compare("MESA")) calcdata.model = model::MESA;
+	else if(!instring.compare("SWD"))  calcdata.model = model::SWD;
+	else {
+		printf("ERROR IN INPUT: THRAIN can only work with polytrope, CHWD, MESA, or SWD\n");
+		printf("This error is fatal.  Quitting.\n");
+		return 1;
+	}
+	printf("%s\n", input_buffer);
+
+	return 0;
+}
+
+int read_units(FILE* input_file, Calculation::InputData& calcdata){
+	char input_buffer[128];		//for read-in from file and text processing
+	std::string instring;		//for more read-in from file
+
 	fscanf(input_file, "Units: %s\n", input_buffer);
 	instring = std::string(input_buffer);
-	if(!instring.compare("astro"))    calcdata.units = units::astro;
-	else if(!instring.compare("geo")) calcdata.units = units::geo;
-	else if(!instring.compare("SI"))  calcdata.units = units::SI;
-	else if(!instring.compare("CGS")) calcdata.units = units::CGS;
+	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
+	else if(!instring.compare("geo")) calcdata.units = units::Units::geo;
+	else if(!instring.compare("SI"))  calcdata.units = units::Units::SI;
+	else if(!instring.compare("CGS")) calcdata.units = units::Units::CGS;
 	else{
 		printf("ERROR IN INPUT: units incorrectly written...\n");
 		printf("units: %s\n", input_buffer);
@@ -254,8 +236,13 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		printf("This error is fatal.  Quitting.\n");
 		return 1;
 	}
+	return 0;
+}
 
-	//read in the type of mode calculation to be performed
+int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
+	char input_buffer[128];		//for read-in from file and text processing
+	std::string instring;		//for more read-in from file
+	
 	fscanf(input_file, "Frequencies: %s", input_buffer);
 	instring = std::string(input_buffer);
 	if(!instring.compare("radial"))           calcdata.modetype = modetype::radial;
@@ -267,7 +254,11 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 		calcdata.modetype = modetype::nonradial;
 	}
 	//read in the adiabatic index for the mode calculation
-	fscanf(input_file, "%s\n", input_buffer);
+	int fill = fscanf(input_file, "%s\n", input_buffer);
+	if(fill != 1) {
+		calcdata.adiabatic_index = nan("no value");
+		return 1;
+	}
 	int numerator=0,denominator=0;
 	sscanf(input_buffer, "%d/%d", &numerator,&denominator);
 	if(denominator!=0) calcdata.adiabatic_index = double(numerator)/double(denominator);
@@ -282,21 +273,33 @@ int read_input(char input_file_name[128], CalculationInputData &calcdata){
 	}
 	printf("Number of frequencies: %d\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
-	calcdata.l = new int[calcdata.mode_num];  //create arrays for mode numbers, L,K
-	calcdata.k = new int[calcdata.mode_num];
 	//now read in the L,K as specified 
-	// calcdata.l is a pointer so addresses are passed as calcdata.l+j
 	for(int j=0; j<calcdata.mode_num; j++){
-		fscanf(input_file, "%d,%d\n", calcdata.l+j, calcdata.k+j);
+		fgets(input_buffer, 128, input_file);
+		int L, K;
+		if (2 == sscanf(input_buffer, "%d,%d\n", &L, &K)){
+			calcdata.l.insert(L);
+			// there is no fundamental mode for dipole oscillations
+			if(L!=1 || K!=0)
+				calcdata.kl[L].insert(K);
+		}
+	}
+	//always make sure K=0 (or K=1 for L=1) is present
+	for(auto it=calcdata.l.begin(); it!=calcdata.l.end(); it++){
+		if(*it!=1) calcdata.kl[*it].insert(0);
+		else if(*it==1) calcdata.kl[*it].insert(1);
+	}
+	// fix number of modes
+	calcdata.mode_num = 0;
+	for(auto it=calcdata.l.begin(); it!=calcdata.l.end(); it++){
+		calcdata.mode_num += calcdata.kl[*it].size();
 	}
 
-	//we are now finished reading in the input
-	fclose(input_file);
 	return 0;
 }
 
 //this function will print back the input file, so the same calculation can be run again
-int echo_input(CalculationInputData &calcdata){
+int echo_input(Calculation::InputData &calcdata){
 	printf("Copying input file...\t"); fflush(stdout);
 	//open file to write output summary
 	char output_file_name[128];
@@ -363,16 +366,16 @@ int echo_input(CalculationInputData &calcdata){
 	
 	fprintf(output_file, "\nUnits:\t");
 	switch(calcdata.units){
-		case units::astro:
+		case units::Units::astro:
 			fprintf(output_file, "astro\n");
 			break;
-		case units::geo:
+		case units::Units::geo:
 			fprintf(output_file, "geo\n");
 			break;
-		case units::CGS:
+		case units::Units::CGS:
 			fprintf(output_file, "CGS\n");
 			break;
-		case units::SI:
+		case units::Units::SI:
 			fprintf(output_file, "SI\n");
 			break;
 	}
@@ -390,9 +393,20 @@ int echo_input(CalculationInputData &calcdata){
 			break;	
 	}
 	fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
-	for(int j=0; j<calcdata.mode_num; j++){
-		fprintf(output_file, "%d,%d\n", calcdata.l[j], calcdata.k[j]);
+	int checkcount=0;
+	for(int L : calcdata.l){
+		for(int K : calcdata.kl.at(L)){
+			fprintf(output_file, "%d,%d\n", L, K);
+			checkcount++;
+		}
 	}
+	if(checkcount != calcdata.mode_num){
+		printf("non-matching numbers of modes");
+		return 1;
+	}
+	// for(int j=0; j<calcdata.mode_num; j++){
+	// 	fprintf(output_file, "%d,%d\n", calcdata.l[j], calcdata.k[j]);
+	// }
 	
 	printf("done\n");
 	fflush(output_file);
@@ -400,7 +414,7 @@ int echo_input(CalculationInputData &calcdata){
 	return 0;
 }
 
-int setup_output(CalculationInputData &data_in, CalculationOutputData &data_out){
+int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_out){
 	printf("Preparing calculation data...\n"); fflush(stdout);
 	//read in the basic properties for the calculation
 	data_out.calcname = data_in.calcname;
@@ -408,11 +422,7 @@ int setup_output(CalculationInputData &data_in, CalculationOutputData &data_out)
 	data_out.model = data_in.model;
 	data_out.modetype = data_in.modetype;
 	data_out.units = data_in.units;
-	data_out.num_input_params = data_in.num_input_params;
-	data_out.input_params = new double[data_out.num_input_params];
-	for(int a=0; a<data_out.num_input_params; a++){
-		data_out.input_params[a] = data_in.input_params[a];
-	}
+	data_out.input_params = data_in.input_params;
 	data_out.str_input_param = data_in.str_input_param;
 	//data_out.index = data_in.index;
 	data_out.Ngrid = data_in.Ngrid;
@@ -425,25 +435,32 @@ int setup_output(CalculationInputData &data_in, CalculationOutputData &data_out)
 	data_out.teff = data_in.teff;
 	data_out.params = data_in.params;
 	//formatting units may need to be re-performed after calculation, depending on star
-	format_units(data_out);
+	units::format_units(data_out);
 	
 	//now prepare the modes
 	data_out.mode_num = data_in.mode_num;
 	data_out.adiabatic_index = data_in.adiabatic_index;
 	data_out.mode_done = 0;
 	data_out.mode_writ = 0;
-	data_out.mode.resize(data_out.mode_num);
-	data_out.l = new int[data_out.mode_num];
-	data_out.k = new int[data_out.mode_num];
-	data_out.w = new double[data_out.mode_num];
-	data_out.f = new double[data_out.mode_num];
-	data_out.period = new double[data_out.mode_num];
-	data_out.mode_SSR = new double[data_out.mode_num];
-	for(int j=0; j<data_out.mode_num; j++){
-		data_out.l[j] = data_in.l[j];
-		data_out.k[j] = data_in.k[j];
+	//init L,K from input
+	data_out.l.reserve(data_out.mode_num);
+	data_out.k.reserve(data_out.mode_num);
+	for(auto il=data_in.l.begin(); il!=data_in.l.end(); il++){
+		std::set<int> kforl = data_in.kl.at(*il);
+		for(auto ik=kforl.begin(); ik!=kforl.end(); ik++){
+			data_out.l.push_back(*il);
+			data_out.k.push_back(*ik);
+		}
 	}
-	
+	data_out.mode_num = data_out.k.size();
+	//set all rest to size
+	data_out.mode.reserve(data_out.mode_num);
+	data_out.w.reserve(data_out.mode_num);
+	data_out.f.reserve(data_out.mode_num);
+	data_out.period.reserve(data_out.mode_num);
+	data_out.mode_SSR.reserve(data_out.mode_num);
+
+
 	//setup error columns
 	data_out.i_err = 0;
 	//if the star is a simple model, use RMSR to estimate mode error
@@ -469,16 +486,15 @@ int setup_output(CalculationInputData &data_in, CalculationOutputData &data_out)
 	return 0;
 }
 
-int write_output(CalculationOutputData &calcdata){
+int write_output(Calculation::OutputData &calcdata){
 	int stat=0;
 	if(write_stellar_output(calcdata)) stat++;
 	if(write_mode_output(calcdata)) stat++;
 	return stat;
 }
 
-
 char dwarf[12][27] = {
-//use raw stirng literal input format R"()" to make ASCII art align
+//use raw string literal input format R"()" to make ASCII art align
 	R"(#|*     * *     *|#)",
 	R"(#| *    ___    * |#)",
 	R"(#|  (\/.....\/)  |#)",
@@ -493,7 +509,7 @@ char dwarf[12][27] = {
 	R"(#|%%%%%%%V%%%%%%%|#)"
 };
 
-int write_stellar_output(CalculationOutputData& calcdata){
+int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
@@ -556,28 +572,28 @@ int write_stellar_output(CalculationOutputData& calcdata){
 	//print out a message showing which observable parameters were passed, and with which units
 	char unitM[100], unitL[10], unitT[10], unitG[10], unitZ[10];
 	switch(calcdata.units){
-		case units::astro:
+		case units::Units::astro:
 			sprintf(unitM, "(Msolar)");
 			sprintf(unitL, "(km)    ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
 			//fprintf(output_file,"%s  Astronomical Units (Msolar, km, s)\n", dwarf[d++]);
 			break;
-		case units::geo:
+		case units::Units::geo:
 			sprintf(unitM, "(m)     ");
 			sprintf(unitL, "(m)     ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
 			//fprintf(output_file,"%s  Geometric Units (G=c=1)\n", dwarf[d++]);
 			break;
-		case units::SI:
+		case units::Units::SI:
 			sprintf(unitM, "(kg)    ");
 			sprintf(unitL, "(m)     ");
 			sprintf(unitG, "(cm/s^2)");
 			sprintf(unitZ, "        ");
 			//fprintf(output_file,"%s  SI Units (kg, m, s)\n", dwarf[d++]);
 			break;
-		case units::CGS:
+		case units::Units::CGS:
 			sprintf(unitM, "(g)     ");
 			sprintf(unitL, "(cm)    ");
 			sprintf(unitG, "(cm/s^2)");
@@ -585,14 +601,14 @@ int write_stellar_output(CalculationOutputData& calcdata){
 			//fprintf(output_file,"%s  CGS Units (g, cm, s)\n", dwarf[d++]);
 			break;
 	}
-	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::pmass?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::pradius?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::ParamType::pmass?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::ParamType::pradius?"(specified)\n":"(derived)\n"));
 	if(calcdata.teff!=0.0)
-	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::pteff?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
 	else
 	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
-	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::plogg?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::pzsurf?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);
 	
 
@@ -637,7 +653,7 @@ int write_stellar_output(CalculationOutputData& calcdata){
 	return 0;
 }
 
-int write_mode_output(CalculationOutputData& calcdata){
+int write_mode_output(Calculation::OutputData& calcdata){
 	printf("Writing mode data to file...\t"); fflush(stdout);
 	//open file to write output summary
 	char output_file_name[128];
@@ -727,17 +743,16 @@ void print_splash(FILE* output_file, char* title, int WIDTH){
 	fprintf(output_file, "#");
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	//code title
-	std::string splash = "|    THRAIN     |  The Mighty White Dwarf Code";
-	fprintf(output_file, "\n#%s \n", splash.c_str());
+	char splash[] = "|    THRAIN     |  The Mighty White Dwarf Code";
+	fprintf(output_file, "\n#%s \n", splash);
 	//second bar
 	fprintf(output_file, "#");
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	fprintf(output_file, "\n");
 }
 
-
 //NOTE: this function has a problem and will always cause a seg fault
-int write_tidal_overlap(CalculationOutputData& calcdata){
+int write_tidal_overlap(Calculation::OutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
 	//open file to write output summary
 	char output_file_name[128];
@@ -816,3 +831,5 @@ int write_tidal_overlap(CalculationOutputData& calcdata){
 	printf("done!\n");
 	return 0;
 }
+
+} // namespace io

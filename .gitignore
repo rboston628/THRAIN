@@ -8,23 +8,29 @@
 !LICENSE
 !makefile
 
-
 # sample input files
 !sampleinput*.txt
 !mesa_*.dat
 
-
 # the source code itself
-!lib/
 !src/
 !src/*/
-!lib/*.h
-!lib/*.cpp
 !src/*.h
+!src/*.hxx
 !src/*.cpp
 !src/*/*.h
 !src/*/*.cpp
 
+# the library
+!lib/
+!lib/makelib
+!lib/*.h
+!lib/*.hxx
+!lib/*.cpp
+
+# the test suite
+!tests/
+!tests/*.h
 
 ## DOCUMENTATION
 # include the documentation
