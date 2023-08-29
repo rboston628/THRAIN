@@ -8,6 +8,7 @@
 #define MATRIX
 
 #include <stdio.h>
+#include <assert.h>
 
 namespace matrix{
 
