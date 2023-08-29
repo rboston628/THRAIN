@@ -135,7 +135,7 @@ double EOS::invert(double rho_last, double P, double T, Abundance chem){
 		x3 = 1.01*x2;
 		y3 = P - (*this)(x3,T,chem);
 		dx = -y2*(x3-x2)/(y3-y2);
-		if(!isnan(dx)) dx = 0.0;
+		if(!std::isnan(dx)) dx = 0.0;
 		x1 = x2 + dx;
 		if(x1 < 0.0) x1 = 0.0;
 		y1 = P - (*this)(x1,T,chem);

@@ -233,7 +233,7 @@ double rootfind::bisection_search(
 	double y = func(x), y2 = y;
 	double ymin = func(xmin), ymax=func(xmax);
 	double xold = x;
-	while( fabs(y)>0.0 || isnan(y) ){	
+	while( fabs(y)>0.0 || std::isnan(y) ){	
 		//printf("BISECT [%le %le], %le\n", xmin, xmax, x);	
 		if( (y*ymax>0.0) ){
 			xmax = x;

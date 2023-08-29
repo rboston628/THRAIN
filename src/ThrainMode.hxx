@@ -177,7 +177,7 @@ int mode_finder(Calculation::OutputData &data){
 							kmax = modeMaxQuest->modeOrder();
 							w2max = modeMaxQuest->getOmega2();
 							printf("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
-							if( isnan(w2max) ) return 1;
+							if( std::isnan(w2max) ) return 1;
 							// add this mode to discovered lists
 							mode::save_mode<MODE>(modeMaxQuest, kfilled, w2filled, modefilled);
 							//if we found it, quit
