@@ -8,7 +8,7 @@
 // have tests requiring certain time performance
 
 // create a matrix using some function to fill in elements
-template<size_t N, size_t M, class T>
+template<std::size_t N, std::size_t M, class T>
 void make_matrix(T (&m)[N][M], std::function<T(void)> make){
     for(int i=0; i<N; i++){
         for(int j=0; j<M; j++){
@@ -44,7 +44,7 @@ T det_NxN(T const (&m)[3][3]){
 // recursive process for general NxN determinant
 // this is a terrible way to find the determinant for real purposes
 // being used here only for a more sound verification
-template<size_t N, class T>
+template<std::size_t N, class T>
 T det_NxN(T const (&m)[N][N]){
     T det = 0.0;
     T minor[N-1][N-1];
@@ -68,7 +68,7 @@ T det_NxN(T const (&m)[N][N]){
 
 // verify that a matrix has been put into upper-triangular form
 // the matrix inversion method will leave matrix in row-echelon form
-template<size_t N, class T>
+template<std::size_t N, class T>
 bool matrix_triangular(T const (&m)[N][N]){
     bool upper = true;
     for(int i=0; i<N && upper; i++){
@@ -136,7 +136,7 @@ void test_det_3x3(){
 }
 
 void test_many_2x2(){
-    const size_t N=2, num_trials = 100;
+    const std::size_t N=2, num_trials = 100;
 
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution(0.0,10.0);
@@ -153,7 +153,7 @@ void test_many_2x2(){
 }
 
 void test_det_many_3x3(){
-    const size_t N = 3, num_trials = 100;
+    const std::size_t N = 3, num_trials = 100;
 
     double sum = 0.0;
     double m[N][N];
@@ -167,7 +167,7 @@ void test_det_many_3x3(){
 }
 
 void test_det_many_NxN(){
-    const size_t N = 8, num_trials = 100;
+    const std::size_t N = 8, num_trials = 100;
 
     double sum = 0.0;
     double m[N][N];

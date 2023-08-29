@@ -38,7 +38,7 @@ void test_splinor_quadratic(){
     
     // double x0 = 0.0, x1 = 10.0, deltax;
 
-    // size_t const num_data[4] = {10, 100, 1000, 10000};
+    // std::size_t const num_data[4] = {10, 100, 1000, 10000};
     // double resid[4], *xtest, *ytest;
     // for(int I=0; I<4; I++){
     //     xtest = new double[num_data[I]];
@@ -51,7 +51,7 @@ void test_splinor_quadratic(){
     //     Splinor spline(xtest,ytest,num_data[I]);
     //     double dx = deltax/7.0;
     //     double sum_fit = 0.0;
-    //     size_t count = 0;
+    //     std::size_t count = 0;
     //     for(double x=1.0; x<9.0; x+=dx){
     //         sum_fit += fabs(quadratic(x)-spline(x))/fabs(quadratic(x));
     //         count++;
@@ -96,7 +96,7 @@ void test_splinor_cubic(){
 
     // double dx=deltax/7.0;
     // double sum_fit=0.0, sum_deriv=0.0;
-    // size_t count=0;
+    // std::size_t count=0;
     // for(double x=1.0; x<9.0; x+=dx){
     //     sum_fit += fabs(cubic(x) - spline(x))/fabs(cubic(x));
     //     sum_deriv += fabs((3.*A*x+2.*B)*x+C - spline(x))/fabs((3.*A*x+2.*B)*x+C);

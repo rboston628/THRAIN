@@ -49,7 +49,7 @@ double bisection_search(
 template <typename T>
 T gen_abs(T x);
 
-template<size_t np>
+template<std::size_t np>
 std::function<bool(double[np])> no_limit = [](double x[np])->bool{return true;};
 
 //single-variable search, searching for ZERO of func
@@ -75,7 +75,7 @@ T newton_search(
 	std::size_t const max_iter=0			//maximum number of iterations in search
 );
 
-template <size_t np>
+template <std::size_t np>
 void newton_search(
 	std::function<void(double f[np],double x[np])>& func,	//f=vector function to zero, x=input array
 	double (&x1)[np],							//an initial guess for x
@@ -85,7 +85,7 @@ void newton_search(
 	std::function<bool(double[np])>& var_limit = no_limit<np> //a function limiting values of x1
 );
 
-template <size_t np>
+template <std::size_t np>
 void newton_search(
 	std::function<void(double f[np],double x[np])>& func,	//f=vector function, x=input array
 	double (&target)[np], 						//the target to be matched to

@@ -137,11 +137,11 @@ void rootfind::newton_search(
 template <size_t np>
 void rootfind::newton_search(
 	std::function<void(double f[np],double x[np])>& func,	//f=vector function, x=input array
-	double (&target)[np], 						//the target to be matched to
-	double (&x1)[np], 							//an initial guess for x
-	double (&dx)[np],							//the step to use in numerical derivatives
-	double const tol,					//tolerance of search, to be this accurate
-	std::size_t const max_iter,			//maximum number of iterations in search
+	double (&target)[np], 		//the target to be matched to
+	double (&x1)[np], 			//an initial guess for x
+	double (&dx)[np],			//the step to use in numerical derivatives
+	double const tol,			//tolerance of search, to be this accurate
+	std::size_t const max_iter,	//maximum number of iterations in search
 	std::function<bool(double[np])>& var_limit //a function limiting values of x1
 ){
 	double x2[np], ddx[np], f1[np], f2[np], dfdx[np][np], dxsave[np];

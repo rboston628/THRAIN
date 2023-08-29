@@ -260,7 +260,7 @@ void SimpleWD::setup(){
 		zo = 2.0;  bo = 2.0; mo=0.6;
 		return;
 	}
-	size_t buffer_size = 256;
+	std::size_t buffer_size = 256;
 	ssize_t line_size;
 	char *input_buffer = NULL, *pressure;
 	std::string instring;
