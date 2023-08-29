@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: build library
+      run: make library
     - name: make thrain
       run: make
     - name: make tests
