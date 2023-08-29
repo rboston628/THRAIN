@@ -1,6 +1,7 @@
 #ifndef ROOTFINDINGMETHODS
 #define ROOTFINDINGMETHODS
 
+#include <cmath>
 #include <functional>
 
 namespace rootfind {
