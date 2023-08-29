@@ -65,7 +65,6 @@ void print_matrix(const T (&m)[N][M], int k=0){
 //will destroy the matrix m
 template <size_t N, class T>
 T determinant(T (&m)[N][N]){
-	C magnitude;
 	T det=1.0, ajj=0.0, coeff=0.0;
 	double temp = 0.0, big = 0.0;
 	size_t i=0,j=0,k=0,ipiv=0;
@@ -73,7 +72,7 @@ T determinant(T (&m)[N][N]){
 		//find the max in this column
 		big = 0.0;
 		for(i=j;i<N;i++){
-			temp = std::fabs(m[i][j]);
+			temp = std::abs(m[i][j]);
 			if(temp>big){
 				big=temp;
 				ipiv=i;
@@ -122,7 +121,6 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 	T dummy = 0.0;
 	for(size_t j=0; j<N; j++) HOMOGENEOUS &= (b[j]==0.0);
 
-	C bigger;
 	T det=1.0, ajj=0.0, coeff=0.0;
 	double temp = 0.0, big = 0.0;
 	size_t i=0,j=0,k=0,ipiv=0;

@@ -99,21 +99,18 @@ MatrixTest() {
 }
 
 void test_det_singular(){
-    printf("MATRIX DET SINGULAR\n");
     const double ZERO = 0.0;
     double m[4][4] = {{1,4,6,2},{-7,2,1,4}, {0,0,0,0}, {1,9,8,5}};
     TS_ASSERT_EQUALS(matrix::determinant(m), ZERO);
 }
 
 void test_det_scalar(){
-    printf("MATRIX DET SCALAR\n");
     const double VALUE = 13.0;
     double m[1][1] = {{VALUE}};
     TS_ASSERT_EQUALS(matrix::determinant(m), VALUE);
 }
 
 void test_det_2x2(){
-    printf("MATRIX DET 2x2\n");
     //|  1 3 | -7 2 | -7   2   | -7  2   |
     //| -7 2 |  1 3 |  0 3+2/7 |  0 23/7 |
     //| d=1  | d=-1 | d=7      | d=23    |
@@ -128,7 +125,6 @@ void test_det_2x2(){
 }
 
 void test_det_3x3(){
-    printf("MATRIX DET 3x3\n");
     double m[3][3] = {
         {1,2,3},
         {3,5,6},
@@ -140,7 +136,6 @@ void test_det_3x3(){
 }
 
 void test_many_2x2(){
-    printf("MATRIX DET MANY 2x2\n");
     const size_t N=2, num_trials = 100;
 
     std::default_random_engine generator;
@@ -158,7 +153,6 @@ void test_many_2x2(){
 }
 
 void test_det_many_3x3(){
-    printf("MATRIX DET MANY 3x3\n");
     const size_t N = 3, num_trials = 100;
 
     double sum = 0.0;
@@ -173,7 +167,6 @@ void test_det_many_3x3(){
 }
 
 void test_det_many_NxN(){
-    printf("MATRIX DET MANY NxN\n");
     const size_t N = 8, num_trials = 100;
 
     double sum = 0.0;
@@ -188,7 +181,6 @@ void test_det_many_NxN(){
 }
 
 void test_det_NxN_complex(){
-    printf("MATRIX DET COMPLEX\n");
     const int N=8;
     typedef std::complex<double> C;
 
@@ -200,7 +192,6 @@ void test_det_NxN_complex(){
 }
 
 void test_det_many_NxN_complex(){
-    printf("MATRIX DET MANY COMPLEX\n");
     const int N=4, num_trials = 100;
     typedef std::complex<double> C;
 
@@ -216,7 +207,6 @@ void test_det_many_NxN_complex(){
 }
 
 void test_invert_2x2(){
-    printf("MATRIX INVERT 2x2\n");
     const int N=2;
 
     // solving A*x = b.
@@ -240,7 +230,6 @@ void test_invert_2x2(){
 }
 
 void test_invert_many_2x2(){
-    printf("MATRIX INVERT MANY 2x2\n");
     const int N=2, num_trials = 100;
 
     // solving A*x = b.
@@ -270,7 +259,6 @@ void test_invert_many_2x2(){
 }
 
 void test_invert_many_NxN(){
-    printf("MATRIX INVERT MANY NxN\n");
     const int N=6, num_trials = 100;
 
     // solving A*x = b.
@@ -300,7 +288,6 @@ void test_invert_many_NxN(){
 }
 
 void test_invert_many_NxN_complex(){
-    printf("MATRIX INVERT MANY COMPLEX NxN\n");
     const int N=6, num_trials = 10;
     typedef std::complex<double> C;
 

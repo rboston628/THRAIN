@@ -374,7 +374,7 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 	
 	double aa[numvar] = {0.0};
 	double bb[numvar] = {0.0};
-	invertMatrix(A, bb, aa);
+	matrix::invertMatrix(A, bb, aa);
 	
 	//for the basis BCs we chose, this will be the properly scaled physical solution
 	//if we change the BCs, we must change these results to match
@@ -499,7 +499,7 @@ double Mode<numvar>::RK4center(double w2, double y0[numvar], double ys[numvar]){
 	}
 	
 	//the Wronskian is the determinant of this matrix
-	return determinant(DY);
+	return matrix::determinant(DY);
 }
 
 //this method serves to verify that the n is indeed the desired mode number
