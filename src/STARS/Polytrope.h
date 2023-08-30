@@ -6,7 +6,6 @@
 //				P~rho^Gamma
 //		Solves Lane-Emden equation, y=theta, x=xi, z=dy/dxi in more usual notation
 //		See Hansen & Kawaler Chapter 7 for further information
-// Reece Boston, Mar 24, 2022
 //**************************************************************************************
 
 #ifndef POLYTROPEH
@@ -59,6 +58,9 @@ public:
 	double getC(int);
 	double Gamma1(int);
 	double sound_speed2(int, double GamPert=0.0);
+	
+		
+	void writeStar(char *c=NULL);
 	
 private:
 	int len;

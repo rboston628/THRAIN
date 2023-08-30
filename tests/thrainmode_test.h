@@ -29,8 +29,8 @@ public:
     }
 
     void test_compare_JCD(){
-        for(size_t L=1; L<=3; L++){
-            for(size_t K=1; K<36; K++){
+        for(std::size_t L=1; L<=3; L++){
+            for(std::size_t K=1; K<36; K++){
                 TS_ASSERT_EQUALS(0.0, mode::compare_JCD(1.5, L, K, mode::JCD1_5[L-1][K-1]/nug));
                 TS_ASSERT_EQUALS(0.0, mode::compare_JCD(3.0, L, K, mode::JCD3_0[L-1][K-1]/nug));
                 TS_ASSERT_EQUALS(0.0, mode::compare_JCD(4.0, L, K, mode::JCD4_0[L-1][K-1]/nug));
@@ -263,7 +263,7 @@ public:
         TS_ASSERT_EQUALS(data.k.size(), Kexp.size());
         TS_ASSERT_EQUALS(data.l.size(), Kexp.size());
         TS_ASSERT_EQUALS(data.k.size(), Lexp.size());
-        for(size_t i=0; i<Kexp.size(); i++){
+        for(std::size_t i=0; i<Kexp.size(); i++){
             TS_ASSERT_EQUALS(data.l[i], Lexp[i]);
             TS_ASSERT_EQUALS(data.k[i], Kexp[i]);
             TS_ASSERT_EQUALS(data.w[i], sqrt(double(w2exp[i])));
@@ -521,7 +521,7 @@ public:
         TS_ASSERT_EQUALS(data.k.size(), Kexp.size());
         TS_ASSERT_EQUALS(data.l.size(), Kexp.size());
         TS_ASSERT_EQUALS(data.k.size(), Lexp.size());
-        for(size_t i=0; i<Kexp.size(); i++){
+        for(std::size_t i=0; i<Kexp.size(); i++){
             TS_ASSERT_EQUALS(data.l[i], Lexp[i]);
             TS_ASSERT_EQUALS(data.k[i], Kexp[i]);
             TS_ASSERT_EQUALS(data.w[i], sqrt(double(w2exp[i])));

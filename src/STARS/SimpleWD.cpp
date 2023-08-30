@@ -20,6 +20,7 @@
 #ifndef SIMPLEWDCLASS
 #define SIMPLEWDCLASS
 
+#include <cstring>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
 
@@ -158,7 +159,7 @@ SimpleWD::SimpleWD(
 		//save the past gradient in case matrix inversion fails
 		double dxsave[numv]; for(int i=0;i<numv;i++) dxsave[i] = dx[i];
 		//invert the matrix -- check for errors
-		if(invertMatrix(dfdx,f2, dx)){
+		if(matrix::invertMatrix(dfdx,f2, dx)){
 			//if the matrix is singular or otherwise fails
 			// then just do something to try to recover
 			printf("ERROR: Matrix inversion failed!\n");
@@ -260,7 +261,7 @@ void SimpleWD::setup(){
 		zo = 2.0;  bo = 2.0; mo=0.6;
 		return;
 	}
-	size_t buffer_size = 256;
+	std::size_t buffer_size = 256;
 	ssize_t line_size;
 	char *input_buffer = NULL, *pressure;
 	std::string instring;
@@ -612,7 +613,7 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	Ystart0[dens] = rholast;
 	
 	//begin RK4 at center
-	int start = 1;	//number of points to compute in this way
+	constexpr int start = 1;	//number of points to compute in this way
 	StellarVar Y[start+1];		//the array of points computed this way
 	//begin at the center
 	Y[0]     = Ycenter;			//the central values
@@ -810,8 +811,8 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		
 	Ysurf = StellarVar(Yfirst[dens],Rstar*rs,Yfirst[pres],Mstar*ms,Ysurf[temp],Lstar*LS);
 	
-	int start = Ntot-1, first = Ntot-1;
-	StellarVar Y[(Ntot-start)];
+	const int npoints = 2, start = Ntot-npoints+1, first = Ntot-1;
+ 	StellarVar Y[npoints];
 	Y[0] = Ysurf;
 	Y[1] = Yfirst;
 	rholast = Y[1][dens];

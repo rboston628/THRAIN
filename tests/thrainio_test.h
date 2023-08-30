@@ -20,7 +20,7 @@ public:
             TS_FAIL("could not read in indicated file\n");
         }
         fseek(infile, 0, SEEK_END);
-        size_t fsize = ftell(infile);
+        std::size_t fsize = ftell(infile);
         fseek(infile, 0, SEEK_SET);
 
         char *read_buffer = new char[fsize + 1];

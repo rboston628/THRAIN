@@ -16,7 +16,7 @@
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching
 //The individual constructors differ only in how they initialize frequency
-template <size_t  numvar>
+template <std::size_t  numvar>
 void Mode<numvar>::basic_setup(){
 	cee2 = star->light_speed2();
 	Gee = star->Gee();
@@ -64,7 +64,7 @@ void Mode<numvar>::basic_setup(){
 
 //This constructor is given an initial value of frequency to use
 //This initial guess is used as a starting point in search for frequency
-template <size_t numvar> 
+template <std::size_t numvar> 
 Mode<numvar>::Mode(double omg2, int l, int m, ModeDriver *drv)
 	: l(l), m(m), omega2(omg2), driver(drv), star(drv->star)
 {	
@@ -77,7 +77,7 @@ Mode<numvar>::Mode(double omg2, int l, int m, ModeDriver *drv)
 
 //This constructor guesses initial frequency based on a desired k,l mode
 //The initial guess is taken from the analytic solutions for n=0 polytrope
-template <size_t numvar> 
+template <std::size_t numvar> 
 Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 	: l(L), m(M), k(K), driver(drv), star(drv->star)
 {	
@@ -120,7 +120,7 @@ Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 
 //This constructor is given a range within which the desired frequency is known to exist
 //The range must bound exactly one eigenfrequency
-template <size_t numvar> 
+template <std::size_t numvar> 
 Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv)
 	: l(l), m(m), driver(drv), star(drv->star)
 {	
@@ -198,7 +198,7 @@ Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv
 }
 
 //destructor
-template <size_t numvar> 
+template <std::size_t numvar> 
 Mode<numvar>::~Mode(){
 		//free space used by y1,...,y4 from stack
 		delete[] rad;
@@ -206,7 +206,7 @@ Mode<numvar>::~Mode(){
 			delete[] y[i];
 }
 
-template <size_t numvar>
+template <std::size_t numvar>
 void Mode<numvar>::converge(){
 	converged = false;
 	convergeBisect(0.0);
@@ -215,7 +215,7 @@ void Mode<numvar>::converge(){
 }
 
 //Find frequency using a bisection search, based on Wronskian, up to tolerance tol
-template <size_t numvar>
+template <std::size_t numvar>
 void Mode<numvar>::convergeBisect(double tol){
 	//the apparently magical numbers are arbitrary
 	double w1  = omega2, w2, W1, W2;
@@ -326,7 +326,7 @@ void Mode<numvar>::convergeBisect(double tol){
 //This is deprecated
 //Newton convergence on omega2, up to tolerance tol, max number of steps term
 //if term = 0, then no maximum number of steps (until integer overflow, anyway)
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::convergeNewton(double tol, int term){
 	int stop=1, fix=0, kick=3;
 	double w1  = 0.0, w2 = omega2;
@@ -353,7 +353,7 @@ void Mode<numvar>::convergeNewton(double tol, int term){
 }
 
 //linearly match inward and outward solutions
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 	double DY[numvar][numvar];
 	for(int i=0;i<numvar/2;i++){
@@ -374,7 +374,7 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 	
 	double aa[numvar] = {0.0};
 	double bb[numvar] = {0.0};
-	invertMatrix(A, bb, aa);
+	matrix::invertMatrix(A, bb, aa);
 	
 	//for the basis BCs we chose, this will be the properly scaled physical solution
 	//if we change the BCs, we must change these results to match
@@ -392,7 +392,7 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 }
 
 //integrates outward from interior to xmax
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::RK4out(int xmax, double w2, double y0[numvar]){
 	//intermediate values used in equations
 	double XC=0.0, YC[num_var]={0.0};
@@ -437,7 +437,7 @@ void Mode<numvar>::RK4out(int xmax, double w2, double y0[numvar]){
 }
 
 //integrates inward from surface toward xmin
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::RK4in( int xmin, double w2, double ys[numvar]){
 	//the XC, Y1C-Y4C are intermediate values used in equations
 	double YC[numvar], XC;
@@ -483,7 +483,7 @@ void Mode<numvar>::RK4in( int xmin, double w2, double ys[numvar]){
 
 //integrates from both edges toward center and returns Wronskian
 //this approach based on Christensen-Dalsgaard, Astrophys.SpaceSci.316:113-120,2008
-template <size_t numvar> 
+template <std::size_t numvar> 
 double Mode<numvar>::RK4center(double w2, double y0[numvar], double ys[numvar]){		
 	//prepare a matrix
 	double DY[numvar][numvar];
@@ -499,12 +499,12 @@ double Mode<numvar>::RK4center(double w2, double y0[numvar], double ys[numvar]){
 	}
 	
 	//the Wronskian is the determinant of this matrix
-	return determinant(DY);
+	return matrix::determinant(DY);
 }
 
 //this method serves to verify that the n is indeed the desired mode number
 // according to Scuflaire and Osaki classification scheme, counting zeros of xi
-template <size_t numvar> 
+template <std::size_t numvar> 
 int Mode<numvar>::verifyMode(){
 	//trace through solution in (xi, chi) plane, parameterized by index
 	int quad=0, quadP, N=0;
@@ -525,7 +525,7 @@ int Mode<numvar>::verifyMode(){
 
 
 //print out the mode information and plot it on gnuplot
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::writeMode(char *c){
 	//create names for files to be opened
 	char filename[256];
@@ -580,7 +580,7 @@ void Mode<numvar>::writeMode(char *c){
 }
 
 //write the mode, and then open the png to screen for easy viewing
-template <size_t numvar> 
+template <std::size_t numvar> 
 void Mode<numvar>::printMode(char *c){
 	writeMode(c);
 	char outname[258];
@@ -596,15 +596,15 @@ void Mode<numvar>::printMode(char *c){
 }
 
 //ways to access the frequency
-template <size_t numvar> 
+template <std::size_t numvar> 
 double Mode<numvar>::getOmega2(){
 	return omega2;
 }
-template <size_t numvar> 
+template <std::size_t numvar> 
 double Mode<numvar>::getFreq(){
 	return sqrt(omega2/sig2omeg);
 }
-template <size_t numvar> 
+template <std::size_t numvar> 
 double Mode<numvar>::getPeriod(){
 	return 2.*m_pi/getFreq();
 }
@@ -613,12 +613,12 @@ double Mode<numvar>::getPeriod(){
 //we want to be able to call SSR() on each Mode object
 //however, SSR() requires equations from ModeDriver
 //this is the best compromise
-template <size_t numvar> 
+template <std::size_t numvar> 
 double Mode<numvar>::SSR(){
 	return driver->SSR(omega2, l, this);
 }
 
-template <size_t numvar>
+template <std::size_t numvar>
 double Mode<numvar>::tidal_overlap(){
 	return driver->tidal_overlap(this);
 }

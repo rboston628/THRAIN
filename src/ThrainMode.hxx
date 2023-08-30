@@ -12,6 +12,10 @@
 
 #include "ThrainMain.h"
 
+namespace rootfind {
+	double pseudo_unif();
+}
+
 namespace mode {
 
 template <class MODE>
@@ -173,7 +177,7 @@ int mode_finder(Calculation::OutputData &data){
 							kmax = modeMaxQuest->modeOrder();
 							w2max = modeMaxQuest->getOmega2();
 							printf("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
-							if( isnan(w2max) ) return 1;
+							if( std::isnan(w2max) ) return 1;
 							// add this mode to discovered lists
 							mode::save_mode<MODE>(modeMaxQuest, kfilled, w2filled, modefilled);
 							//if we found it, quit
@@ -253,7 +257,7 @@ int mode_finder(Calculation::OutputData &data){
 				int enough=0;
 				while(ktry!=ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 					//pick a pseudo-random place in brackets
-					w2in = w2minT + pseudo_unif()*(w2maxT-w2minT);
+					w2in = w2minT + rootfind::pseudo_unif()*(w2maxT-w2minT);
 					delete modetry;
 					modetry = new MODE(w2in, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
@@ -376,7 +380,7 @@ int mode_finder(Calculation::OutputData &data){
 					int enough=0;
 					while(ktry != ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 						//if scanning didn't work, pick a pseudo-random place in brackets
-						w2in = w2minT + pseudo_unif()*(w2maxT-w2minT);
+						w2in = w2minT + rootfind::pseudo_unif()*(w2maxT-w2minT);
 						delete modetry;
 						modetry = new MODE(w2in, *lt,0,data.driver);
 						ktry = modetry->modeOrder();

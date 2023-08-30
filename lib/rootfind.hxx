@@ -3,26 +3,30 @@
 
 #include "matrix.h"
 
+// *************************************************************************************
+//					NEWTON METHODS
+//  These functions implement Newton's method in one or many dimensions
+// *************************************************************************************
+
 //single-variable search, searching for ZERO of func
 //intended to work with real-valued or complex-valued numbers
 template <typename T>
-T newton_search(
-	std::function<T(T)> func,				//the function to find zero of
-	T &x,									//an initial guess for the zero
-	T dx,									//the step to use in numerical derivatives
-	T const tol,							//tolerance of search, to be this accurate
-	std::size_t const max_iter			//maximum number of iterations in search
+T rootfind::newton_search(
+	std::function<T(T)>& func,	//the function to find zero of
+	T &x,						//an initial guess for the zero
+	T dx,						//the step to use in numerical derivatives
+	double const tol,				//tolerance of search, to be this accurate
+	std::size_t const max_iter	//maximum number of iterations in search
 ){
-	T f1 = func(x), f2 = func(x+dx);
+	T f1 = func(x), f2, ddx;
 	std::size_t tracker = 1;
 	
-	T ddx = 1.0;
-	while(gen_abs(f1)>tol && tracker++!=max_iter){
+	while(std::abs(f1)>tol && tracker++!=max_iter){
+		f2 = func(x+dx);
 		ddx = -dx*f1/(f2-f1);
 		x += ddx;
 		dx = ddx;
 		f1 = func(x);
-		f2 = func(x+dx);
 	}
 	return f1;
 }
@@ -30,46 +34,45 @@ T newton_search(
 //single-variable search, searching for func = target
 //intended to work with real-valued or complex-valued numbers
 template <typename T>
-T newton_search(
-	std::function<T(T)> func,				//the function to match to target
-	T const target,							//the target to be matched to
-	T &x,									//an initial guess for x
-	T dx,									//the step to use in numerical derivatives
-	T const tol,							//tolerance of search, to be this accurate
-	std::size_t const max_iter			//maximum number of iterations in search
+T rootfind::newton_search(
+	std::function<T(T)>& func,	//the function to match to target
+	T const target,				//the target to be matched to
+	T &x,						//an initial guess for x
+	T dx,						//the step to use in numerical derivatives
+	double const tol,			//tolerance of search, to be this accurate
+	std::size_t const max_iter	//maximum number of iterations in search
 ){
-	T f1 = func(x), f2 = func(x+dx);
+	T f1 = func(x), f2, ddx;
 	std::size_t tracker = 1;
-		
-	T ddx = dx;
-	while(gen_abs(ddx)>tol && tracker++!=max_iter){
+
+	while(std::abs(target-f1)>tol && tracker++!=max_iter){
+		f2 = func(x+dx);
 		ddx = dx*(target-f1)/(f2-f1);
 		x += ddx;
 		dx = ddx;
 		f1 = func(x);
-		f2 = func(x+dx);
-		ddx = target-f1;
 	}
 	return f1;
 }
 
 
 template <size_t np>
-void newton_search(
-	std::function<void(double f[np],double x[np])> func,	//f=vector function to zero, x=input array
-	double (&x1)[np],							//an initial guess for x
-	double (&dx)[np],							//the step to use in numerical derivatives
-	double const tol,					//tolerance of search, to be this accurate
-	std::size_t const max_iter,			//maximum number of iterations in search
-	std::function<bool(double[np])> var_limit  //a function limiting values of x1
+void rootfind::newton_search(
+	std::function<void(double f[np],double x[np])>& func,	//f=vector function to zero, x=input array
+	double (&x1)[np],			//an initial guess for x
+	double (&dx)[np],			//the step to use in numerical derivatives
+	double const tol,			//tolerance of search, to be this accurate
+	std::size_t const max_iter,	//maximum number of iterations in search
+	std::function<bool(double[np])>& var_limit  //a function limiting values of x1
 ){
 	double x2[np], ddx[np], f1[np], f2[np], dfdx[np][np], dxsave[np];
 	func(f1,x1);
 	std::size_t tracker = 1;
-	double F1=0.0, F2=0.0, maxDF = 1.0;
+	double F1=0.0, F2=0.0, maxDF = -1.0;
 	for(int i=0; i<np; i++) F1 += 0.5*f1[i]*f1[i];
 	
 	for(int i=0; i<np; i++) ddx[i] = dx[i];
+	for(int i=0; i<np; i++) maxDF = fmax(maxDF, std::abs(f1[i]));
 	while( maxDF > tol && tracker++!=max_iter){
 		//calculate the matrix of derivatives (df/dx)
 		for(int i=0; i<np; i++) x2[i] = x1[i];
@@ -84,12 +87,12 @@ void newton_search(
 		//solve the equation f1 = -(dfdx)*(dx) for dx
 		for(int i=0; i<np; i++) f2[i] = -f1[i];
 		for(int i=0; i<np; i++) dxsave[i] = dx[i];
-		if(invertMatrix(dfdx, f2, dx)){
+		if(matrix::invertMatrix(dfdx, f2, dx)){
 			//if the matrix is singular or otherwise fails
 			// then do something to try to recover
 			printf("ERROR: Matrix inversion failed!\nTrying to recover with past value.\n");
 			//use the last gradient
-			double scale = pseudo_unif();
+			double scale = rootfind::pseudo_unif();
 			for(int i=0; i<np; i++) dx[i] = scale*dxsave[i];
 		}
 		for(int i=0; i<np; i++) x2[i] = x1[i] + dx[i];
@@ -132,14 +135,14 @@ void newton_search(
 }
 
 template <size_t np>
-void newton_search(
-	std::function<void(double f[np],double x[np])> func,	//f=vector function, x=input array
-	double (&target)[np], 						//the target to be matched to
-	double (&x1)[np], 							//an initial guess for x
-	double (&dx)[np],							//the step to use in numerical derivatives
-	double const tol,					//tolerance of search, to be this accurate
-	std::size_t const max_iter,			//maximum number of iterations in search
-	std::function<bool(double[np])> var_limit //a function limiting values of x1
+void rootfind::newton_search(
+	std::function<void(double f[np],double x[np])>& func,	//f=vector function, x=input array
+	double (&target)[np], 		//the target to be matched to
+	double (&x1)[np], 			//an initial guess for x
+	double (&dx)[np],			//the step to use in numerical derivatives
+	double const tol,			//tolerance of search, to be this accurate
+	std::size_t const max_iter,	//maximum number of iterations in search
+	std::function<bool(double[np])>& var_limit //a function limiting values of x1
 ){
 	double x2[np], ddx[np], f1[np], f2[np], dfdx[np][np], dxsave[np];
 	func(f1,x1);
@@ -162,12 +165,12 @@ void newton_search(
 		//solve the equation (target-f1) = (dfdx)*(dx) for dx
 		for(int i=0; i<np; i++) f2[i] = target[i]-f1[i];
 		for(int i=0; i<np; i++) dxsave[i] = dx[i];
-		if(invertMatrix(dfdx, f2, dx)){
+		if(matrix::invertMatrix(dfdx, f2, dx)){
 			//if the matrix is singular or otherwise fails
 			// then do something to try to recover
 			printf("ERROR: Matrix inversion failed!\nTrying to recover with past value.\n");
 			//use a random multiple of the  last gradient
-			double scale = pseudo_unif();
+			double scale = rootfind::pseudo_unif();
 			for(int i=0; i<np; i++) dx[i] = scale*dxsave[i];
 		}
 		for(int i=0; i<np; i++) x2[i] = x1[i] + dx[i];

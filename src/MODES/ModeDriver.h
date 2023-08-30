@@ -46,7 +46,7 @@ public:
 //**************************************************************************************
 class ModeDriver {
 public:
-	const size_t num_var;
+	const std::size_t num_var;
 	//constructor
 	ModeDriver(int nv, Star *s) : num_var(nv), star(s)  {};
 	virtual ~ModeDriver(){};
@@ -76,7 +76,7 @@ protected:
 	int surface_bc_order;
 	
 	friend class ModeBase;
-	template <size_t N> friend class Mode;
+	template <std::size_t N> friend class Mode;
 	friend class Star;
 };
 
