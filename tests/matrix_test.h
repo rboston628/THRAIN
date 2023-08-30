@@ -1,5 +1,6 @@
 #include "../lib/matrix.h"
 #include <cxxtest/TestSuite.h>
+#include <functional>
 #include <random>
 
 // TODO: time-profile solutions
