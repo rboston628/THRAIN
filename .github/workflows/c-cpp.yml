@@ -7,15 +7,13 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: [ubuntu-latest, macos, windows-latest]
 
     steps:
     - uses: actions/checkout@v3
-      with:
-        repository: 'CxxTest/cxxtest'
-    - uses: actions/checkout@v3
+    - name: install cxxtest
+      run: sudo apt install -y cxxtest
     - name: build library
       run: make library
     - name: make thrain
