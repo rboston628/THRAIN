@@ -366,9 +366,9 @@ double ChandrasekharWD::sound_speed2(int X, double GamPert){
 
 double ChandrasekharWD::Radius(){return Rn*xi[len-1];}	//total radius
 double ChandrasekharWD::Mass(){return mr(len-1);}//total mass
-double ChandrasekharWD::Gee(){return G_CGS;};
+double ChandrasekharWD::Gee(){return G_CGS;}
 //in Newtonian, light speed is infinity...
-double ChandrasekharWD::light_speed2(){return 1.0;};
+double ChandrasekharWD::light_speed2(){return 1.0;}
 
 
 
