@@ -98,7 +98,8 @@ jobs:
         if: startsWith(matrix.config.os, 'macos')
         run: |
           brew install cxxtest 
-          sed 's/CC=g++/${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+
         # p7zip is already installed on the macos runners
       
       - name: Build library
