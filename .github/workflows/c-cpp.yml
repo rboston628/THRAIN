@@ -25,28 +25,7 @@ jobs:
       matrix:
         config: 
         - {
-            name: "Windows Latest MSVC",
-            os: windows-latest,
-            artifact: "windows_msvc.7z",
-            build_type: "Release",
-            cc: "cl",
-            cxx: "cl",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
-            archiver: "7z a",
-            generators: "Visual Studio 16 2019"
-          }
-        - {
-            name: "Windows Latest MinGW",
-            os: windows-latest,
-            artifact: "windows_mingw.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-        - {
-            name: "Ubuntu_Latest_GCC",
+            name: "ubuntu latest",
             os: ubuntu-latest,
             artifact: "ubuntu_gcc.7z",
             build_type: "Release",
@@ -56,7 +35,7 @@ jobs:
             generators: "Ninja"
           }
         - {
-            name: "Ubuntu_GCC_9",
+            name: "ubuntu gcc9",
             os: ubuntu-latest,
             artifact: "ubuntu_gcc9.7z",
             build_type: "Release",
@@ -66,7 +45,17 @@ jobs:
             generators: "Ninja"
           }
         - {
-            name: "macOS Latest Clang",
+            name: "macOS gcc",
+            os: macos-latest,
+            artifact: "macos_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
+        - {
+            name: "macOS clang",
             os: macos-latest,
             artifact: "macos_clang.7z",
             build_type: "Release",
@@ -85,11 +74,6 @@ jobs:
           echo github.event.action: ${{ github.event.action }}
           echo github.event_name: ${{ github.event_name }}
 
-      - name: Install dependencies on windows
-        if: startsWith(matrix.config.os, 'windows')
-        run: |
-          choco install cxxtest
-
       - name: Install dependencies on ubuntu
         if: startsWith(matrix.config.name, 'Ubuntu_Latest_GCC')
         run: |
@@ -97,7 +81,7 @@ jobs:
           sudo apt-get install -y cxxtest
           gcc --version
 
-      - name: Install dependencies on ubuntu9
+      - name: Install dependencies on ubuntu w/ gcc9
         if: startsWith(matrix.config.name, 'Ubuntu_GCC_9')
         run: |
           echo Update gcc-9 =======================================================================
@@ -113,7 +97,8 @@ jobs:
       - name: Install dependencies on macos
         if: startsWith(matrix.config.os, 'macos')
         run: |
-          brew install p7zip cxxtest
+          brew install cxxtest 
+        # p7zip is already installed on the macos runners
       
       - name: Build library
         shell: bash
