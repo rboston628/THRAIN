@@ -8,6 +8,8 @@
 !LICENSE
 !makefile
 !lib/makelib
+!.github/
+!.github/workflows/
 !.github/workflows/c-cpp.yml
 
 # sample input files
