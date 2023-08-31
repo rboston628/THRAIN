@@ -7,6 +7,8 @@
 !README.md
 !LICENSE
 !makefile
+!lib/makelib
+!.github/workflows/c-cpp.yml
 
 # sample input files
 !sampleinput*.txt
@@ -20,10 +22,14 @@
 !src/*.cpp
 !src/*/*.h
 !src/*/*.cpp
+# but don't include these
+src/STARS/Isopycnic.h
+src/STARS/Isopycnic.cpp
+src/STARS/ZAMS.h
+src/STARS/ZAMS.cpp
 
 # the library
 !lib/
-!lib/makelib
 !lib/*.h
 !lib/*.hxx
 !lib/*.cpp
@@ -35,8 +41,8 @@
 ## DOCUMENTATION
 # include the documentation
 !documentation/
-!documentation/*.pdf
-!documentation/*.png
+!documentation/documentation.pdf
+!documentation/thrain.png
 !documentation/mathematica/
 !documentation/mathematica/*.nb
 # but not the text source files or aux files
@@ -47,3 +53,7 @@ documentation/*.log
 documentation/*.out
 documentation/*.gz
 
+## TO FIX REMOTE REMOTE
+# git rm -r -f --cached .
+# git add .
+# git commit -m "rebase with gitignore"
