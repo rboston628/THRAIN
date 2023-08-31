@@ -75,14 +75,14 @@ jobs:
           echo github.event_name: ${{ github.event_name }}
 
       - name: Install dependencies on ubuntu
-        if: startsWith(matrix.config.name, 'Ubuntu_Latest_GCC')
+        if: startsWith(matrix.config.name, 'ubuntu latest')
         run: |
           sudo apt-get update
           sudo apt-get install -y cxxtest
           gcc --version
 
       - name: Install dependencies on ubuntu w/ gcc9
-        if: startsWith(matrix.config.name, 'Ubuntu_GCC_9')
+        if: startsWith(matrix.config.name, 'ubuntu gcc9')
         run: |
           echo Update gcc-9 =======================================================================
           echo gcc version before
@@ -98,6 +98,7 @@ jobs:
         if: startsWith(matrix.config.os, 'macos')
         run: |
           brew install cxxtest 
+          sed 's/CC=g++/${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
         # p7zip is already installed on the macos runners
       
       - name: Build library
