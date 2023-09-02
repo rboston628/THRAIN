@@ -106,7 +106,7 @@ SimpleWD::SimpleWD(
 	Xmass = Xtot;
 	
 	printf("star  :\t M=%le\tR=%le\tL=%le\n", Msolar, Rsolar, Lsolar);
-	sprintf(name, "WD_M%0.2f_L%0.2f_X%0.2f_Y%0.2f", Msolar, Rsolar, Xtot[0], Xtot[1]);
+	name = strmakef("WD_M%0.2f_L%0.2f_X%0.2f_Y%0.2f", Msolar, Rsolar, Xtot[0], Xtot[1]);
 	// find relevant scales for re-dimensionalizing the quantities
 	Dscale = Mstar*pow(Rstar,-3)/(4.*m_pi);
 	Pscale = G_CGS*pow(Mstar,2)*pow(Rstar,-4)/(4.*m_pi);
@@ -1490,18 +1490,15 @@ void SimpleWD::getC1Surface(double *cs, int& maxPow){
 // 4) graph of Brunt-Vaisala and Lamb frequency vs. logP (to compare to Goldreich & Wu)
 // optional argument c[] is calculation directory where files should be written
 // if no argument, files written to ./out/[name], where name is shown in constructor
-void SimpleWD::printChem(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	sprintf(filename, "%s", c);
-	char title[256]; graph_title(title);
+void SimpleWD::printChem(const char *const c){
+
+	std::string filename(c), rootname, txtname, outname;
+	std::string title = graph_title();
 	
 	//print the chemical gradient
-	sprintf(txtname, "%s/chemical.txt", filename);
-	sprintf(outname, "%s/chemical.png", filename);
-	FILE* fp  = fopen(txtname, "w");
+	txtname = filename + "/chemical.txt";
+	outname = filename + "/chemical.png";
+	FILE* fp  = fopen(txtname.c_str(), "w");
 	double H,He;
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
@@ -1520,20 +1517,20 @@ void SimpleWD::printChem(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'mass fraction\n");
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
 	fprintf(gnuplot, "set yrange [-0.01: 1.01]\n");
-	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname);
+	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	fprintf(gnuplot, "set output '%s/chem_log.png'\n", filename);
+	fprintf(gnuplot, "set output '%s/chem_log.png'\n", filename.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} X_i'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
@@ -1541,26 +1538,23 @@ void SimpleWD::printChem(char *c){
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
 	fprintf(gnuplot, "set yrange [1e-8:1.01]\n");
 	fprintf(gnuplot, "set ytics 10\n");
-	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname);
+	fprintf(gnuplot, "plot '%s' u 3:5 w l t 'X (H1)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:6 w l t 'Y (He4)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
 }
-void SimpleWD::printBV(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	sprintf(filename, "%s", c);
-	char title[256]; graph_title(title);
+void SimpleWD::printBV(const char *const c, const double g){
+
+	std::string filename(c), rootname, txtname, outname;
+	std::string title = graph_title();
 	
 	//print the Brunt-Vaisala frequency
-	sprintf(txtname, "%s/BruntVaisala.txt", filename);
-	sprintf(outname, "%s/BruntVaisala.png", filename);
-	FILE* fp  = fopen(txtname, "w");
+	txtname = filename + "/BruntVaisala.txt";
+	outname = filename + "/BruntVaisala.png";
+	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0, f0 = G_CGS*Mstar*pow(Rstar,-3);
 	fprintf(fp, "1-m\tN2\tL1\n");
 	for(int X=0; X< Ntot; X++){
@@ -1575,8 +1569,8 @@ void SimpleWD::printBV(char *c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Brunt-Vaisala and Lamb for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Brunt-Vaisala and Lamb for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} N^2 & log_{10} L_1^2 (Hz^2)\n");
 	fprintf(gnuplot, "set logscale x 10\n");
@@ -1584,23 +1578,19 @@ void SimpleWD::printBV(char *c){
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set ytics 10\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 }
-void SimpleWD::printOpacity(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	sprintf(filename, "%s", c);
-	char title[256]; graph_title(title);
+void SimpleWD::printOpacity(const char *const c){
+	std::string filename(c), txtname, outname;
+	std::string title = graph_title();
 	
 	//make a graph of T, nabla, opacity
-	sprintf(txtname, "%s/opacity.txt", filename);
-	sprintf(outname, "%s/opacity.png", filename);
-	FILE* fp  = fopen(txtname, "w");
+	txtname = filename + "/opacity.txt";
+	outname = filename + "/opacity.png";
+	FILE* fp  = fopen(txtname.c_str(), "w");
 	Abundance X;
 	StellarVar ly;
 	double logT=logY[0][temp];
@@ -1626,8 +1616,8 @@ void SimpleWD::printOpacity(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'opacity, temperature for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'opacity, temperature for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log(1-m/M)'\n");
 	fprintf(gnuplot, "set y2label 'temperature'\n");
 	fprintf(gnuplot, "set logscale x 10\n");
@@ -1638,33 +1628,28 @@ void SimpleWD::printOpacity(char *c){
 	fprintf(gnuplot, "set y2tics 0.1 nomirror\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'T' axes x1y2", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'nabla'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'nabla_{ad}'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'opacity'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:6 w l t 'H' lc 7 axes x1y2", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:8 w l t 'Gamma1' lc 10", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:9 w l t 'Gamma_C' lc 11", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'T' axes x1y2", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'nabla'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'nabla_{ad}'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'opacity'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:6 w l t 'H' lc 7 axes x1y2", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:8 w l t 'Gamma1' lc 10", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:9 w l t 'Gamma_C' lc 11", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 }
-void SimpleWD::printCoefficients(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
+void SimpleWD::printCoefficients(const char *const c, const double g){
 
-	char command[300];
-	sprintf(filename, "%s/wave_coefficient", c);
-	sprintf(command, "mkdir %s", filename);
-	system(command);
+	std::string filename, txtname, outname;
+	filename = addstring(c,"/wave_coefficient");
+	system( ("mkdir -p " + filename).c_str() );
 	
-	char title[256]; graph_title(title);
+	std::string title = graph_title();
 	
 	//print the coefficients of the center and surface, for series analysis
-	sprintf(txtname, "%s/center.txt", filename);
-	FILE *fp = fopen(txtname, "w");
+	txtname = filename + "/center.txt";
+	FILE *fp = fopen(txtname.c_str(), "w");
 	double gam1 = adiabatic_1[0];
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\n", dc[0],dc[1],dc[2]);
 	fprintf(fp, "pres:\t%0.16le\t%0.16le\t%0.16le\n", pc[0],pc[1],pc[2]);
@@ -1674,8 +1659,8 @@ void SimpleWD::printCoefficients(char *c){
 	fprintf(fp, "Vg:\t%0.16le\t%0.16le\t%0.16le\n", V0[0]/gam1,V0[1]/gam1,V0[2]/gam1);
 	fprintf(fp, "c1:\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	sprintf(txtname, "%s/surface.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/surface.txt";
+	fp = fopen(txtname.c_str(), "w");
 	gam1 = adiabatic_1[Ntot-1];
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ds[0],ds[1],ds[2],ds[3],ds[4]);
 	fprintf(fp, "pres:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ps[0],ps[1],ps[2],ps[3],ps[4]);
@@ -1688,8 +1673,8 @@ void SimpleWD::printCoefficients(char *c){
 	
 	//print fits to those coefficients at center and surface
 	int NC=15, NS=15;
-	sprintf(txtname, "%s/centerfit.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/centerfit.txt";
+	fp = fopen(txtname.c_str(), "w");
 	double x2 = exp(2.*logY[0][radi]);
 	gam1 = adiabatic_1[0];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
@@ -1714,8 +1699,8 @@ void SimpleWD::printCoefficients(char *c){
 		);
 	}
 	fclose(fp);
-	sprintf(txtname, "%s/surfacefit.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/surfacefit.txt";
+	fp = fopen(txtname.c_str(), "w");
 	double t = 1.-exp(logY[0][radi]);
 	gam1 = adiabatic_1[Ntot-1];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
@@ -1742,9 +1727,9 @@ void SimpleWD::printCoefficients(char *c){
 	fclose(fp);
 	
 	//print the pulsation coeffcients
-	sprintf(txtname, "%s/coefficients.txt", filename);
-	sprintf(outname, "%s/coefficients.png", filename);
-	fp  = fopen(txtname, "w");
+	txtname = filename + "/coefficients.txt";
+	outname = filename + "/coefficients.png";
+	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
 	for(int X=0; X<Ntot; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
@@ -1757,77 +1742,73 @@ void SimpleWD::printCoefficients(char *c){
 	}
 	fclose(fp);	
 	//plot file in png in gnuplot
-	//gnuplot = popen("gnuplot -persist", "w");
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 	//fits
+	txtname = filename + "/centerfit.txt";
+	outname = filename + "/centergit.png";
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	sprintf(txtname, "%s/centerfit.txt", filename);
-	sprintf(outname, "%s/centerfit.png", filename);
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set xrange [0:%le]\n", 1.01*exp(logY[NC][radi]));
-	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	sprintf(txtname, "%s/surfacefit.txt", filename);
-	sprintf(outname, "%s/surfacefit.png", filename);
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title);
+	txtname = filename + "/surfacefit.txt";
+	outname = filename + "/surfacefit.png";
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set xrange [%le:1]\n", exp(logY[Ntot-NS-1][radi]));
-	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
 }
-void SimpleWD::printBigASCII(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	sprintf(filename, "%s", c);
-	char title[256]; graph_title(title);
+void SimpleWD::printBigASCII(const char *const c){
 
-	sprintf(txtname, "%s/M%0.3le_R%0.2le_Teff%4.0lf.txt", filename, Msolar, Rsolar, Teff);
-	FILE* fp = fopen(txtname, "w");
+	std::string filename(c), txtname, outname;
+	std::string title = graph_title();
+
+	txtname = filename + strmakef("/M%0.3le_R%0.2le_Teff%4.0lf.txt", Msolar, Rsolar, Teff);
+	FILE* fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "## SimpleWD output file\n");
 	fprintf(fp, "# Mass \t%le (g)\t%0.3le (Msun) \n", Mstar, Msolar);
 	fprintf(fp, "# Radius \t%le (cm)\t%1.2le (Rearth) \n", Rstar, Rsolar);
@@ -1948,38 +1929,22 @@ void SimpleWD::printBigASCII(char *c){
 	}
 	fclose(fp);
 }
-void SimpleWD::writeStar(char *c){
+void SimpleWD::writeStar(const char *const c){
 	printf("PRINTING STAR\n");
 	//create names for files to be opened
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	if(c==NULL)	sprintf(filename, "./out/%s", name);
-	else{
-		sprintf(filename, "./%s/star", c);
-	}
-	sprintf(txtname, "%s/star.txt", filename);
-	sprintf(outname, "%s/star.png", filename);
+	std::string filename, txtname, outname;
+	if(c==NULL)	filename = "./out." + name;
+	else filename = strmakef("./%s/star", c);
+	txtname = filename + "/star.txt";
+	outname = filename + "/star.png";
 
-	char title[256]; graph_title(title);
+	std::string title = graph_title();
 
 	//prepare the output directory, making sure it exists
 	FILE *fp;
-	if(!(fp = fopen(txtname, "w")) ){
-		if(c==NULL){
-			system("mkdir ./out");
-			char command[256]; sprintf(command, "mkdir ./out/%s", name);
-			system(command);
-			fp = fopen(txtname, "w");
-		}
-		else {
-			char command[256]; sprintf(command, "mkdir ./%s", c);
-			system(command);
-			sprintf(command, "mkdir %s", filename);
-			system(command);
-			if(!(fp = fopen(filename, "w"))) printf("big trouble, boss\n");		
-		}
+	if(!(fp = fopen(txtname.c_str(), "w")) ){
+		system( ("mkdir -p " + filename).c_str() );
+		if(!(fp = fopen(filename.c_str(), "w"))) printf("big trouble, boss\n");		
 	}
 	
 	//print results to text file
@@ -2008,8 +1973,8 @@ void SimpleWD::writeStar(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Profile for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'rho, P'\n");
 	fprintf(gnuplot, "set logscale y 10\n set ytics 10 nomirror\nset format y '10^{%%L}'\n");
@@ -2017,19 +1982,19 @@ void SimpleWD::writeStar(char *c){
 	fprintf(gnuplot, "set y2range [-0.01:1.01]\nset y2tics 0.2 nomirror\n");
 	fprintf(gnuplot, "set y2label 'normalized temperature, radius'\n");
 	fprintf(gnuplot, "plot ");
-	fprintf(gnuplot, "     '%s' u 2:($7/%le) w l t 'T' axes x1y2", txtname, T0);
-	fprintf(gnuplot, ",    '%s' u 2:3 w l t 'rho'", txtname);
-	fprintf(gnuplot, ",    '%s' u 2:5 w l t 'P'", txtname);
-	fprintf(gnuplot, ",    '%s' u 2:($4/%le) w l t 'r' axes x1y2", txtname, 1.0);
+	fprintf(gnuplot, "     '%s' u 2:($7/%le) w l t 'T' axes x1y2", txtname.c_str(), T0);
+	fprintf(gnuplot, ",    '%s' u 2:3 w l t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 2:5 w l t 'P'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 2:($4/%le) w l t 'r' axes x1y2", txtname.c_str(), 1.0);
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 	
 	//call files to print other properties
-	printChem(filename);
-	printBV(filename);
-	printOpacity(filename);
-	printCoefficients(filename);	
+	printChem(filename.c_str());
+	printBV(filename.c_str());
+	printOpacity(filename.c_str());
+	printCoefficients(filename.c_str());	
 	//printBigASCII(filename);
 }
 

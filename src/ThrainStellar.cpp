@@ -78,9 +78,8 @@ int create_classical_CHWD(Calculation::OutputData& data){
 
 //create a classical WD found in MESA
 int create_classical_MESA(Calculation::OutputData& data){
-	char inputname[255];
-	sprintf(inputname, "%s.dat", data.str_input_param.c_str());
-	data.star = new MESA(inputname, data.Ngrid);
+	std::string inputname = data.str_input_param + ".dat";
+	data.star = new MESA(inputname.c_str(), data.Ngrid);
 	
 	//adjust the inputs around the fact this is a MESA object
 	data.mass = data.star->Mass()/data.unitset.base_mass;		//the mass is determined by model

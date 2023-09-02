@@ -79,8 +79,8 @@ protected:
 	double R;			//the radius of the star
 public:
 	//file output methods to write and view plots of mode
-	void printMode(char *c = NULL);
-	void writeMode(char *c = NULL);
+	void printMode(const char *const c = NULL);
+	void writeMode(const char *const c = NULL);
 
 };
 

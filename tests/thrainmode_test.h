@@ -171,8 +171,8 @@ public:
 class FakeMode : public ModeBase {
 public:
     static const unsigned int num_var=0U;
-    void printMode(char *c){}
-    void writeMode(char *c){}
+    void printMode(const char *const c){}
+    void writeMode(const char *const c){}
     double getRad(int x){return 0.0;}
     double getY(int i, int x){return 0.0;}
     double getYtilde(int i, int x){return 0.0;}
@@ -291,8 +291,7 @@ public:
 
     // make sure that it always looks for f-mode with L>=2
     void test_mode_akways_find_k0(){
-        std::string testname = "ALWAYS FIND K0 - L=";
-        char name[25];
+        std::string testname = "ALWAYS FIND K0 - L=", name;
         // STEP 1 adds a K=0 mode for K>=2
         // STEP 2 finds K=0,1 modes
         FakeMode::iter = 0;
@@ -306,8 +305,8 @@ public:
         for(int L=2; L<10; L++){
             std::vector<int> Lin {L};
             std::vector<int> Lout {L,L};
-            sprintf(name, "%s%d", testname.c_str(), L);
-            do_test_mode_finder_fake_classes(std::string(name), Lin,Kin, Lout,Kout, w2);
+            name = testname + std::to_string(L);
+            do_test_mode_finder_fake_classes(name, Lin,Kin, Lout,Kout, w2);
         }
     }
 

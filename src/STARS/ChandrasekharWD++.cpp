@@ -13,7 +13,6 @@
 #ifndef ChandrasekharWDCLASS
 #define ChandrasekharWDCLASS
 
-
 #include "ChandrasekharWD++.h"
 
 void ChandrasekharWD::chemical_gradient(const double xi, const double dx, double& mu, double& dmu){
@@ -45,7 +44,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	X0  = sqrt(Y02-1.);
 	X02 = Y02-1.;
 	//name this model for files
-	sprintf(name, "ChandrasekharWD.%1.1f", Y0);
+	name = strmakef("ChandrasekharWD.%1.1lf", Y0);
 
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with x[len-1]=0.0
@@ -156,7 +155,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, const double dx, double mu0, 
 	X0  = sqrt(Y02-1.);
 	X02 = Y02-1.;
 	//name this model for files
-	sprintf(name, "ChandrasekharWD.%1.1f", Y0);
+	name = strmakef("ChandrasekharWD.%1.1lf", Y0);
 
 	//reserve room for arrays
 	xi= new double[len]; //normalized radius
@@ -512,32 +511,20 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 
 void ChandrasekharWD::writeStar(char *c){
 	//create names for files to be opened
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	if(c==NULL)	sprintf(filename, "./out/%s", name);
-	else{
-		sprintf(filename, "./%s/star", c);
-	}
-	sprintf(txtname, "%s/%s.txt", filename, name);
-	sprintf(outname, "%s/%s.png", filename, name);
+	std::string filename, rootname, txtname, outname;
+	if(c==NULL)	filename = "./out/" + name;
+	else filename = addstring("./",c) + "/star";
+
+	txtname = filename + "/" + name + ".txt";
+	outname = filename + "/" + name + ".png";
 
 	FILE *fp;
-	if(!(fp = fopen(txtname, "w")) ){
-		if(c==NULL){
-			system("mkdir ./out");
-			char command[256]; sprintf(command, "mkdir ./out/%s", name);
-			system(command);
-			fp = fopen(txtname, "w");
-		}
-		else {
-			char command[256]; sprintf(command, "mkdir ./%s", c);
-			system(command);
-			sprintf(command, "mkdir %s", filename);
-			system(command);
-			if(!(fp = fopen(filename, "w"))) printf("big trouble, boss\n");		
-		}
+	if(!(fp = fopen(txtname.c_str(), "w")) ){
+		system( ("mkdir -p " + filename).c_str());
+		if(!(fp = fopen(txtname.c_str(), "w"))){
+			perror("big trouble, boss\n");
+			return;
+		}	
 	}
 	//print results to text file
 	// radius rho pressure gravity
@@ -557,23 +544,23 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	char title[256]; graph_title(title);
-	fprintf(gnuplot, "set title 'Profile for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	std::string title = graph_title();
+	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'rho/rho_c, P/P_c, m/M, g/g_S'\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 	
 	//print the pulsation coeffcients frequency
-	sprintf(txtname, "%s/coefficients.txt", filename);
-	sprintf(outname, "%s/coefficients.png", filename);
-	fp  = fopen(txtname, "w");
+	txtname = filename + "/coefficients.txt";
+	outname = filename + "/coefficients.png";
+	fp  = fopen(txtname.c_str(), "w");
 	for(int X=1; X< length()-1; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			xi[X],
@@ -589,25 +576,25 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 	
 	
 	//print the Brunt-Vaisala frequency
-	sprintf(txtname, "%s/BruntVaisala.txt", filename);
-	sprintf(outname, "%s/BruntVaisala.png", filename);
-	fp  = fopen(txtname, "w");
+	txtname = filename + "/BruntVaisala.txt";
+	outname = filename + "/BruntVaisala.png";
+	fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
 	for(int X=1; X< length()-1; X++){
 		//N^2 = -g*A
@@ -623,8 +610,8 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set format x '10^{%%L}'\n");
@@ -633,16 +620,16 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "set xlabel 'log_{10} P\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} N^2 & log_{10} L_1^2 (Hz^2)\n");\
 	fprintf(gnuplot, "set yrange [1e-6:1e2]\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 	
 	//print the chemical gradient
-	sprintf(txtname, "%s/chemical.txt", filename);
-	sprintf(outname, "%s/chemical.png", filename);
-	fp  = fopen(txtname, "w");
+	txtname = filename + "/chemical.txt";
+	outname = filename + "/chemical.png";
+	fp  = fopen(txtname.c_str(), "w");
 	double H,He;
 	for(int X=1; X< length()-1; X++){
 		He = 2.*(mue[X]-1.)/mue[X];
@@ -659,16 +646,16 @@ void ChandrasekharWD::writeStar(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set xlabel 'log_{10} (1-m/M)\n");
 	fprintf(gnuplot, "set ylabel 'abundance\n");
 	fprintf(gnuplot, "set yrange [-0.01: 1.01]\n");
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'X (H1)'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'Y (He4)'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'X (H1)'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'Y (He4)'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
