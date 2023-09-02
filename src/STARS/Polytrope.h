@@ -23,44 +23,43 @@ public:
 
 	static int read_star_input(Calculation::InputData&, FILE* input_file);
 
-	void graph_title(char* buff){
-		sprintf(buff, "polytrope n=%1.2f", n);
+	std::string graph_title() override {
+		return strmakef("polytrope n=%1.2f", n);
 	}
-	//char* name(){return polyname;};
 	
 	Polytrope(double, double, double, int);	//constructor, M, R, n and length
 	Polytrope(double, int);					//constructor, n and length
 	Polytrope(double, int, const double);	//constructor, n and length, dx
 	virtual ~Polytrope();  //destructor
-	int length(){return len;}
+	int length() override {return len;}
 	//these three functions specify units
-	double Radius();	//total radius
-	double Mass();		//total mass
-	double Gee(){return GG;};
+	double Radius() override;	//total radius
+	double Mass() override;		//total mass
+	double Gee() override {return GG;};
 	//in Newtonian, light speed is infinity... just use the max value to represent this
-	virtual double light_speed2(){return std::numeric_limits<double>::max();};
+	virtual double light_speed2() override {return std::numeric_limits<double>::max();};
 	
 	//these return value of indicated variable -- used in testing
 	double getX(int X){     return Y[X][x];}
 	double getY(int X){     return Y[X][y];}
 	double getYderiv(int X){return Y[X][z];}
 		
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(int) override;
+	double rho(int) override, drhodr(int) override;
+	double   P(int) override,   dPdr(int) override;
+	double Phi(int) override, dPhidr(int) override;
+	double  mr(int) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double Gamma1(int);
-	double sound_speed2(int, double GamPert=0.0);
+	double Schwarzschild_A(int, double GamPert=0.0) override;
+	double getAstar(int, double GamPert=0.0) override;
+	double getVg(int, double GamPert=0.0) override;
+	double getU(int) override;
+	double getC(int) override;
+	double Gamma1(int) override;
+	double sound_speed2(int, double GamPert=0.0) override;
 	
 		
-	void writeStar(char *c=NULL);
+	void writeStar(const char *const c=NULL) override;
 	
 private:
 	int len;
@@ -99,14 +98,14 @@ private:
 	char polyname[40];		//a name of the polytrope... not yet implemented properly
 public:
 	//methods to find central, surfae power series expansions of key variables in pulsation
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter(double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double*, int&, double g=0);
-	void getUSurface(double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter(double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double*, int&, double g=0) override;
+	void getUSurface(double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
 };
 
 #endif

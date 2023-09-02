@@ -22,7 +22,7 @@ MESA::MESA(const char* filename, int L) : len(L) {
 	fscanf(infile, "  %d     %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
 	printf("\tMass = %0.2lg\tRadis = %0.2lg\tLuminosity = %0.2lg\n", Mstar, Rstar, Lstar);
 	printf("Number of grid points in MESA calculation %d\n", Ntot);
-	sprintf(name, "MESA.M%1.2g.R%1.2g.L%1.2g", Mstar, Rstar, Lstar);
+	name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", Mstar, Rstar, Lstar);
 			
 	//read through file once to get the max values of R,M
 	int firstdata = ftell(infile);
@@ -514,18 +514,18 @@ void MESA::getC1Surface(double *cs, int& maxPow){
 }
 
 
-void MESA::printBV(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	sprintf(filename, "%s", c);
-	char title[256]; graph_title(title);
+void MESA::printBV(const char *const c, double const g){
+	// char filename[256];
+	// char rootname[256];
+	// char txtname[256];
+	// char outname[256];
+	std::string filename = c, rootname, txtname, outname;
+	std::string title = graph_title();
 	
 	//print the Brunt-Vaisala frequency
-	sprintf(txtname, "%s/BruntVaisala.txt", filename);
-	sprintf(outname, "%s/BruntVaisala.png", filename);
-	FILE* fp  = fopen(txtname, "w");
+	txtname = filename + "/BruntVaisala.txt";
+	outname = filename + "/BruntVaisala.png";
+	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
 	double scaleN2 = G_CGS*Mtot*pow(Rtot,-3);		//put N^2 back into CGS units
 	for(int X=1; X< length(); X++){
@@ -541,8 +541,8 @@ void MESA::printBV(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x\n");
 	fprintf(gnuplot, "set format x '10^{%%L}'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -550,30 +550,28 @@ void MESA::printBV(char *c){
 	fprintf(gnuplot, "set xlabel 'log_{10} (1-m/M)\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} N^2 (Hz^2)\n");
 	fprintf(gnuplot, "set hidden3d noundefined\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(-$2) w l t '-N^2'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(-$2) w l t '-N^2'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 }
 
-void MESA::printCoefficients(char *c){
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-
-	char command[300];
-	sprintf(filename, "%s/wave_coefficient", c);
-	sprintf(command, "mkdir %s", filename);
-	system(command);
+void MESA::printCoefficients(const char *const c, double const g){
+	// char filename[256];
+	// char rootname[256];
+	// char txtname[256];
+	// char outname[256];
+	std::string filename, rootname, txtname, outname;
+	filename = addstring(c, "/wave_coefficient");
+	system( ("mkdir -p " + filename).c_str() );
 	
-	char title[256]; graph_title(title);
+	const char* title = graph_title().c_str();
 	
 	//print the coefficients of the center and surface, for series analysis
-	sprintf(txtname, "%s/center.txt", filename);
-	FILE *fp = fopen(txtname, "w");
+	txtname = filename + "/center.txt";
+	FILE *fp = fopen(txtname.c_str(), "w");
 	double gam1 = Gam1->interp(radi[1]);
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\n", dc[0],dc[1],dc[2]);
 	fprintf(fp, "pres:\t%0.16le\t%0.16le\t%0.16le\n", pc[0],pc[1],pc[2]);
@@ -582,8 +580,8 @@ void MESA::printCoefficients(char *c){
 	fprintf(fp, "Vg  :\t%0.16le\t%0.16le\t%0.16le\n", V0[0]/gam1,V0[1]/gam1,V0[2]/gam1);
 	fprintf(fp, "c1  :\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	sprintf(txtname, "%s/surface.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/surface.txt";
+	fp = fopen(txtname.c_str(), "w");
 	gam1 = Gam1->interp(radi[len-1]);
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ds[0],ds[1],ds[2],ds[3],ds[4]);
 	fprintf(fp, "pres:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ps[0],ps[1],ps[2],ps[3],ps[4]);
@@ -595,8 +593,8 @@ void MESA::printCoefficients(char *c){
 	
 	//print fits to those coefficients at center and surface
 	int NC=15, NS=15;
-	sprintf(txtname, "%s/centerfit.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/centerfit.txt";
+	fp = fopen(txtname.c_str(), "w");
 	double x2 = 0.0;
 	gam1 = Gam1->interp(radi[1]);
 	fprintf(fp, "x           \trho         \trho_fit     \tP           \tP_fit       \tA*          \tA*_fit      \tU           \tU_fit       \tVg          \tVg_fit      \tc1          \tc1_fit\n");
@@ -619,8 +617,8 @@ void MESA::printCoefficients(char *c){
 		);
 	}
 	fclose(fp);
-	sprintf(txtname, "%s/surfacefit.txt", filename);
-	fp = fopen(txtname, "w");
+	txtname = filename + "/surfacefit.txt";
+	fp = fopen(txtname.c_str(), "w");
 	double t = 1.-radi[len-2];
 	gam1 = Gam1->interp(radi[len-1]);
 	fprintf(fp, "x           \trho         \trho_fit     \tP           \tP_fit       \tA*          \tA*_fit      \tU           \tU_fit       \tVg          \tVg_fit      \tc1          \tc1_fit\n");
@@ -645,9 +643,9 @@ void MESA::printCoefficients(char *c){
 	fclose(fp);
 	
 	//print the pulsation coeffcients frequency
-	sprintf(txtname, "%s/coefficients.txt", filename);
-	sprintf(outname, "%s/coefficients.png", filename);
-	fp  = fopen(txtname, "w");
+	txtname = filename + "/coefficients.txt";
+	outname = filename + "/coefficients.png";
+	fp  = fopen(txtname.c_str(), "w");
 	for(int X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			radi[X],
@@ -662,26 +660,26 @@ void MESA::printCoefficients(char *c){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
-	fprintf(gnuplot, "set output '%s'\n", outname);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:4 w l t 'V_g'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:5 w l t 'c_1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 	//fits
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	sprintf(txtname, "%s/centerfit.txt", filename);
-	sprintf(outname, "%s/centerfit.png", filename);
-	fprintf(gnuplot, "set output '%s'\n", outname);
+	txtname = filename + "/centerfit.txt";
+	outname = filename + "/centerfit.png";
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
@@ -689,16 +687,16 @@ void MESA::printCoefficients(char *c){
 	fprintf(gnuplot, "set ytics 10\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set xrange [0:%le]\n", radi[NC]);
-	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/$2) w lp t 'rho'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/$4) w lp t 'P'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/$6) w lp t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/$8) w lp t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/$10) w lp t 'Vg'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/$12) w lp t 'c1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/$2) w lp t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/$4) w lp t 'P'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/$6) w lp t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/$8) w lp t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/$10) w lp t 'Vg'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/$12) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	sprintf(txtname, "%s/surfacefit.txt", filename);
-	sprintf(outname, "%s/surfacefit.png", filename);
-	fprintf(gnuplot, "set output '%s'\n", outname);
+	txtname = filename + "/surfacefit.txt";
+	txtname = filename + "/surfacefit.png";
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
@@ -706,12 +704,12 @@ void MESA::printCoefficients(char *c){
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set xrange [%le:1]\n", radi[len-NS-1]);
-	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'A*'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'U'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'Vg'", txtname);
-	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'c1'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'A*'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'U'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/abs($10)) w lp t 'Vg'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	
 	//now leave gnuplot
@@ -721,34 +719,19 @@ void MESA::printCoefficients(char *c){
 
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
-void MESA::writeStar(char *c){
+void MESA::writeStar(const char *const c){
 	//create names for files to be opened
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	if(c==NULL)	sprintf(filename, "./out/%s", name);
-	else{
-		sprintf(filename, "./%s/star/", c);
-	}
-	sprintf(txtname, "%s/%s.txt", filename, name);
-	sprintf(outname, "%s/%s.png", filename, name);
+	std::string filename, rootname, txtname, outname;
+	if(c==NULL)	filename = strmakef("./out/%s", name.c_str());
+	else filename = strmakef("./%s/star/", c);
+	txtname = strmakef("%s/%s.txt", filename.c_str(), name.c_str());
+	outname = strmakef("%s/%s.png", filename.c_str(), name.c_str());
 
 	FILE *fp;
-	if(!(fp = fopen(txtname, "w")) ){
-		if(c==NULL){
-			system("mkdir ./out");
-			char command[40]; sprintf(command, "mkdir ./out/%s", name);
-			system(command);
-			fp = fopen(txtname, "w");
-		}
-		else {
-			char command[256]; sprintf(command, "mkdir ./%s", c);
-			system(command);
-			sprintf(command, "mkdir %s", filename);
-			system(command);
-			if(!(fp = fopen(txtname, "w"))) printf("big trouble, boss\n");		
-		}
+	if(!(fp = fopen(txtname.c_str(), "w")) ){
+		system( ("mkdir -p " + filename).c_str() );
+		if(!(fp = fopen(txtname.c_str(), "w"))) 
+			printf("big trouble, boss\n");		
 	}
 	//print results to text file
 	// radius rho pressure gravity
@@ -767,22 +750,22 @@ void MESA::writeStar(char *c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	char title[256]; graph_title(title);
-	fprintf(gnuplot, "set title 'Profile for %s'\n", title);
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	std::string title = graph_title();
+	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'rho/rho_c, P/P_c, m/M, g/g_S'\n");
 	fprintf(gnuplot, "set xrange [0:1]\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname);
-	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname);
+	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'rho'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:4 w l t 'P'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:6 w l t 'm'", txtname.c_str());
+	fprintf(gnuplot, ", '%s' u 1:7 w l t 'g'", txtname.c_str());
 	fprintf(gnuplot, "\n");
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 		
-	printBV(filename);
-	printCoefficients(filename);	
+	printBV(filename.c_str());
+	printCoefficients(filename.c_str());	
 }
 
 double MESA::SSR(){	
@@ -813,7 +796,7 @@ double MESA::SSR(){
 	fprintf(gnuplot, "set term png size 1600,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", "SSR.png");
-	char title[256]; graph_title(title);
+	const char* title = graph_title().c_str();
 	fprintf(gnuplot, "set title 'error for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'error'\n");

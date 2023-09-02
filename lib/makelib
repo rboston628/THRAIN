@@ -8,9 +8,9 @@ CC=g++ --std=c++14
 
 ## files needed to compile stellar models
 #  dependencies
-LIBDEPS = Splinor.h  chandra.h   stellar.h   rootfind.h
+LIBDEPS = Splinor.h  chandra.h   stellar.h   rootfind.h string.h
 #  source
-LIBSRC = Splinor.cpp chandra.cpp stellar.cpp rootfind.cpp
+LIBSRC = Splinor.cpp chandra.cpp stellar.cpp rootfind.cpp string.cpp
 
 ## prepare object names
 LIBOBJ = $(patsubst %.cpp, %.o, $(LIBSRC))

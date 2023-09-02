@@ -11,7 +11,7 @@ namespace Chandrasekhar {
 	double factor_f(double x);
 	double factor_g(double x);
 //	double factor_h(double x);
-};
+}
 
 namespace FermiDirac {
 	//Abscissae (x) and weights (w) for 24-point Gauss quadrature method due to Sagar 1991

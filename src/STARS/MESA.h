@@ -10,28 +10,28 @@ class MESA : public Star {
 public:	
 	MESA(const char*, int);	//constructor
 	virtual ~MESA(); //destructor - clears all space in memory
-	int length(){return len;}
-	double Mass();
-	double Radius();
-	double Gee();
-	double light_speed2();
-	void graph_title(char* buff){
-		sprintf(buff, "MESA model w/ Mass=%lg", Mtot);
+	int length() override {return len;}
+	double Mass() override;
+	double Radius() override;
+	double Gee() override;
+	double light_speed2() override;
+	std::string graph_title () override {
+		return strmakef("MESA model w/ Mass=%lg", Mtot);
 	}
 	
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(int) override;
+	double rho(int) override, drhodr(int) override;
+	double   P(int) override,   dPdr(int) override;
+	double Phi(int) override, dPhidr(int) override;
+	double mr(int)  override;
 	
-	double Gamma1(int);
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double sound_speed2(int, double GamPert=0);
+	double Gamma1(int) override;
+	double Schwarzschild_A(int, double GamPert=0.0) override;
+	double getAstar(int, double GamPert=0.0) override;
+	double getVg(int, double GamPert=0.0) override;
+	double getU(int) override;
+	double getC(int) override;
+	double sound_speed2(int, double GamPert=0) override;
 	
 private:
 	void printSection(int, int);
@@ -68,19 +68,19 @@ private:
 	void setupSurface();
 	
 public:
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter(double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double *, int&, double g=0);
-	void getUSurface(double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
-	void writeStar(char *c=NULL);
-	double SSR();
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter(double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double *, int&, double g=0) override;
+	void getUSurface(double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
+	void writeStar(const char *const c=NULL) override;
+	double SSR() override;
 private:
-	void printBV(char *c);
-	void printCoefficients(char *c);
+	void printBV(const char *const, double const g=0) override;
+	void printCoefficients(const char *const, double const g=0) override;
 };
 
 #endif

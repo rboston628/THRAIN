@@ -526,27 +526,23 @@ int Mode<numvar>::verifyMode(){
 
 //print out the mode information and plot it on gnuplot
 template <std::size_t numvar> 
-void Mode<numvar>::writeMode(char *c){
+void Mode<numvar>::writeMode(const char *const c){
 	//create names for files to be opened
-	char filename[256];
-	char rootname[256];
-	char txtname[256];
-	char outname[256];
-	if(c==NULL)	sprintf(filename, "./out/%s/mode", star->name);
-	else{
-		sprintf(filename, "./%s/modes", c);
-	}
-	sprintf(rootname, "%s/mode_%d.%d", filename, l,k);
-	if(!converged) sprintf(rootname, "%sXX", rootname); 
+	// char filename[256];
+	// char rootname[256];
+	// char txtname[256];
+	// char outname[256];
+	std::string filename, modename = strmakef("/mode_%d.%d", l, k);
+	if(c==NULL)	filename = "./out/" + star->name + "/mode";
+	else filename = addstring("./", c) + "/modes";
+	std::string rootname = filename + modename;
 	//save data to folder to avoid clutter - make sure folder exists
-	sprintf(txtname, "%s.txt", rootname);
-	sprintf(outname, "%s.png", rootname);
+	std::string txtname = rootname + ".txt";
+	std::string outname = rootname + ".png";
 	FILE *fp;
-	if(!(fp = fopen(txtname, "w")) ){
-		char command[256];
-		sprintf(command, "mkdir -p %s", filename);
-		system(command);
-		fp = fopen(txtname, "w");
+	if(!(fp = fopen(txtname.c_str(), "w")) ){
+		system( ("mkdir -p "+filename).c_str() );
+		fp = fopen(txtname.c_str(), "w");
 	}
 	double R = rad[len-1];
 	double M = star->Mass();
@@ -560,9 +556,9 @@ void Mode<numvar>::writeMode(char *c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set output '%s'\n", outname);
-	char title[100]; star->graph_title(title);
-	fprintf(gnuplot, "set title 'full mode %d,%d in %s, period=%0.5lf s'\n", l,k, title, getPeriod());
+	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
+	std::string title = star->graph_title();
+	fprintf(gnuplot, "set title 'full mode %d,%d in %s, period=%0.5lf s'\n", l,k, title.c_str(), getPeriod());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'log|y|'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -571,7 +567,7 @@ void Mode<numvar>::writeMode(char *c){
 	fprintf(gnuplot, "set arrow 1 from %le, graph 0 to %le, graph 1 lc rgb 'red' nohead\n", rad[xfit]/R, rad[xfit]/R);
 	fprintf(gnuplot, "plot ");
 	for(int a=0; a<numvar; a++){
-		fprintf(gnuplot, "%c '%s' u 1:(abs($%d)) w l t '%s'", (a==0? ' ':','),txtname, a+2, varname[a].c_str());
+		fprintf(gnuplot, "%c '%s' u 1:(abs($%d)) w l t '%s'", (a==0? ' ':','),txtname.c_str(), a+2, varname[a].c_str());
 	}
 	fprintf(gnuplot, "\n");
 
@@ -581,18 +577,20 @@ void Mode<numvar>::writeMode(char *c){
 
 //write the mode, and then open the png to screen for easy viewing
 template <std::size_t numvar> 
-void Mode<numvar>::printMode(char *c){
+void Mode<numvar>::printMode(const char *const c){
 	writeMode(c);
-	char outname[258];
-	if(c==NULL) sprintf(outname, "./out/%s/mode/mode_%d.%d", star->name, l,k);
+	// char outname[258];
+	std::string outname, modename = "mode_"+std::to_string(l)+"."+std::to_string(k)+".png";
+	if(c==NULL) outname = "./out/"+star->name+"/mode/"+modename;
 	else {
-		sprintf(outname, "./%s/modes/mode_%d.%d", c, l,k);
+		outname = "./";
+		for(std::size_t i=0; c[i]!=0; i++){
+			outname += c[i];
+		}
+		outname += "modes/"+modename;
 	}
-	if(!converged) sprintf(outname, "%sXX", outname);
-	sprintf(outname, "%s.png", outname);
 	char openmyplot[248];
-	sprintf(openmyplot, "open %s", outname);
-	system(openmyplot);
+	system(std::string("open "+outname).c_str());
 }
 
 //ways to access the frequency

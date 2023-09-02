@@ -302,17 +302,14 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 int echo_input(Calculation::InputData &calcdata){
 	printf("Copying input file...\t"); fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s_in.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
 	FILE* output_file;
 	
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
-		char command[140]; 
-		sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -513,16 +510,15 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
 		printf("creating file..."); fflush(stdout);
-		char command[140]; sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -541,74 +537,72 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	fprintf(output_file, "\n");
 	
-	char s[256],m[256];
+	// char s[256],m[256];
+	std::string s, m;
 	switch(calcdata.model){
 		case model::polytrope:
-		sprintf(s,"Polytropic star");
+		s = "Polytropic star";
 		break;
 		case model::CHWD:
-		sprintf(s,"Chandrasekhar WD");
+		s = "Chandrasekhar WD";
 		break;
 		case model::MESA:
-		sprintf(s,"MESA model");
+		s = "MESA model";
 		break;
 		case model::SWD:
-		sprintf(s,"Simple WD model");
+		s = "Simple WD model";
 		break;
 	}
 	switch(calcdata.modetype){
 		case modetype::radial:
-			sprintf(m,"radial");
+			m = "radial";
 			break;
 		case modetype::nonradial:
-			sprintf(m,"nonradial");
+			m = "nonradial";
 			break;
 		case modetype::cowling:
-			sprintf(m,"Cowling");
+			m = "Cowling";
 			break;
 	}	
-	fprintf(output_file, "%s  %s with %s pulsations\n", dwarf[d++], s, m);
+	fprintf(output_file, "%s  %s with %s pulsations\n", dwarf[d++], s.c_str(), m.c_str());
 
 	//print out a message showing which observable parameters were passed, and with which units
-	char unitM[100], unitL[10], unitT[10], unitG[10], unitZ[10];
+	// char unitM[10], unitL[10], unitT[10], unitG[10], unitZ[10];
+	std::string unitM, unitL, unitT, unitG, unitZ = "        ";
 	switch(calcdata.units){
 		case units::Units::astro:
-			sprintf(unitM, "(Msolar)");
-			sprintf(unitL, "(km)    ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(Msolar)";
+			unitL = "(km)    ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  Astronomical Units (Msolar, km, s)\n", dwarf[d++]);
 			break;
 		case units::Units::geo:
-			sprintf(unitM, "(m)     ");
-			sprintf(unitL, "(m)     ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(m)     ";
+			unitL = "(m)     ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  Geometric Units (G=c=1)\n", dwarf[d++]);
 			break;
 		case units::Units::SI:
-			sprintf(unitM, "(kg)    ");
-			sprintf(unitL, "(m)     ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(kg)    ";
+			unitL = "(m)     ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  SI Units (kg, m, s)\n", dwarf[d++]);
 			break;
 		case units::Units::CGS:
-			sprintf(unitM, "(g)     ");
-			sprintf(unitL, "(cm)    ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(g)     ";
+			unitL = "(cm)    ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  CGS Units (g, cm, s)\n", dwarf[d++]);
 			break;
 	}
-	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::ParamType::pmass?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::ParamType::pradius?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM.c_str(), calcdata.mass,  (calcdata.params&units::ParamType::pmass?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL.c_str(), calcdata.radius,(calcdata.params&units::ParamType::pradius?"(specified)\n":"(derived)\n"));
 	if(calcdata.teff!=0.0)
-	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ.c_str(), calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
 	else
 	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
-	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG.c_str(), calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ.c_str(), calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);
 	
 
@@ -645,9 +639,8 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	fprintf(output_file, "\n");
 	fclose(output_file);
 	
-	char outname[128];
-	sprintf(outname, "./output/%s",calcdata.calcname.c_str());
-	calcdata.star->writeStar(outname);
+	std::string outname = "./output/"+calcdata.calcname;
+	calcdata.star->writeStar(outname.c_str());
 	
 	printf("done\n");
 	return 0;
@@ -656,11 +649,10 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 int write_mode_output(Calculation::OutputData& calcdata){
 	printf("Writing mode data to file...\t"); fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "a")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
 		printf("the file doesn't exist\n");
 		return 1;
 	}
@@ -726,9 +718,8 @@ int write_mode_output(Calculation::OutputData& calcdata){
 			else fprintf(output_file, "\tN/A");
 		}
 		fprintf(output_file, "\n");
-		char outname[128];
-		sprintf(outname, "./output/%s",calcdata.calcname.c_str());
-		(calcdata.mode[j])->writeMode(outname);
+		std::string outname = "./output/"+calcdata.calcname;
+		(calcdata.mode[j])->writeMode(outname.c_str());
 		fflush(output_file);
 		calcdata.mode_writ++;
 	}
@@ -738,7 +729,7 @@ int write_mode_output(Calculation::OutputData& calcdata){
 	return 0;
 }
 
-void print_splash(FILE* output_file, char* title, int WIDTH){
+void print_splash(FILE* output_file, const char *const title, int WIDTH){
 	//first bar
 	fprintf(output_file, "#");
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
@@ -755,16 +746,14 @@ void print_splash(FILE* output_file, char* title, int WIDTH){
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/tidal_overlap.txt", calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/tidal_overlap.txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
 		printf("creating file...\n"); fflush(stdout);
-		char command[140]; sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -772,9 +761,8 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	
 	//print the cool splash
 	int WIDTH = 80;
-	char splashy[1100];
-	sprintf(splashy, "tidal overlap coefficients for %s", calcdata.calcname.c_str());
-	print_splash(output_file, splashy, WIDTH);
+	std::string splashy = "tidal overlap coefficients for "+calcdata.calcname;
+	print_splash(output_file, splashy.c_str(), WIDTH);
 	fflush(output_file);
 		
 	//produce a list of the different L asked for, each represented once

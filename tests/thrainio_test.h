@@ -270,11 +270,9 @@ public:
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[3] = {1,2,3};
         int Kvalues[5] = {1,2,3,4,5};
-        char freqLine[10] = "";
         for(int L : Lvalues){
             for(int K : Kvalues){
-                sprintf(freqLine, "%d,%d\n", L,K);
-                filecontents += std::string(freqLine);
+                filecontents += strmakef("%d,%d\n", L,K);
             }
         }
         make_test_input(testfilename,filecontents);
@@ -303,11 +301,9 @@ public:
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[] = {3,1,2   /*duplixates to be ignored */, 3,1,2};
         int Kvalues[] = {4,2,3,5 /*duplixates to be ignored */, 5,5,1};
-        char freqLine[10] = "";
         for(int L : Lvalues){
             for(int K : Kvalues){
-                sprintf(freqLine, "%d,%d\n", L,K);
-                filecontents += std::string(freqLine);
+                filecontents += strmakef("%d,%d\n", L,K);
             }
         }
         make_test_input(testfilename,filecontents);
@@ -342,11 +338,9 @@ public:
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[] = {1,2};
         int Kvalues[] = {0,1,2,3}; //the k=0 will be dropped when l=1
-        char freqLine[10] = "";
         for(int L : Lvalues){
             for(int K : Kvalues){
-                sprintf(freqLine, "%d,%d\n", L,K);
-                filecontents += std::string(freqLine);
+                filecontents += strmakef("%d,%d\n", L,K);
             }
         }
         make_test_input(testfilename,filecontents);
@@ -580,7 +574,7 @@ public:
         char freqLine[10] = "";
         for(int L : Lvalues){
             for(int K : Kvalues){
-                sprintf(freqLine, "%d,%d\n", L,K);
+                snprintf(freqLine,10, "%d,%d\n", L,K);
                 filecontents += std::string(freqLine);
             }
         }

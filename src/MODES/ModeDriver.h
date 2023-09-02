@@ -17,8 +17,8 @@
 class ModeBase {
 public:
 	//file output methods to write and view plots of mode
-	virtual void printMode(char *c = NULL) = 0;
-	virtual void writeMode(char *c = NULL) = 0;
+	virtual void printMode(const char *const c = NULL) = 0;
+	virtual void writeMode(const char *const c = NULL) = 0;
 		
 	virtual ~ModeBase(){};
 	

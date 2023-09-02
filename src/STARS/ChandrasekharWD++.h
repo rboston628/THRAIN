@@ -20,8 +20,8 @@
 class ChandrasekharWD : public Star {
 public:
 
-	void graph_title(char* buff){
-		sprintf(buff, "Chandrasekhar WD with y_0=%1.2f", Y0);
+	std::string graph_title(){
+		return strmakef("Chandrasekhar WD with y_0=%1.2f", Y0);
 	}
 	
 	//the constructors

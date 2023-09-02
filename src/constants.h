@@ -5,10 +5,6 @@
 //  Reece Boston, Mar 24, 2022
 // **************************************************************************************
 
-//constants and dependencies
-#ifndef CONSTANTS
-#define CONSTANTS
-
 #include <math.h>
 #include <complex>
 #include <stdio.h>
@@ -17,7 +13,12 @@
 #include <vector>
 #include "../lib/Splinor.h"
 #include "../lib/matrix.h"
+#include "../lib/string.h"
 // #include <time.h> //might use later to put a time stamp
+
+//constants and dependencies
+#ifndef CONSTANTS
+#define CONSTANTS
 
 //good ol' pi!
 const double m_pi = 3.141592653589793;

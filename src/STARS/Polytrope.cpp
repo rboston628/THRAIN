@@ -27,7 +27,7 @@ Polytrope::Polytrope(double BigM, double BigR, double n, int L)
 		exit(EXIT_FAILURE);
 	}
 	//name this polytrope for files
-	sprintf(name, "polytrope.%1.1f", n);
+	name = strmakef("polytrope.%1.1f", n);
 	
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with y[len-1]=0.0
@@ -140,7 +140,7 @@ Polytrope::Polytrope(double n, int L)
 		exit(EXIT_FAILURE);
 	}
 	//name this polytrope for files
-	sprintf(name, "polytrope.%1.1f", n);
+	name = strmakef("polytrope.%1.1f", n);
 	
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with y[len-1]=0.0
@@ -267,7 +267,7 @@ Polytrope::Polytrope(double n, int L, const double dx)
 	}
 
 	//name this polytrope for files
-	sprintf(name, "polytrope.%1.1f", n);
+	name = strmakef("polytrope.%1.1f", n);
 	//reserve room for arrays
 	Y = new double*[len];
 	for(int i=0;i<len;i++) 
@@ -677,19 +677,17 @@ void Polytrope::getC1Surface(double *cs, int& maxPow){
 }
 
 
-void Polytrope::writeStar(char *c){
+void Polytrope::writeStar(const char *const c){
 	//create names for files to be opened
-	char pathname[256];
-	if(c==NULL)	sprintf(pathname, "./out/%s", name);
-	else{
-		sprintf(pathname, "./%s/star/", c);
-	}
-	char command[300];
-	sprintf(command, "mkdir -p %s", pathname);
+	std::string pathname;
+	if(c==NULL)	pathname = addstring("./out/", name);
+	else pathname = addstring("./",c)+"/star/";
+
+	system( addstring("mkdir -p ", pathname).c_str() );
 	
-	printStar(pathname);
-	printBV(pathname, 5./3.);
-	printCoefficients(pathname, 5./3.);
+	printStar(pathname.c_str());
+	printBV(pathname.c_str(), 5./3.);
+	printCoefficients(pathname.c_str(), 5./3.);
 }
 
 

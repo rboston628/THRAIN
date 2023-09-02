@@ -15,8 +15,8 @@ class Star {
 public:	
 	//this is an identifier for the model of star
 	//must be chosen to make UNIX accessible filename -- no spaces!
-	char name[40];	
-	virtual void graph_title(char*) =0;
+	std::string name;	
+	virtual std::string graph_title() =0;
 	//this is the index where shooting methods for modes should join
 	int indexFit;
 
@@ -59,10 +59,10 @@ public:
 	virtual double Gee() =0;
 	virtual double light_speed2() =0;
 	//print relevant values of the star in .txt and gnuplot
-	virtual void writeStar(char *c = NULL);
-	virtual void printStar(char *c = NULL);
-	virtual void printBV(  char *c = NULL, double const gam1=0.0);
-	virtual void printCoefficients(char *c = NULL, double const gam1=0.0);
+	virtual void writeStar(const char *const c = NULL);
+	virtual void printStar(const char *const c = NULL);
+	virtual void printBV(  const char *const c = NULL, double const gam1=0.0);
+	virtual void printCoefficients(const char *const c = NULL, double const gam1=0.0);
 	virtual double SSR();
 	
 	//allow Modes to access private members of Star
