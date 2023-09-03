@@ -11,7 +11,6 @@
 #ifndef POLYTROPEH
 #define POLYTROPEH
 
-#include <limits>
 #include "Star.h"
 
 namespace Calculation {
