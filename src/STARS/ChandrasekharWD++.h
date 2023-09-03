@@ -25,10 +25,10 @@ public:
 	}
 	
 	//the constructors
-	ChandrasekharWD(double, int,               double MU0, double K, double AC, double AS);
-	ChandrasekharWD(double, int, const double, double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t,               double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t, const double, double MU0, double K, double AC, double AS);
 	virtual ~ChandrasekharWD();   //destructor
-	int length() override {return len;}
+	std::size_t length() override {return len;}
 	//these three functions specify units
 	double Radius() override;	//total radius
 	double Mass() override;//total mass
@@ -38,28 +38,28 @@ public:
 		return std::numeric_limits<double>::infinity();
 	}
 	
-	double rad(int) override;
-	double rho(int) override, drhodr(int) override;
-	double   P(int) override,   dPdr(int) override;
-	double Phi(int) override, dPhidr(int) override;
-	double mr(int) override;
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0) override;
-	double getAstar(int, double GamPert=0.0) override;
-	double getVg(int, double GamPert=0.0) override;
-	double getU(int) override;
-	double getC(int) override;
-	double Gamma1(int) override;
-	double sound_speed2(int, double GamPert=0.0) override;
-	double Ledoux(int, double GamPert=0.0);
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
+	std::size_t len;
 	double Y0;		// central value of y, y^2=1+x^2
 	double X0, X02, Y02;
 	//double A0;		//pressure scale
 	//double B0;		//density scale
 	double Rn;		//radius scale
-	int len;
 	double dx;
 	//lane-emden solution functions
 	double *xi;	//normalized radius
@@ -73,13 +73,13 @@ private:
 	double mu0, k, acore, aswap;
 	void chemical_gradient(const double, const double, double&, double&);
 	
-	
 	//to handle chemical profile
 	double* mue;   //mean atomic mass per electron
 	double* dmue;  //derivative of above
+
 	//integrate using basic RK4
-	double RK4integrate(const int, double);
-	int RK4integrate(const int, double, int);
+	double RK4integrate(const std::size_t, double);
+	std::size_t RK4integrate(const std::size_t, double, int);
 	
 	//the T=0 Fermi function
 	//double factor_f(double x);

@@ -40,7 +40,7 @@ void Star::printStar(const char *const outputdir){
 	//print results to text file
 	// radius rho pressure gravity
 	double irc=1./this->rho(0), ipc=1./P(0), R=Radius(), ig=1./dPhidr(length()-1);
-	for(int X=0; X< length(); X++){
+	for(std::size_t X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			rad(X)/R, this->rho(X)*irc, -drhodr(X)*irc*R,
 			P(X)*ipc, -dPdr(X)*ipc*R,
@@ -52,7 +52,7 @@ void Star::printStar(const char *const outputdir){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Profile for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -71,14 +71,14 @@ void Star::printStar(const char *const outputdir){
 double Star::SSR(){	
 	double checkEuler;
 	double checkPoiss;
-	int len = length();
+	std::size_t len = length();
 			
 	//sum up errors in equations
 	checkEuler = 0.0;
 	checkPoiss = 0.0;
 	double d2Phi = 0.0;
 	double e1, e2, n1, n2;
-	for(int X=4; X<len-4; X++){
+	for(std::size_t X=4; X<len-4; X++){
 		//Euler equation
 		e1 = fabs(dPdr(X) + rho(X)*dPhidr(X) );
 		n1 = fabs(dPdr(X)) + fabs(rho(X)*dPhidr(X));
@@ -113,7 +113,7 @@ void Star::printBV(const char *const outputdir, double const gam1){
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
 	fprintf(fp, "1-m\tN2\tL1\n");
-	for(int X=1; X< length()-1; X++){
+	for(std::size_t X=1; X< length()-1; X++){
 		N2 =  -Schwarzschild_A(X,gam1)*dPhidr(X);
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
 			(1.-mr(X)/Mass()),
@@ -150,7 +150,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	std::string wavecoeffdir = addstring(outputdir, "/wave_coefficient");
 	system( ("mkdir -p " + wavecoeffdir).c_str() ); 
 
-	int Ntot = length();
+	std::size_t Ntot = length();
 	const int num_c=3, num_s=5;
 	int bc_c = (num_c-1)*2, bc_s = (num_s-1);
 	double A0[num_c] = {0.}, U0[num_c] = {0.}, V0[num_c] = {0.}, c0[num_c] = {0.};
@@ -183,13 +183,13 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	fclose(fp);
 	
 	//print fits to those coefficients at center and surface
-	int NC=15, NS=15;
+	std::size_t const NC=15, NS=15;
 	txtname = wavecoeffdir + "/centerfit.txt";
 	fp = fopen(txtname.c_str(), "w");
 	double Rtot = Radius();
 	double x, x2;
 	fprintf(fp, "x\tA\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
-	for(int X=0; X<NC; X++){
+	for(std::size_t X=0; X<NC; X++){
 		x = rad(X)/Rtot;
 		x2 = pow(x,2);
 		fprintf(fp, "%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\n",
@@ -209,7 +209,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	fp = fopen(txtname.c_str(), "w");
 	double t = 0.;
 	fprintf(fp, "t%*c\tA*      \tA*_fit   \tU       \tU_fit   \tVg      \tVg_fit  \tc1      \tc1_fit  \n", 7, ' ');
-	for(int X=Ntot-2; X>=Ntot-NS-1; X--){
+	for(std::size_t X=Ntot-2; X>=Ntot-NS-1; X--){
 		t = 1. - rad(X)/Rtot;
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
 			t,
@@ -230,7 +230,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	outname = wavecoeffdir + "/coefficients.png";
 	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
-	for(int X=0; X<Ntot; X++){
+	for(std::size_t X=0; X<Ntot; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			rad(X)/Rtot,
 			getAstar(X, gam1),
@@ -244,7 +244,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");

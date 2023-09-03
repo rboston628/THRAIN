@@ -26,11 +26,11 @@ public:
 		return strmakef("polytrope n=%1.2f", n);
 	}
 	
-	Polytrope(double, double, double, int);	//constructor, M, R, n and length
-	Polytrope(double, int);					//constructor, n and length
-	Polytrope(double, int, const double);	//constructor, n and length, dx
+	Polytrope(double, double, double, std::size_t);	//constructor, M, R, n and length
+	Polytrope(double, std::size_t);					//constructor, n and length
+	Polytrope(double, std::size_t, const double);	//constructor, n and length, dx
 	virtual ~Polytrope();  //destructor
-	int length() override {return len;}
+	std::size_t length() override {return len;}
 	//these three functions specify units
 	double Radius() override;	//total radius
 	double Mass() override;		//total mass
@@ -39,29 +39,29 @@ public:
 	virtual double light_speed2() override {return std::numeric_limits<double>::infinity();};
 	
 	//these return value of indicated variable -- used in testing
-	double getX(int X){     return Y[X][x];}
-	double getY(int X){     return Y[X][y];}
-	double getYderiv(int X){return Y[X][z];}
+	double getX(std::size_t X){     return Y[X][x];}
+	double getY(std::size_t X){     return Y[X][y];}
+	double getYderiv(std::size_t X){return Y[X][z];}
 		
-	double rad(int) override;
-	double rho(int) override, drhodr(int) override;
-	double   P(int) override,   dPdr(int) override;
-	double Phi(int) override, dPhidr(int) override;
-	double  mr(int) override;
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double  mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0) override;
-	double getAstar(int, double GamPert=0.0) override;
-	double getVg(int, double GamPert=0.0) override;
-	double getU(int) override;
-	double getC(int) override;
-	double Gamma1(int) override;
-	double sound_speed2(int, double GamPert=0.0) override;
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
 	
 		
 	void writeStar(const char *const c=NULL) override;
 	
 private:
-	int len;
+	std::size_t len;
 	double n;		//polytropic index
 	double Gamma;	//polytropic exponent
 	//the values of K, rho0, P0 relate to the choice of units and scale factors
@@ -84,7 +84,7 @@ private:
 	
 	//integrate Lane-Emden using basic RK4
 	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
-	double RK4integrate(const int, double, SurfaceBehavior);
+	double RK4integrate(const std::size_t, double, SurfaceBehavior);
 	
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface

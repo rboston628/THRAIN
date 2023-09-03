@@ -35,7 +35,7 @@ void ChandrasekharWD::chemical_gradient(const double xi, const double dx, double
 }
 
 //initalize white dwarf from central value of y and length
-ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double acore, double aswap)
+ChandrasekharWD::ChandrasekharWD(double Y0, std::size_t L, double mu0, double k, double acore, double aswap)
 	: Y0(Y0), len(L), mu0(mu0), k(k), acore(acore), aswap(aswap)
 {
 	//exclude unphysical values of Y0
@@ -125,7 +125,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 	mass[0] = 0.0; mue[0] = 2.0; dmue[0] = 0.0;
 	x[0] = sqrt(Y0*Y0-1.);
 	f[0] = Chandrasekhar::factor_f(x[0]);
-	for(int X=1; X<len; X++){
+	for(std::size_t X=1; X<len; X++){
 		x[X] = sqrt(y[X]*y[X]-1.);
 		if(y[X]<1.) x[X] = 0.0;	
 		f[X] = Chandrasekhar::factor_f(x[X]);
@@ -133,7 +133,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 		mass[X] = -4.*m_pi*xi[X]*xi[X]*z[X]/mue[X];
 	}
 	indexFit = len/2;
-	for(int X=1; X<len; X++){
+	for(std::size_t X=1; X<len; X++){
 		//scan through x, set matching point where x[X] = 0.5
 		if(x[X-1]>0.5 & x[X+1]<=0.5) indexFit = X;
 	}
@@ -146,7 +146,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, double mu0, double k, double 
 
 //initalize white dwarf from central value of y and length, with specific step size
 //this should only be used for testing scaling issues
-ChandrasekharWD::ChandrasekharWD(double Y0, int L, const double dx, double mu0, double k, double acore, double aswap)
+ChandrasekharWD::ChandrasekharWD(double Y0, std::size_t L, const double dx, double mu0, double k, double acore, double aswap)
 	: Y0(Y0), len(L), dx(dx), mu0(mu0), k(k), acore(acore), aswap(aswap)
 {	
 	//exclude unphysical values of Y0
@@ -178,7 +178,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, const double dx, double mu0, 
 	mass[0] = 0.0;
 	x[0] = sqrt(Y0*Y0-1.);
 	f[0] = Chandrasekhar::factor_f(x[0]);
-	for(int X=1; X<len; X++){
+	for(std::size_t X=1; X<len; X++){
 		x[X] = sqrt(y[X]*y[X]-1.);
 		if(y[X]<1.) x[X] = 0.0;	
 		chemical_gradient(xi[X],dx, mue[X],dmue[X]);
@@ -187,7 +187,7 @@ ChandrasekharWD::ChandrasekharWD(double Y0, int L, const double dx, double mu0, 
 	}
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
-	printf("  indexFit  = %d\n", indexFit);
+	printf("  indexFit  = %lu\n", indexFit);
 	printf("r[indexFit] = %0.32le\n", rad(indexFit));
 	setupCenter();
 	setupSurface();
@@ -207,7 +207,7 @@ ChandrasekharWD::~ChandrasekharWD(){
 }
 
 //integrate the polytrope up to Len using RK4
-double ChandrasekharWD::RK4integrate(const int Len, double dx){
+double ChandrasekharWD::RK4integrate(const std::size_t Len, double dx){
 	//the YC, ZC, XC are corrected values of y, z, x to be used in equations
 	double YC,ZC,XC,   YC12, YHe4, YH1;
 	double MUC, DMUC;
@@ -224,7 +224,7 @@ double ChandrasekharWD::RK4integrate(const int Len, double dx){
 	
 	//set our initial conditions
 	xi[0] = 0.0; y[0] = Y0; z[0] = 0.0;
-	for(int X = 0; X<Len-1; X++){
+	for(std::size_t X = 0; X<Len-1; X++){
 		XC = xi[X]; YC = y[X]; ZC = z[X];
 		chemical_gradient(XC,dx, MUC, DMUC);
 		for(int a = 0; a<4; a++){
@@ -252,7 +252,7 @@ double ChandrasekharWD::RK4integrate(const int Len, double dx){
 	return y[Len-1]-1.;
 }
 
-int ChandrasekharWD::RK4integrate(const int Len, double dx, int grid){
+std::size_t ChandrasekharWD::RK4integrate(const std::size_t Len, double dx, int grid){
 	grid=1;
 	//the YC, ZC, XC are mid-point values of y, z, x to be used in equations
 	double YC,ZC,XC;
@@ -266,7 +266,7 @@ int ChandrasekharWD::RK4integrate(const int Len, double dx, int grid){
 	
 	//set our initial conditions
 	x[0] = 0.0; y[0] = Y0; z[0] = 0.0;
-	for(int X = 0; X<Len-1; X++){
+	for(std::size_t X = 0; X<Len-1; X++){
 		XC = double(X)*dx; YC = y[X]; ZC = z[X];
 		chemical_gradient(XC,dx, MUC, DMUC);
 		for(int a = 0; a<4; a++){
@@ -290,73 +290,73 @@ int ChandrasekharWD::RK4integrate(const int Len, double dx, int grid){
 }
 
 //Here we define functions to access radius, pressure, etc.
-double ChandrasekharWD::rad(int X){
+double ChandrasekharWD::rad(std::size_t X){
 	return Rn*xi[X];
 }
-double ChandrasekharWD::rho(int X){
+double ChandrasekharWD::rho(std::size_t X){
 	using namespace Chandrasekhar;
 	return B0*mue[X]*pow(x[X],3);
 }
-double ChandrasekharWD::drhodr(int X){
+double ChandrasekharWD::drhodr(std::size_t X){
 	using namespace Chandrasekhar;
 	return 3.*B0*mue[X]*x[X]*y[X]*z[X]/Rn + B0*pow(x[X],3)*dmue[X]/Rn; //note: dx/dxi = z*y/x
 }
-double ChandrasekharWD::P(int X){
+double ChandrasekharWD::P(std::size_t X){
 	using namespace Chandrasekhar;
 	return A0*f[X];
 }
-double ChandrasekharWD::dPdr(int X){
+double ChandrasekharWD::dPdr(std::size_t X){
 	using namespace Chandrasekhar;
 	return 8.*A0*pow(x[X],3)*z[X]/Rn; //see eqn (9) in Chandrasekhar 1935
 }
-double ChandrasekharWD::Phi(int X){
+double ChandrasekharWD::Phi(std::size_t X){
 	using namespace Chandrasekhar;
 	//zeroed to join exterior solution at surface, where Phi->0 at infty
 	return -8.*A0/B0 * (y[X] - 1. + z[len-1]*xi[len-1])/mue[X];
 }
-double ChandrasekharWD::dPhidr(int X){
+double ChandrasekharWD::dPhidr(std::size_t X){
 	using namespace Chandrasekhar;
 	return -8.*A0/B0 * z[X]/Rn/mue[X];
 }
-double ChandrasekharWD::mr(int X){
+double ChandrasekharWD::mr(std::size_t X){
 	using namespace Chandrasekhar;
 	return B0*pow(Rn,3)*mass[X];
 }
 
-double ChandrasekharWD::Schwarzschild_A(int X, double GamPert){
+double ChandrasekharWD::Schwarzschild_A(std::size_t X, double GamPert){
 	if(GamPert==0.0) return dmue[X]/mue[X]/Rn;
 	else        	 return dmue[X]/mue[X]/Rn-z[X]*(8.*pow(x[X],3)/f[X]/GamPert-3.*y[X]/pow(x[X],2))/Rn;
 }
 
-double ChandrasekharWD::getAstar(int X, double GamPert){
+double ChandrasekharWD::getAstar(std::size_t X, double GamPert){
 	if(GamPert==0.0) return -dmue[X]/mue[X]*xi[X];
 	else        	 return -dmue[X]/mue[X]*xi[X] + z[X]*xi[X]*(8.*pow(x[X],3)/f[X]/GamPert-3.*y[X]/pow(x[X],2));
 }
 
-double ChandrasekharWD::Ledoux(int X, double GamPert){
+double ChandrasekharWD::Ledoux(std::size_t X, double GamPert){
 	return dmue[X]/mue[X]/Rn;
 }
 
-double ChandrasekharWD::getU(int X){
+double ChandrasekharWD::getU(std::size_t X){
 	if(X==0) return 3.0;
 	return -mue[X]*mue[X]*xi[X]*pow(x[X],3)/z[X];
 }
 
-double ChandrasekharWD::getVg(int X, double GamPert){
+double ChandrasekharWD::getVg(std::size_t X, double GamPert){
 	if(GamPert==0.0) return -8.*pow(x[X],3)*xi[X]*z[X]/f[X]/Gamma1(X);
 	else			 return -8.*pow(x[X],3)*xi[X]*z[X]/f[X]/GamPert;
 }
 
-double ChandrasekharWD::getC(int X){
+double ChandrasekharWD::getC(std::size_t X){
 	if(X==0) return z[len-1]*xi[len-1]/2./yc[1]*mue[0]/mue[len-1];
 	return (z[len-1]/z[X])*(xi[X]/xi[len-1])*(mue[X]/mue[len-1]);
 }
 
-double ChandrasekharWD::Gamma1(int X){
+double ChandrasekharWD::Gamma1(std::size_t X){
 	return 8.*pow(x[X],5)/(3.*y[X]*f[X]);
 }
 
-double ChandrasekharWD::sound_speed2(int X, double GamPert){
+double ChandrasekharWD::sound_speed2(std::size_t X, double GamPert){
 	using namespace Chandrasekhar;
 	if(GamPert == 0.0) return Gamma1(X)*A0/B0*f[X]/pow(x[X],3)/mue[X];
 	else               return GamPert  *A0/B0*f[X]/pow(x[X],3)/mue[X];
@@ -524,7 +524,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	//print results to text file
 	// radius rho pressure gravity
 	double irc=1./rho(0), ipc=1./P(0), R=Radius(), ig=1./dPhidr(length()-1);
-	for(int X=0; X< length(); X++){
+	for(std::size_t X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t",
 			rad(X)/R, rho(X)*irc, -drhodr(X)*irc*R,
 			P(X)*ipc, -dPdr(X)*ipc*R,
@@ -538,7 +538,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	std::string title = graph_title();
 	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
@@ -556,7 +556,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	txtname = filename + "/coefficients.txt";
 	outname = filename + "/coefficients.png";
 	fp  = fopen(txtname.c_str(), "w");
-	for(int X=1; X< length()-1; X++){
+	for(std::size_t X=1; X< length()-1; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			xi[X],
 			-xi[X]*Rn*Schwarzschild_A(X, 0.),
@@ -570,7 +570,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
@@ -591,7 +591,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	outname = filename + "/BruntVaisala.png";
 	fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
-	for(int X=1; X< length()-1; X++){
+	for(std::size_t X=1; X< length()-1; X++){
 		//N^2 = -g*A
 		N2 = -dPhidr(X)*Schwarzschild_A(X,0.);
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
@@ -604,7 +604,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
@@ -626,7 +626,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	outname = filename + "/chemical.png";
 	fp  = fopen(txtname.c_str(), "w");
 	double H,He;
-	for(int X=1; X< length()-1; X++){
+	for(std::size_t X=1; X< length()-1; X++){
 		He = 2.*(mue[X]-1.)/mue[X];
 		H = 1.-He;
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
@@ -640,7 +640,7 @@ void ChandrasekharWD::writeStar(const char *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x 10\n");

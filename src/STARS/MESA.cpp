@@ -18,7 +18,7 @@
 #include "MESA.h"
 
 //initalize polytrope from index and tolerance
-MESA::MESA(const char* filename, int L) : len(L) {
+MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	printf("Beginning read-in of MESA data.\n");
 	FILE *infile;
 	if( !(infile = fopen(filename, "r")) ) {
@@ -29,14 +29,14 @@ MESA::MESA(const char* filename, int L) : len(L) {
 		system("ls");
 		exit(1);
 	}  
-	fscanf(infile, "  %d     %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
+	fscanf(infile, "  %lu    %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
 	printf("\tMass = %0.2lg\tRadis = %0.2lg\tLuminosity = %0.2lg\n", Mstar, Rstar, Lstar);
-	printf("Number of grid points in MESA calculation %d\n", Ntot);
+	printf("Number of grid points in MESA calculation %lu\n", Ntot);
 	name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", Mstar, Rstar, Lstar);
 			
 	//read through file once to get the max values of R,M
-	int firstdata = ftell(infile);
-	for(int k=0; k<Ntot-1; k++){
+	std::size_t firstdata = ftell(infile);
+	for(std::size_t k=0; k<Ntot-1; k++){
 		fscanf(infile, "%*[^\n]\n");
 	}
 	fscanf(infile, "%*d %lg %lg %lg %*lg %lg %*lg %lg %*[^\n]", &Rtot, &Mtot, &Ltot, ts, &dels);
@@ -57,7 +57,7 @@ MESA::MESA(const char* filename, int L) : len(L) {
 		
 	//read from the file
 	fseek(infile, firstdata, SEEK_SET);
-	for(int k=0; k<Ntot; k++){
+	for(std::size_t k=0; k<Ntot; k++){
 		fscanf(infile, "     %*d     %lg     %lg     %*lg", &rt[k], &mt[k]);
 		fscanf(infile, "     %lg     %*lg    %lg     %*lg", &pt[k], &dt[k]);
 		fscanf(infile, "     %lg     %lg     %*lg    %*lg", &Nt[k], &Gt[k]);
@@ -83,13 +83,13 @@ MESA::MESA(const char* filename, int L) : len(L) {
 	if(n < 1) n = 1; //must at least divide each interval in half
 	len = pow(2,int(n))*(Ntot-1) + 1;
 	subgrid = pow(2,int(n));
-	printf("number of grid points to be used %d\n", len);
+	printf("number of grid points to be used %lu\n", len);
 			
 	radi = new double[len];
-	int kk=0;
-	for(int k=0; k<Ntot-1; k++){
+	std::size_t kk=0;
+	for(std::size_t k=0; k<Ntot-1; k++){
 		double dr = (rt[k+1]-rt[k])/subgrid;
-		for(int ki=0; ki<subgrid; ki++,kk++) radi[kk] = rt[k]+double(ki)*dr;
+		for(std::size_t ki=0; ki<subgrid; ki++,kk++) radi[kk] = rt[k]+double(ki)*dr;
 	}
 	radi[len-1] = rt[Ntot-1];
 		
@@ -100,7 +100,7 @@ MESA::MESA(const char* filename, int L) : len(L) {
 	double *Vt = new double[Ntot]; //Vg
 	
 	At[0] = 0.0; Ut[0] = 3.0; Vt[0] = 0.0; Ct[0] = 3./dt[0];
-	for(int k=1; k<Ntot-1; k++){
+	for(std::size_t k=1; k<Ntot-1; k++){
 		At[k] = Nt[k]*rt[k]/gt[k];
 		Ct[k] = pow(rt[k],3)/mt[k];
 		Ut[k] = dt[k]*pow(rt[k],3)/mt[k];
@@ -135,7 +135,7 @@ MESA::MESA(const char* filename, int L) : len(L) {
 	delete[] rt;
 	
 	indexFit = len/2;
-	for(int X=1; X<len-1; X++){
+	for(std::size_t X=1; X<len-1; X++){
 		//set matching point as where density is half its central value
 		if(dens->interp(radi[X-1])>rhof & dens->interp(radi[X+1])<=rhof)
 			indexFit = X;
@@ -168,21 +168,21 @@ double MESA::Gee()   {return G_CGS;} //Newton's constant in appropriate units
 double MESA::light_speed2(){return C_CGS*C_CGS;} //light speed in appropriate units
 
 //Here we define functions to access radius, pressure, etc.
-double MESA::rad(int X){
+double MESA::rad(std::size_t X){
 	if(X>=0 & X<len) return Rtot*radi[X];
 	else {
 		printf("\nradius out of range\n");	
 		return nan("");
 	}
 }
-double MESA::rho(int X){
+double MESA::rho(std::size_t X){
 	if(X>=0 & X<len) return Dscale*dens->interp(radi[X]);
 	else {
 		printf("\nrho out of range\n");	
 		return nan("");
 	}
 }
-double MESA::drhodr(int X){
+double MESA::drhodr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Dscale/Rtot*dens->deriv(radi[X]);
 	else {
@@ -190,14 +190,14 @@ double MESA::drhodr(int X){
 		return nan("");
 	}
 }
-double MESA::P(int X){
+double MESA::P(std::size_t X){
 	if(X>=0 & X<len) return Pscale*pres->interp(radi[X]);
 	else {
 		printf("\nP out of range\n");	
 		return nan("");
 	}
 }
-double MESA::dPdr(int X){
+double MESA::dPdr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Pscale/Rtot*pres->deriv(radi[X]);
 	else {
@@ -206,17 +206,17 @@ double MESA::dPdr(int X){
 	}
 }
 /** NEEDS TO BE IMPLEMENTED **/
-double MESA::Phi(int X){
+double MESA::Phi(std::size_t X){
 	return 0.0;
 }
-double MESA::dPhidr(int X){
+double MESA::dPhidr(std::size_t X){
 	if(X>=0 & X<len) return Gscale*grav->interp(radi[X]);
 	else {
 		printf("\ng out of range\n");	
 		return nan("");
 	}
 }
-double MESA::mr(int X){
+double MESA::mr(std::size_t X){
 	if(X>=0 && X<len) return Mtot*mass->interp(radi[X]);
 	else {
 		printf("\nm out of range\n");	
@@ -224,40 +224,40 @@ double MESA::mr(int X){
 	}
 }
 
-double MESA::Schwarzschild_A(int X, double GamPert){
+double MESA::Schwarzschild_A(std::size_t X, double GamPert){
 	/*NOTE:  A* = -r*A, but rad is not dimensionless -- so must divide by R here*/
 	if(GamPert==0.0) return -aSpline->interp(radi[X])/radi[X]/Rtot;
 	else             return dens->deriv(radi[X])/dens->interp(radi[X])/Rtot
 						  - pres->deriv(radi[X])/pres->interp(radi[X])/Rtot/GamPert;
 }
 
-double MESA::getAstar(int X, double GamPert){
+double MESA::getAstar(std::size_t X, double GamPert){
 	if(GamPert==0.0) return aSpline->interp(radi[X]);
 	else             return radi[X]*pres->deriv(radi[X])/pres->interp(radi[X])/GamPert
 						  - radi[X]*dens->deriv(radi[X])/dens->interp(radi[X]);
 }
 
-double MESA::getU(int X){
+double MESA::getU(std::size_t X){
 	//U = 4pi rho r/g
 	if(X==0) return 3.0;
 	return uSpline->interp(radi[X]);
 }
 
-double MESA::getVg(int X, double GamPert){
+double MESA::getVg(std::size_t X, double GamPert){
 	//Vg = gr rho/(Gamma1*P)
 	if(GamPert==0.0) return vSpline->interp(radi[X])/Gam1->interp(radi[X]);
 	else			 return vSpline->interp(radi[X])/GamPert;
 }
 
-double MESA::getC(int X){
+double MESA::getC(std::size_t X){
 	if(X==0) return 3./dens->interp(0.0);
 	return cSpline->interp(radi[X]);
 }
 
 
-double MESA::Gamma1(int X){return Gam1->interp(radi[X]);}
+double MESA::Gamma1(std::size_t X){return Gam1->interp(radi[X]);}
 
-double MESA::sound_speed2(int X, double GamPert){
+double MESA::sound_speed2(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return Pscale/Dscale*pres->interp(radi[X])/dens->interp(radi[X])*Gam1->interp(radi[X]);
 	else               return Pscale/Dscale*pres->interp(radi[X])/dens->interp(radi[X])*GamPert;
 }
@@ -538,7 +538,7 @@ void MESA::printBV(const char *const c, double const g){
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
 	double scaleN2 = G_CGS*Mtot*pow(Rtot,-3);		//put N^2 back into CGS units
-	for(int X=1; X< length(); X++){
+	for(std::size_t X=1; X< length(); X++){
 		N2 = scaleN2*BVfq->interp(radi[X]);
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
 			(1.-mass->interp(radi[X])),
@@ -550,7 +550,7 @@ void MESA::printBV(const char *const c, double const g){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x\n");
@@ -602,13 +602,13 @@ void MESA::printCoefficients(const char *const c, double const g){
 	fclose(fp);
 	
 	//print fits to those coefficients at center and surface
-	int NC=15, NS=15;
+	std::size_t NC=15, NS=15;
 	txtname = filename + "/centerfit.txt";
 	fp = fopen(txtname.c_str(), "w");
 	double x2 = 0.0;
 	gam1 = Gam1->interp(radi[1]);
 	fprintf(fp, "x           \trho         \trho_fit     \tP           \tP_fit       \tA*          \tA*_fit      \tU           \tU_fit       \tVg          \tVg_fit      \tc1          \tc1_fit\n");
-	for(int X=0; X<NC; X++){
+	for(std::size_t X=0; X<NC; X++){
 		x2 = radi[X]*radi[X];
 		fprintf(fp, "%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\n",
 			radi[X],
@@ -632,7 +632,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	double t = 1.-radi[len-2];
 	gam1 = Gam1->interp(radi[len-1]);
 	fprintf(fp, "x           \trho         \trho_fit     \tP           \tP_fit       \tA*          \tA*_fit      \tU           \tU_fit       \tVg          \tVg_fit      \tc1          \tc1_fit\n");
-	for(int X=len-1; X>=len-NS-1; X--){
+	for(std::size_t X=len-1; X>=len-NS-1; X--){
 		t = 1. - radi[X];
 		fprintf(fp, "%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\t%+12le\n",
 			radi[X],
@@ -656,7 +656,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	txtname = filename + "/coefficients.txt";
 	outname = filename + "/coefficients.png";
 	fp  = fopen(txtname.c_str(), "w");
-	for(int X=0; X< length(); X++){
+	for(std::size_t X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			radi[X],
 			-radi[X]*aSpline->interp(radi[X]),
@@ -669,7 +669,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -748,7 +748,7 @@ void MESA::writeStar(const char *const c){
 	double 	irc=1./dens->interp(radi[0]), 
 			ipc=1./pres->interp(radi[0]),
 			ig =1./grav->interp(radi[len-1]);
-	for(int X=0; X< length(); X++){
+	for(std::size_t X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			radi[X],
 			dens->interp(radi[X])*irc,  -dens->deriv(radi[X])*irc*Rtot,
@@ -785,7 +785,7 @@ double MESA::SSR(){
 	double d2Phi = 0.0;
 	double e1, e2, n1, n2;
 	FILE *fp = fopen("SSR.txt", "w");
-	for(int X=2; X<len-4; X++){
+	for(std::size_t X=2; X<len-4; X++){
 		//Euler equation
 		e1 = fabs(pres->deriv(radi[X])  +      dens->interp(radi[X])*grav->interp(radi[X]));
 		n1 = fabs(pres->deriv(radi[X])) + fabs(dens->interp(radi[X])*grav->interp(radi[X]));
@@ -804,7 +804,7 @@ double MESA::SSR(){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", "SSR.png");
 	const char* title = graph_title().c_str();
 	fprintf(gnuplot, "set title 'error for %s'\n", title);

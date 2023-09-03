@@ -14,9 +14,9 @@
 
 class MESA : public Star {
 public:	
-	MESA(const char*, int);	//constructor
+	MESA(const char*, std::size_t);	//constructor
 	virtual ~MESA(); //destructor - clears all space in memory
-	int length() override {return len;}
+	std::size_t length() override {return len;}
 	double Mass() override;
 	double Radius() override;
 	double Gee() override;
@@ -25,31 +25,31 @@ public:
 		return strmakef("MESA model w/ Mass=%lg", Mtot);
 	}
 	
-	double rad(int) override;
-	double rho(int) override, drhodr(int) override;
-	double   P(int) override,   dPdr(int) override;
-	double Phi(int) override, dPhidr(int) override;
-	double mr(int)  override;
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double mr(std::size_t)  override;
 	
-	double Gamma1(int) override;
-	double Schwarzschild_A(int, double GamPert=0.0) override;
-	double getAstar(int, double GamPert=0.0) override;
-	double getVg(int, double GamPert=0.0) override;
-	double getU(int) override;
-	double getC(int) override;
-	double sound_speed2(int, double GamPert=0) override;
+	double Gamma1(std::size_t) override;
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0) override;
 
 private:
-	void printSection(int, int);
-	void subgridCubicSpline(const int, const int, const int*);
+	void printSection(std::size_t, std::size_t);
+	void subgridCubicSpline(const std::size_t, const std::size_t, const std::size_t*);
 	void spline(
-		const int, const int, const int *const,
+		const std::size_t, const std::size_t, const std::size_t *const,
 		const double *const,  const double *const,
 		double*, double*
 	);
-	void getSplineCoefficients(const int, double*, const double *const, const double *const);
+	void getSplineCoefficients(const std::size_t, double*, const double *const, const double *const);
 
-	int Ntot, len, subgrid;  //Ntot = grid size from MESA
+	std::size_t Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
 	//in units of g, cm, erg/s, respectively
 	double Mtot, Rtot, Ltot;

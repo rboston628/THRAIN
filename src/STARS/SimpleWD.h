@@ -29,10 +29,10 @@ public:
 	SimpleWD(
 		double M, 	//the mass, in solar units
 		double T,	//effective temperature in K
-		int N
+		std::size_t N
 	);
 	virtual ~SimpleWD();	//destructor
-	int length() override {return Ntot;}
+	std::size_t length() override {return Ntot;}
 	//these three functions specify units
 	double Radius() override;	//total radius
 	double Mass() override;	    //total mass
@@ -40,21 +40,21 @@ public:
 	//in Newtonian, light speed is infinity...
 	virtual double light_speed2() override;
 	
-	double rad(int) override;
-	double rho(int) override, drhodr(int) override;
-	double   P(int) override,   dPdr(int) override;
-	double Phi(int) override, dPhidr(int) override;
-	double  mr(int) override;
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double  mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0) override;
-	double getAstar(int, double GamPert=0.0) override;
-	double getVg(int, double GamPert=0.0) override;
-	double getU(int) override;
-	double getC(int) override;
-	double Gamma1(int) override;
-	double sound_speed2(int, double GamPert=0.0) override;
-	double Ledoux(int, double GamPert=0.0);
-	double BruntVaisala(int, double GamPert=0.0);
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	double Ledoux(std::size_t, double GamPert=0.0);
+	double BruntVaisala(std::size_t, double GamPert=0.0);
 	Abundance Xmass;
 		
 private:
@@ -65,7 +65,7 @@ private:
 	void rescaleR();
 
 
-	int Ntot, Ncore, Natm;//number of grid points
+	std::size_t Ntot, Ncore, Natm;//number of grid points
 	
 	//surfce values
 	double Msolar, Mstar; //in solar and CGS units
@@ -79,8 +79,8 @@ private:
 	double *logQ;	   // the independent variable
 	StellarVar*  logY; // log density, radius, pressure, mass, temperature, luminosity
 	StellarVar* dlogY; // dlogY/dlogQ, as above
-	void setupGrid(double, int);
-	void expandGrid(int);
+	void setupGrid(double, std::size_t);
+	void expandGrid(std::size_t);
 
 	StellarVar Yscale, logYscale;
 	StellarVar Ysolar;
@@ -88,11 +88,11 @@ private:
 	
 	//methods to calculate the two regions
 	static const int numv=3;
-	void   joinAtCenter(double x[numv], double f[numv], double& F);
-	double calculateCore( const double x[numv], int Nmax);
-	int    firstCoreStep( const double x[numv], double& rholast, int Nmax);
-	void   calculateAtmosphere( const double x[numv]);
-	int    firstAtmosphereStep( const double x[numv], double& rholast);
+	void        joinAtCenter(double x[numv], double f[numv], double& F);
+	double      calculateCore( const double x[numv], std::size_t Nmax);
+	std::size_t firstCoreStep( const double x[numv], double& rholast, std::size_t Nmax);
+	void        calculateAtmosphere( const double x[numv]);
+	std::size_t firstAtmosphereStep( const double x[numv], double& rholast);
 	StellarVar dYdR(       const StellarVar&, const double& delta, const double epsilon=1.0);
 	StellarVar dlogYdlogR( const StellarVar&, const double& delta, const double epsilon=1.0);
 	StellarVar dYdM(       const StellarVar&, const double& delta, const double epsilon=1.0);
