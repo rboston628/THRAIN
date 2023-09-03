@@ -192,7 +192,7 @@ public:
         FILE* in = fopen(testfilename.c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.modetype, modetype::nonradial);
-        TS_ASSERT_IS_NAN(data.adiabatic_index);
+        TS_ASSERT(std::isnan(data.adiabatic_index));
         fclose(in);
     }
 

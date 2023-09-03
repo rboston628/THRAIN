@@ -253,8 +253,8 @@ void test_find_brackets_move_failures(){
     #              */
     xguess = under_root;
     rootfind::bisection_find_brackets_move(flat, xguess, xmin, xmax);
-    TS_ASSERT_IS_NAN(xmin);
-    TS_ASSERT_IS_NAN(xmax);
+    TS_ASSERT(std::isnan(xmin));
+    TS_ASSERT(std::isnan(xmax));
 
     /* test situation
     #  \   /
@@ -264,8 +264,8 @@ void test_find_brackets_move_failures(){
     #              */
     xguess = root;
     rootfind::bisection_find_brackets_move(parabola, xguess, xmin, xmax);
-    TS_ASSERT_IS_NAN(xmin);
-    TS_ASSERT_IS_NAN(xmax);
+    TS_ASSERT(std::isnan(xmin));
+    TS_ASSERT(std::isnan(xmax));
 }
 
 void test_find_brackets_newton(){
