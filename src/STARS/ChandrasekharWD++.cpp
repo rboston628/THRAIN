@@ -366,10 +366,6 @@ double ChandrasekharWD::sound_speed2(int X, double GamPert){
 double ChandrasekharWD::Radius(){return Rn*xi[len-1];}	//total radius
 double ChandrasekharWD::Mass(){return mr(len-1);}//total mass
 double ChandrasekharWD::Gee(){return G_CGS;}
-//in Newtonian, light speed is infinity...
-double ChandrasekharWD::light_speed2(){return 1.0;}
-
-
 
 // **************************  CENTRAL BOUNDARY **************************************
 // the following provide coefficients for central expansions of A*, Vg, U, c1 in trms of x=r/R
@@ -508,8 +504,7 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 	if(maxPow  > 4) maxPow = 4;
 }
 
-
-void ChandrasekharWD::writeStar(char *c){
+void ChandrasekharWD::writeStar(const char *const c){
 	//create names for files to be opened
 	std::string filename, rootname, txtname, outname;
 	if(c==NULL)	filename = "./out/" + name;

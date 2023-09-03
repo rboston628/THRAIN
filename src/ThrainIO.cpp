@@ -633,7 +633,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 			break;
 	}
 	fprintf(output_file, "%s  \n", dwarf[d++]);
-	fprintf(output_file, "%s  Number of grid points : %d\n", dwarf[d++], calcdata.Ngrid);
+	fprintf(output_file, "%s  Number of grid points : %lu\n", dwarf[d++], calcdata.Ngrid);
 	fprintf(output_file, "%s  Fractional RMS error  : %1.3le\n", dwarf[d++], calcdata.star_SSR);
 	//bottom bar
 	fprintf(output_file, "#");
@@ -714,7 +714,6 @@ int write_mode_output(Calculation::OutputData& calcdata){
 			continue;
 		}
 		fprintf(output_file, "%0.12le \t%3.12le \t%0.12le", calcdata.w[j], calcdata.f[j],calcdata.period[j]);
-		//fprintf(output_file, "\t%1.2le", calcdata.mode_SSR[j]);
 		for(int e=0; e<calcdata.i_err; e++){
 			if(!std::isnan(calcdata.err[e][j])) fprintf(output_file, "\t%1.2le", calcdata.err[e][j]);
 			else fprintf(output_file, "\tN/A");
@@ -744,7 +743,6 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 	fprintf(output_file, "\n");
 }
 
-//NOTE: this function has a problem and will always cause a seg fault
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
 	//open file to write output summary
@@ -777,7 +775,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	std::unordered_map<int, ModeBase*> fmode;
 	for(auto lt = l_list.begin(); lt!=l_list.end(); lt++){
 		if(*lt<2){
-			printf("no tidal response at this order\n");
+			printf("\tl=%d\tno tidal response at this order\n", *lt);
 			continue;
 		}
 		for(int i=0; i<calcdata.mode_done; i++){
@@ -787,8 +785,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 			}
 		}
 	}
-		
-			
+
 	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
@@ -815,7 +812,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	}
 	fclose(output_file);
 	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
-		delete fmode[*lt];
+		fmode[*lt] = nullptr;
 	}
 	printf("\tdone\n");
 	printf("done!\n");

@@ -4,7 +4,7 @@
 #ifndef INTERP
 #define INTERP
 
-#include <math.h>
+#include <cmath>
 
 class Interpolator {
 	public:

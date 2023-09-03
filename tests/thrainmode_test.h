@@ -19,13 +19,13 @@ public:
     // test that result fails if given bad L or K for lookup
     void test_compare_JCD_bad_lk(){
         // fail L too low
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 0, 1, 0.01));
+        TS_ASSERT_IS_NAN(mode::compare_JCD(1.5, 0, 1, 0.01));
         // fail L too high
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 4, 1, 0.01));
+        TS_ASSERT_IS_NAN(mode::compare_JCD(1.5, 4, 1, 0.01));
         // fail K too low
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 1, 0, 0.01));
+        TS_ASSERT_IS_NAN(mode::compare_JCD(1.5, 2, 0, 0.01));
         // fail K too high
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 1, 36, 0.01));
+        TS_ASSERT_IS_NAN(mode::compare_JCD(1.5, 1, 36, 0.01));
     }
 
     void test_compare_JCD(){

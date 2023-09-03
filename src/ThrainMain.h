@@ -84,6 +84,9 @@ struct OutputData {
 	~OutputData(){
 		delete star;
 		delete driver;
+		for(auto it=mode.begin(); it!=mode.end(); it++){
+			delete (*it);
+		}
 		for(int e=0; e<i_err; e++)
 			delete[] err[e];
 	}

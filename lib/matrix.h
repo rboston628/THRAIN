@@ -3,12 +3,12 @@
 //		This file describes certain matri operations for the GRPulse code.  
 // **************************************************************************************
 
+#include <cmath>
+#include <stdio.h>
+#include <assert.h>
 
 #ifndef MATRIX
 #define MATRIX
-
-#include <stdio.h>
-#include <assert.h>
 
 namespace matrix{
 
@@ -160,9 +160,9 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 	std::size_t L=0;
 	x[N-1] = b[N-1];
 	if(HOMOGENEOUS) x[N-1] = 1.0;
-	for(int i=N-1;i>=0; i--){
+	for(int i=N-2;i>=0; i--){
 		L=0;
-		while(m[i][L]==T(0) && L<N-1){	
+		while(m[i][L]==T(0) && L<N){	
 			L++;
 		}
 		x[i] = (HOMOGENEOUS ? 0.0 : b[i]);
@@ -170,6 +170,11 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 			x[i] -= m[i][j]*x[j];
 		}
 	}
+	bool produced_nan = false;
+	for(int i=0; i<N; i++){
+		if( (x[i]-x[i]) != T(0) ) produced_nan = true;
+	}
+	if(produced_nan){printf("ERROR in invertMatrix: NaNs produced\n"); return 1;}
 	return 0;
 }
 

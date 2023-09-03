@@ -75,7 +75,6 @@ Mode<numvar>::Mode(double omg2, int l, int m, ModeDriver *drv)
 	this->k = verifyMode();
 }
 
-
 //This constructor guesses initial frequency based on a desired k,l mode
 //The initial guess is taken from the analytic solutions for n=0 polytrope
 template <std::size_t numvar> 

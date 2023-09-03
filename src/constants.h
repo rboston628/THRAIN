@@ -5,7 +5,7 @@
 //  Reece Boston, Mar 24, 2022
 // **************************************************************************************
 
-#include <math.h>
+#include <cmath>
 #include <complex>
 #include <stdio.h>
 #include <stdlib.h>

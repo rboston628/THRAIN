@@ -299,8 +299,8 @@ public:
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Frequencies: nonradial 5/3\n";
-        int Lvalues[] = {3,1,2   /*duplixates to be ignored */, 3,1,2};
-        int Kvalues[] = {4,2,3,5 /*duplixates to be ignored */, 5,5,1};
+        int Lvalues[] = {3,1,2     /* duplicates to be ignored */, 3,1,2};
+        int Kvalues[] = {4,2,3,5,1 /* duplicates to be ignored */, 5,5,1};
         for(int L : Lvalues){
             for(int K : Kvalues){
                 filecontents += strmakef("%d,%d\n", L,K);
@@ -564,7 +564,7 @@ public:
         std::string testfilename("tests/test_file.txt");
         std::string filecontents =
             "# test a comment\n\n"
-            "Name: valid_test_name\n"
+            "Name: TEST_SETUP_OUTPUT\n"
             "Model: newtonian polytrope 1.5 1\n"
             "Params: mass 1.0 radius 10.0\n"
             "Units: geo\n"
@@ -586,7 +586,7 @@ public:
         outdata.star = nullptr;
         outdata.driver = nullptr;
         TS_ASSERT_EQUALS(0, io::setup_output(indata, outdata));
-        TS_ASSERT_EQUALS(outdata.calcname, "valid_test_name");
+        TS_ASSERT_EQUALS(outdata.calcname, "TEST_SETUP_OUTPUT");
         TS_ASSERT_EQUALS(outdata.regime, regime::PN0); 
         TS_ASSERT_EQUALS(outdata.model, model::polytrope);
         TS_ASSERT_EQUALS(outdata.modetype, modetype::nonradial);

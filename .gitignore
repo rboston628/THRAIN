@@ -7,7 +7,6 @@
 !README.md
 !LICENSE
 !makefile
-!lib/makelib
 !.github/
 !.github/workflows/
 !.github/workflows/c-cpp.yml
@@ -30,9 +29,14 @@ src/STARS/ZAMS.cpp
 
 # the library
 !lib/
-!lib/*.h
-!lib/*.hxx
-!lib/*.cpp
+!lib/makelib
+!lib/chandra.*
+!lib/matrix.*
+!lib/rootfind.*
+!lib/Splinor.*
+!lib/stellar.*
+!lib/string.*
+lib/*.o
 
 # the test suite
 !tests/

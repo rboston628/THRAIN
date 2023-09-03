@@ -2,6 +2,7 @@
 #include <cxxtest/TestSuite.h>
 #include <functional>
 #include <random>
+#include <cmath>
 
 // TODO: time-profile solutions
 // time profile 100 dets and inversions
@@ -76,6 +77,8 @@ bool matrix_triangular(T const (&m)[N][N]){
         for(int j=0; j<i && upper; j++){
             upper &= (m[i][j]==T(0));
         }
+        //further ensure the diagonal is not zero
+        upper &= (m[i][i]!=T(0));
     }
     return upper;
 }
