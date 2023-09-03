@@ -15,7 +15,7 @@ T rootfind::newton_search(
 	std::function<T(T)>& func,	//the function to find zero of
 	T &x,						//an initial guess for the zero
 	T dx,						//the step to use in numerical derivatives
-	double const tol,				//tolerance of search, to be this accurate
+	double const tol,			//tolerance of search, to be this accurate
 	std::size_t const max_iter	//maximum number of iterations in search
 ){
 	T f1 = func(x), f2, ddx;

@@ -15,26 +15,26 @@
 void Star::writeStar(const char *const c){
 	//create names for files to be opened
 	// char pathname[256];
-	std::string pathname;
-	if(c==NULL)	pathname = strmakef("./out/%s", name.c_str());
-	else pathname = strmakef("./%s/star/", c);
+	std::string outputdir;
+	if(c==NULL)	outputdir = strmakef("./out/%s/", name.c_str());
+	else outputdir = strmakef("./%s/star/", c);
 	
-	system( ("mkdir -p "+pathname).c_str() );
+	system( ("mkdir -p "+outputdir).c_str() );
 	
-	printStar(pathname.c_str());
-	printBV(pathname.c_str());
-	printCoefficients(pathname.c_str());
+	printStar(outputdir.c_str());
+	printBV(outputdir.c_str());
+	printCoefficients(outputdir.c_str());
 }
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
-void Star::printStar(const char *const pathname){
+void Star::printStar(const char *const outputdir){
 	//create names for files to be opened
-	std::string txtname = addstring(pathname,"/") + name + ".txt";
-	std::string outname = addstring(pathname,"/") + name + ".png";
+	std::string txtname = strmakef("%s/%s.txt", outputdir, name.c_str());
+	std::string outname = strmakef("%s/%s.png", outputdir, name.c_str());
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( addstring("mkdir -p ",pathname).c_str() );
+		system( addstring("mkdir -p ",outputdir).c_str() );
 		fp = fopen(txtname.c_str(), "w");
 	}
 	//print results to text file
@@ -54,8 +54,7 @@ void Star::printStar(const char *const pathname){
 	fprintf(gnuplot, "set term png size 1600,800\n");
 	fprintf(gnuplot, "set samples %d\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
-	std::string title = graph_title();
-	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
+	fprintf(gnuplot, "set title 'Profile for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'rho/rho_c, P/P_c, m/M, g/g_S'\n");
 	fprintf(gnuplot, "set yrange [0:1]\n");
@@ -106,10 +105,9 @@ double Star::SSR(){
 	return sqrt((checkPoiss+checkEuler)/double(2*len-8));
 }
 
-void Star::printBV(const char *const pathname, double const gam1){
-	std::string txtname = addstring(pathname, "/BruntVaisala.txt");
-	std::string outname = addstring(pathname, "/BruntVaisala.png");
-	std::string title = graph_title();
+void Star::printBV(const char *const outputdir, double const gam1){
+	std::string txtname = addstring(outputdir, "/BruntVaisala.txt");
+	std::string outname = addstring(outputdir, "/BruntVaisala.png");
 	
 	//print the Brunt-Vaisala frequency
 	FILE* fp  = fopen(txtname.c_str(), "w");
@@ -128,7 +126,7 @@ void Star::printBV(const char *const pathname, double const gam1){
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
-	fprintf(gnuplot, "set title 'Brunt-Vaisala and Lamb for %s'\n", title.c_str());
+	fprintf(gnuplot, "set title 'Brunt-Vaisala and Lamb for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel '-log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} N^2 & log_{10} L_1^2 (Hz^2)\n");
 	fprintf(gnuplot, "set logscale x 10\n");
@@ -143,11 +141,15 @@ void Star::printBV(const char *const pathname, double const gam1){
 	pclose(gnuplot);
 }
 
-void Star::printCoefficients(const char *const pathname, double const gam1){
+void Star::printCoefficients(const char *const outputdir, double const gam1){
 
 	std::string txtname, outname;
 	std::string title = graph_title();
 	
+	// FIRST: print out coefficients near center and surface, for series analysis
+	std::string wavecoeffdir = addstring(outputdir, "/wave_coefficient");
+	system( ("mkdir -p " + wavecoeffdir).c_str() ); 
+
 	int Ntot = length();
 	const int num_c=3, num_s=5;
 	int bc_c = (num_c-1)*2, bc_s = (num_s-1);
@@ -165,14 +167,14 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 	getC1Surface(c1,bc_s);
 	
 	//print the coefficients of the center and surface, for series analysis
-	txtname = addstring(pathname, "/center.txt");
+	txtname = wavecoeffdir + "/center.txt";
 	FILE *fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "A*:\t%0.16le\t%0.16le\t%0.16le\n", A0[0],A0[1],A0[2]);
 	fprintf(fp, "U :\t%0.16le\t%0.16le\t%0.16le\n", U0[0],U0[1],U0[2]);
 	fprintf(fp, "Vg:\t%0.16le\t%0.16le\t%0.16le\n", V0[0],V0[1],V0[2]);
 	fprintf(fp, "c1:\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	txtname = addstring(pathname, "/surface.txt");
+	txtname = wavecoeffdir + "/surface.txt";
 	fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "A*:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", A1[0],A1[1],A1[2],A1[3],A1[4]);
 	fprintf(fp, "U :\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", U1[0],U1[1],U1[2],U1[3],U1[4]);
@@ -182,15 +184,15 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 	
 	//print fits to those coefficients at center and surface
 	int NC=15, NS=15;
-	txtname = strmakef("%s/centerfit.txt", pathname);
+	txtname = wavecoeffdir + "/centerfit.txt";
 	fp = fopen(txtname.c_str(), "w");
 	double Rtot = Radius();
 	double x, x2;
-	fprintf(fp, "x        \tA*      \tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
+	fprintf(fp, "x\tA\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
 	for(int X=0; X<NC; X++){
 		x = rad(X)/Rtot;
 		x2 = pow(x,2);
-		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
+		fprintf(fp, "%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\t%0.8le\n",
 			x,
 			getAstar(X, gam1),
 			A0[0] + A0[1]*x2 + A0[2]*x2*x2,
@@ -203,10 +205,10 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 		);
 	}
 	fclose(fp);
-	txtname = strmakef("%s/surfacefit.txt", pathname);
+	txtname = wavecoeffdir + "/surfacefit.txt";
 	fp = fopen(txtname.c_str(), "w");
 	double t = 0.;
-	fprintf(fp, "t%*c\tA*      \tA*_fit  \tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n", 7, ' ');
+	fprintf(fp, "t%*c\tA*      \tA*_fit   \tU       \tU_fit   \tVg      \tVg_fit  \tc1      \tc1_fit  \n", 7, ' ');
 	for(int X=Ntot-2; X>=Ntot-NS-1; X--){
 		t = 1. - rad(X)/Rtot;
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
@@ -224,8 +226,8 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 	fclose(fp);
 	
 	//print the pulsation coeffcients
-	txtname = strmakef("%s/coefficients.txt", pathname);
-	outname = strmakef("%s/coefficients.png", pathname);
+	txtname = wavecoeffdir + "/coefficients.txt";
+	outname = wavecoeffdir + "/coefficients.png";
 	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
 	for(int X=0; X<Ntot; X++){
@@ -259,14 +261,15 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 	//fits
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	txtname = strmakef("%s/centerfit.txt", pathname);
-	outname = strmakef("%s/centerfit.png", pathname);
+	txtname = wavecoeffdir + "/centerfit.txt";
+	outname = wavecoeffdir + "/centerfit.png";
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
 	fprintf(gnuplot, "set logscale y\n");
-	fprintf(gnuplot, "set ytics 100\n");
+	fprintf(gnuplot, "set yrange [1e-8:10]\n");
+	fprintf(gnuplot, "set ytics ('0' 1e-8, '1e-6' 1e-6, '1e-4' 1e-4, '1e-2' 1e-2, '1' 1e0, '100' 1e2)\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set xrange [0:%le]\n", 1.01*rad(NC)/Rtot);
 	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'A*'", txtname.c_str());
@@ -274,8 +277,8 @@ void Star::printCoefficients(const char *const pathname, double const gam1){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'Vg'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	txtname = strmakef("%s/surfacefit.txt", pathname);
-	outname = strmakef("%s/surfacefit.png", pathname);
+	txtname = wavecoeffdir + "/surfacefit.txt";
+	outname = wavecoeffdir + "/surfacefit.png";
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");

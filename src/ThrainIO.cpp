@@ -82,7 +82,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 				break;
 		}
 		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
-		calcdata.Ngrid = int(calcdata.input_params[2]);
+		calcdata.Ngrid = std::size_t(calcdata.input_params[2]);
 	}
 	
 	//MESA INPUT
@@ -100,7 +100,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		calcdata.input_params.reserve(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
-		printf("Ngrid=%d\n", calcdata.Ngrid);
+		printf("Ngrid=%lu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
 		FILE *swd = fopen("swd.txt", "w");
@@ -203,7 +203,7 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
-	printf(" MAKING A ");
+	printf("MAKING A ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
 	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
@@ -220,10 +220,11 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 }
 
 int read_units(FILE* input_file, Calculation::InputData& calcdata){
-	char input_buffer[128];		//for read-in from file and text processing
+	char input_buffer[256];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 
 	fscanf(input_file, "Units: %s\n", input_buffer);
+	printf("USING UNITS: ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
 	else if(!instring.compare("geo")) calcdata.units = units::Units::geo;
@@ -236,6 +237,7 @@ int read_units(FILE* input_file, Calculation::InputData& calcdata){
 		printf("This error is fatal.  Quitting.\n");
 		return 1;
 	}
+	printf("%s\n", input_buffer);
 	return 0;
 }
 
@@ -271,7 +273,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 		fscanf(input_file, "%s\n", input_buffer);
 		calcdata.mode_num++;
 	}
-	printf("Number of frequencies: %d\n", calcdata.mode_num);
+	printf("Number of frequencies: %lu\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
 	//now read in the L,K as specified 
 	for(int j=0; j<calcdata.mode_num; j++){
@@ -334,7 +336,7 @@ int echo_input(Calculation::InputData &calcdata){
 		case model::SWD:
 			fprintf(output_file, "SWD ");
 	}
-	fprintf(output_file, "%d\n", calcdata.Ngrid);
+	fprintf(output_file, "%lu\n", calcdata.Ngrid);
 	
 	switch(calcdata.model){
 		case model::polytrope:
@@ -510,7 +512,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){

@@ -44,8 +44,8 @@ struct InputData {
 	modetype::ModeType modetype;     //the kind of modes to calculation: Cowling, 4th order, ...
 	std::vector<double> input_params;//parameters needed for the stellar model calculation
 	std::string str_input_param;     //a possible string parameter, such as a file name
-	int mode_num;                    //the number of modes to be calculated
-	int Ngrid;                       //the number of grid points to use in the calculation
+	std::size_t mode_num;            //the number of modes to be calculated
+	std::size_t Ngrid;               //the number of grid points to use in the calculation
 	std::set<int> l;                 //the set of L in calculation
 	std::map<int,std::set<int>> kl;  //for each L, the set of K to search
 	double mass, radius, zsurf, logg, teff;//properties of a star
@@ -65,7 +65,7 @@ struct OutputData {
 	std::vector<double> input_params;//parameters needed for the stellar model calculation
 	std::string str_input_param;     //a possible string parameter, such as a file name
 	int mode_num, mode_writ, mode_done;//records the number of modes, which modes have been written
-	int Ngrid;						 //the number of grid points to use in the calculation
+	std::size_t Ngrid;				 //the number of grid points to use in the calculation
 	std::vector<int> l, k;           //vectors for L,K for each mode
 	std::vector<double> w, f, period;//vectors of frequency and period for each mode
 	std::vector<double> mode_SSR;    //the backsubstitution residual for each mode

@@ -17,7 +17,8 @@ _STARTYPES = \
 		STARS/Polytrope \
 		STARS/ChandrasekharWD++ \
 		STARS/MESA \
-		STARS/SimpleWD
+		STARS/SimpleWD \
+		STARS/Isopycnic 
 _STARDEPS = constants.h 
 
 STARDEPS = $(patsubst %, $(IDIR)/%.h, $(_STARTYPES)) $(patsubst %, $(IDIR)/%, $(_STARDEPS))

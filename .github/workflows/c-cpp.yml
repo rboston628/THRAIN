@@ -64,6 +64,7 @@ jobs:
             archiver: "7za a",
             generators: "Ninja"
           }
+        # TODO setup windows runners
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -99,7 +100,7 @@ jobs:
         run: |
           brew install cxxtest 
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
-
+        # the last line will replace gcc with clang inside makefile
         # p7zip is already installed on the macos runners
       
       - name: Build library

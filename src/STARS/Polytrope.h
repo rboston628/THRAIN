@@ -84,12 +84,8 @@ private:
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
 	
 	//integrate Lane-Emden using basic RK4
-	double RK4integrate(const int, double);
-	//a grid-multiplying RK4 method
-	int RK4integrate(const int, double, int);
-	//find the location of edge of star for last step of solution
-	void findEdge(int);
-	double integrateEdge(int Nedge, double dx);
+	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
+	double RK4integrate(const int, double, SurfaceBehavior);
 	
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface

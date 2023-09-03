@@ -40,5 +40,20 @@ public:
         // test formatting doubles
         std::string doubles = strmakef("%0.4lf + %2.6le", m_pi, sqrt(117));
         TS_ASSERT_EQUALS(doubles, "3.1416 + 1.081665e+01");
+
+        // the implementation uses a buffer of size 256
+        // try to deliberately make something larger than this
+        constexpr std::size_t really_big_size = 400;
+        char really_big_char[really_big_size+1];
+        std::string exp_result = "";
+        for(int i=0; i<really_big_size; i++){
+            really_big_char[i] = 'a';
+            exp_result.push_back('a');
+        }
+        // must add null-terminator
+        really_big_char[really_big_size] = 0;
+        // compare results
+        std::string test_big_string = strmakef("%s", really_big_char);
+        TS_ASSERT_EQUALS( test_big_string, exp_result );
     }
 };

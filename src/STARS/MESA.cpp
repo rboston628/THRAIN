@@ -1,5 +1,15 @@
-//Class to read in MESA data for pulsation calculations
-// Reece Boston, Mar 24, 2022
+//**************************************************************************************
+//							MESA Wrapper
+// MESA.cpp
+//		This is a simple wrapper, intended to work with data generated using MESA
+//	
+// Reece Boston, Sep 02, 2023
+//**************************************************************************************
+
+//*****
+ // WARNING: must have at least one interpolated step at a midpoint, 
+ // or the RK4 method being used to find modes will NOT work.
+ //*****
 
 
 #ifndef MESACLASS
@@ -222,7 +232,7 @@ double MESA::Schwarzschild_A(int X, double GamPert){
 }
 
 double MESA::getAstar(int X, double GamPert){
-	if(GamPert==0.0) return radi[X]*aSpline->interp(radi[X]);
+	if(GamPert==0.0) return aSpline->interp(radi[X]);
 	else             return radi[X]*pres->deriv(radi[X])/pres->interp(radi[X])/GamPert
 						  - radi[X]*dens->deriv(radi[X])/dens->interp(radi[X]);
 }

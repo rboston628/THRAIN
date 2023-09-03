@@ -96,8 +96,9 @@ int mode_finder(Calculation::OutputData &data){
 			modetry = new MODE(*kt, ltarget, 0, data.driver);
 			mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 		}
+
 		// save values for the min,max values of K in list
-		int klo=*(kfilled.begin()), khi=*(kfilled.rbegin());
+		int klo=*(kl.begin()), khi=*(kl.rbegin());
 
 
 		//****************************************************************************
@@ -125,14 +126,14 @@ int mode_finder(Calculation::OutputData &data){
 // STEP 3a: search within discovered modes to see if brackets exist	
 			printf("finding brackets.\n");
 			double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0;
-			int kmax=khi+1, kmin=klo-1;
+			int kmax=klo-1, kmin=khi+1;
 			mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 			mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 			printf("\t\t(%d,%d) first fit\n", kmin, kmax);
 
 // STEP 3b: if one or both brackets do not exist, look for brackets
-			bool nomax = (kmax==khi+1), nomin = (kmin==klo-1); 
-			if( nomax || nomin ){
+			bool nomax = (kmax==klo-1), nomin = (kmin==khi+1); 
+			if( nomax || nomin ) {
 				// create a trial mode and add it to the list
 				modetry = new MODE(ktarget, ltarget, 0, data.driver);
 				ktry = modetry->modeOrder();
@@ -169,7 +170,7 @@ int mode_finder(Calculation::OutputData &data){
 						MODE* modeMaxQuest = nullptr; // preserve modetry while on quest
 						double incr = 2.0;
 						while(kmax < ktarget){
-							delete modetry;
+							delete modeMaxQuest;
 							// increase the frequency and look
 							w2max = incr*w2max;
 							// create a mode with this larger frequency
@@ -193,8 +194,8 @@ int mode_finder(Calculation::OutputData &data){
 								printf("No Dice\n");
 								break;
 							}
+							mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 						}
-						mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 						mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 					}
 				}
@@ -227,18 +228,23 @@ int mode_finder(Calculation::OutputData &data){
 				
 //STEP 4c: compare the trial mode to desired mode
 //if we found it, move on to next
-				if(kfilled.count(ktarget)) {
+				if(ktry==ktarget) {
 					printf("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
 					break;
 				}
 
 //STEP 4d: if we didn't find it, try to move brackets
-				mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
-				mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
+				//accounts for fact multiple w2in lead to same k
+				if(ktry > ktarget && w2in < w2max && w2try>0.0){
+					w2max = w2in;
+				}
+				else if(ktry < ktarget && w2in > w2min && w2try>0.0){
+					w2min = w2in;
+				}
 
 //STEP 4e: if the sought mode is bracketed between two known frequencies
 // then we can use special Mode constructor
-				if((kmin == ktarget-1) & (kmax == ktarget+1)){
+				if((kmin == ktarget-1) && (kmax == ktarget+1)){
 					delete modetry;
 					modetry = new MODE(w2min, w2max, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
@@ -249,7 +255,7 @@ int mode_finder(Calculation::OutputData &data){
 					mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				}
 				
-//STEP 4f:  check if the brackets have moved since last iteration
+//STEP 4f: check if the brackets have moved since last iteration
 				//if not, pick a random location within brackets to test
 				//repeat until one of the brackets can move
 				//this prevents us from getting stuck
@@ -271,15 +277,15 @@ int mode_finder(Calculation::OutputData &data){
 					mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 					
 					//accounts for fact multiple w2in lead to same k
-					if(w2in < w2maxT && ktry == kmax && w2in>0.0){
-						w2maxT = w2in;
+					if(w2in < w2max && ktry > ktarget && w2in>0.0){
+						w2max = w2in;
 					}
-					else if(w2in > w2minT && ktry == kmin && w2in>0.0){
-						w2minT = w2in;
+					else if(w2in > w2min && ktry < ktarget && w2in>0.0){
+						w2min = w2in;
 					}
 					//sometimes zeros are inaccessible
 					//move brackets and try again
-					if(fabs(w2minT-w2maxT)<1e-2*w2minT) {
+					if(fabs(w2min-w2max)<1e-2*w2min) {
 						w2min = w2minT;
 						w2max = w2maxT;
 						break;
@@ -451,7 +457,7 @@ int mode_finder(Calculation::OutputData &data){
 				data.f.push_back(0.0);
 				data.period.push_back(0.0);
 				data.mode_SSR.push_back(0.0);	
-				data.mode.push_back(NULL);	
+				data.mode.push_back(nullptr);	
 			}
 			nextmode++;
 			data.mode_done++;
@@ -469,7 +475,7 @@ int mode_finder(Calculation::OutputData &data){
 			e++;
 		}
 		//STEP 7b: for realistic models, use overlap c0 to indicate numerical error
-		//  this logic is not workign very well yet
+		//  this logic is not working very well yet
 		if(data.error[error::isC0]){
 			int testK = (*lt==1 ? 1 : 0);
 			MODE *testmode;

@@ -12,6 +12,7 @@
 #define MODECLASS
 
 #include "Mode.h"
+#include "../lib/rootfind.h"
 
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching
@@ -140,60 +141,37 @@ Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv
 	}
 	
 	//the brackets given are often themselves zeros -- inch them closer to avoid this
-	double dw = (omeg2hi-omeg2lo)*1.0e-3;
-	double wmin=omeg2lo+dw, wmax=omeg2hi-dw;
+	double dw = (omeg2hi-omeg2lo)*1.0e-2;
+	double w2min = omeg2lo+dw;
+	double w2max = omeg2hi-dw;
+
+	std::function<double(double)> wronskian = [this](double w)->double {
+		return this->RK4center(w, this->yCenter, this->ySurface);
+	};
 	//now find the initial bracketing values of the Wronskian
-	double Wsmin = RK4center(omeg2lo, yCenter, ySurface);
-	double Wsmax = RK4center(omeg2hi, yCenter, ySurface);
+	double Wsmin = wronskian(w2min); //, yCenter, ySurface);
+	double Wsmax = wronskian(w2max); //(omeg2hi, yCenter, ySurface);
 	
 	//if the bracketing values do not bound a zero, just use the mid-point as a starting value
-	omega2 =  0.5*(omeg2lo + omeg2hi);
 	if(Wsmin*Wsmax>0.0) {
+		omega2 = 0.5*(w2min+w2max);
 		converge();
 		this->k = verifyMode();
 		return;
 	}
+	double w2 = 0.5*(omeg2lo + omeg2hi);
+	double W = rootfind::bisection_search(wronskian, w2, omeg2lo, omeg2hi);
 	
-	//if the brackets are fine, we now begin a biection search
-	int stop=0;
-	double w1 = 0.5*(omeg2lo + omeg2hi), w2 = omeg2hi;
-	double W1 = RK4center(w1, yCenter, ySurface), W2;
-	while( fabs(w2-w1) > 0.0 ){
-		w2 = w1;
-		W2 = W1;
-		//test each bracket
-		if( W1*Wsmax > 0.0 ){
-			if( w1 < omeg2hi ){
-				omeg2hi = w1;
-				Wsmax = W1;
-			}
-		}
-		else if( W1*Wsmin > 0.0 ){
-			if( w1 > omeg2lo ){
-				omeg2lo = w1;
-				Wsmin = W1;
-			}
-		}
-		w1 = 0.5*(omeg2hi+omeg2lo);
-		W1 = RK4center(w1, yCenter, ySurface);
-		//if the new Wronskian is same as old, pick a random value inside brackets
-		if(W2==W1){
-			ok = (a*ok+b)%r; //generates a psuedo-random integer in (0,r)
-			w1 = omeg2lo + (double(ok)/double(r))*fabs(omeg2hi-omeg2lo);
-			W1 = RK4center(w1, yCenter, ySurface);
-		}
-		if(++stop>20){
-			converge();
-			this->k = verifyMode();
-			return;
-		}
-	}
-	//we now know our value of omega2
-	omega2=w1;
-	linearMatch(omega2, yCenter, ySurface);
 	//if the Wronskian still isn't good, just find values as normal
-	if(W1 > 1e-10) converge();
-	else converged = true;
+	if(W > 1e-10) {
+		converge();
+	}
+	else {
+		//we now know our value of omega2
+		omega2=w2;
+		linearMatch(omega2, yCenter, ySurface);
+		converged = true;
+	}
 	this->k = verifyMode();
 }
 

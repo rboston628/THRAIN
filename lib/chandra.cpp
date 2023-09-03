@@ -10,12 +10,12 @@ double Chandrasekhar::factor_f(double x){
 }
 	
 double Chandrasekhar::factor_g(double x){
-		return 8.*x*x*x*(sqrt(1.+x*x) - 1.0) - factor_f(x);
+	return 8.*x*x*x*(sqrt(1.+x*x) - 1.0) - factor_f(x);
 }
 	
-//	double factor_h(double x){
-//		return x*x*x + (A0/B0/C_CGS/C_CGS)*factor_g(x);
-//	}
+double Chandrasekhar::factor_h(double x, double sigma, double mue=1.0){
+ 	return mue*x*x*x + sigma*factor_g(x);
+ }
 
 
 //methods usign the weights and abscissae of Sagar 1991

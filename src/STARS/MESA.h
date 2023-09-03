@@ -1,5 +1,11 @@
-//Class to calculate read in MESA data for pulsation calculations d
-//Reece Boston, Mar 24, 2022
+//**************************************************************************************
+//							MESA Wrapper
+// MESA.h
+//		This is a simple wrapper, intended to work with data generated using MESA
+//	
+// Reece Boston, Sep 02, 2023
+//**************************************************************************************
+
 
 #ifndef MESACLASSH
 #define MESACLASSH
@@ -32,7 +38,7 @@ public:
 	double getU(int) override;
 	double getC(int) override;
 	double sound_speed2(int, double GamPert=0) override;
-	
+
 private:
 	void printSection(int, int);
 	void subgridCubicSpline(const int, const int, const int*);
@@ -42,7 +48,7 @@ private:
 		double*, double*
 	);
 	void getSplineCoefficients(const int, double*, const double *const, const double *const);
-		
+
 	int Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
 	//in units of g, cm, erg/s, respectively
@@ -53,7 +59,6 @@ private:
 	double *radi;	
 	Splinor *dens, *pres, *mass, *grav, *Gam1, *BVfq;
 	Splinor *aSpline, *vSpline, *uSpline, *cSpline;
-	
 	
 	//for BCs of modes
 	double nc;// effective polytropic index at center

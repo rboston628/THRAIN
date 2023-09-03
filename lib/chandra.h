@@ -10,7 +10,7 @@ namespace Chandrasekhar {
 
 	double factor_f(double x);
 	double factor_g(double x);
-//	double factor_h(double x);
+	double factor_h(double x, double, double);
 }
 
 namespace FermiDirac {

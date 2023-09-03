@@ -56,7 +56,7 @@ double conductive_opacity(const StellarVar& ly, const Abundance& X){
 	double Coulomb_Logarithm = log(2.*m_pi*X.mean_Z()/3.)/3. + log(1.5+3./GC)/2. - 0.5*x*x/(1.+x*x); 
 	// now get opacity, by combining Cassisi 2007 eq 1, 2, 8
 	double opaccoeff = 512.*boltzmann_sigma*pow(electron.mass_CGS,2)*pow(electron.charge_CGS,4)
-				*proton.mass_CGS/(3.*pow(plank_h_CGS,3)*pow(boltzmann_k,2));
+				*proton.mass_CGS/(3.*pow(planck_h_CGS,3)*pow(boltzmann_k,2));
 	double opacity = opaccoeff*X.mean_A()*sqrt(1.+x*x)*exp(2.*(ly[temp]-ly[dens]))*Coulomb_Logarithm;
 	return opacity;//*/
 }

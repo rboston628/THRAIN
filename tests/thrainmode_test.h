@@ -138,7 +138,8 @@ public:
     }
 
     void test_min_from_set_largest(){
-        // test will not find a min
+        // the target is larger than all members of set
+        // will return the max of the set as the min
         std::set<int> kbrackets {5,6,7};
         std::map<int, double> w2brackets {{5,4.0},{6,12.0},{7,14.0}};
         double w2min=0.0;
@@ -146,6 +147,18 @@ public:
         mode::get_min_from_set(kbrackets, w2brackets, ktarget, kmin, w2min);
         TS_ASSERT_EQUALS(kmin, 7);
         TS_ASSERT_EQUALS(w2min, 14.0);
+    }
+
+    void test_max_from_set_smallest(){
+        // the target is smaller than all members of set
+        // will return the min of the set as the max
+        std::set<int> kbrackets {5,6,7};
+        std::map<int, double> w2brackets {{5,4.0},{6,12.0},{7,14.0}};
+        double w2max=0.0;
+        int ktarget = 2, kmax = 1;
+        mode::get_max_from_set(kbrackets, w2brackets, ktarget, kmax, w2max);
+        TS_ASSERT_EQUALS(kmax, 5);
+        TS_ASSERT_EQUALS(w2max, 4.0);
     }
 
 };
