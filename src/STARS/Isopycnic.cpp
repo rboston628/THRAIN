@@ -105,6 +105,7 @@ double Isopycnic::Schwarzschild_A(std::size_t X, double GamPert){
 	else               return -z[X]/(y[X]*Rn)/GamPert;
 }
 
+
 double Isopycnic::getAstar(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return 0.6*x[X]*z[X]/(y[X]);
 	else               return x[X]*z[X]/(y[X])/GamPert;
