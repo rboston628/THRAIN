@@ -111,11 +111,12 @@ void Star::printBV(const char *const outputdir, double const gam1){
 	
 	//print the Brunt-Vaisala frequency
 	FILE* fp  = fopen(txtname.c_str(), "w");
-	double N2 = -1.0;
+	double N2 = -1.0, R = Radius();
 	fprintf(fp, "1-m\tN2\tL1\n");
 	for(std::size_t X=1; X< length()-1; X++){
 		N2 =  -Schwarzschild_A(X,gam1)*dPhidr(X);
-		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
+		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
+			rad(X)/R,
 			(1.-mr(X)/Mass()),
 			N2,
 			2.*sound_speed2(X,gam1)*pow(rad(X),-2));
@@ -134,8 +135,8 @@ void Star::printBV(const char *const outputdir, double const gam1){
 	fprintf(gnuplot, "set format x '%%L'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
 	fprintf(gnuplot, "set ytics 10\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'N^2'", txtname.c_str());
-	fprintf(gnuplot, ",    '%s' u 1:3 w l t 'L_1^2'", txtname.c_str());
+	fprintf(gnuplot, "plot '%s' u 2:3 w l t 'N^2'", txtname.c_str());
+	fprintf(gnuplot, ",    '%s' u 2:4 w l t 'L_1^2'", txtname.c_str());
 	//fprintf(gnuplot, ",    '%s' u 1:(-$2) w l t '-N^2'", txtname);
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);

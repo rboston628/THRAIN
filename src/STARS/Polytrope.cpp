@@ -30,8 +30,9 @@ Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 	name = strmakef("polytrope.%1.1f", n);
 	
 	Y = new double*[len];
-	for(std::size_t i=0;i<len;i++) 
+	for(std::size_t i=0;i<len;i++) {
 		Y[i] = new double[numvar];
+	}
 
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with y[len-1]=0.0
@@ -39,12 +40,12 @@ Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 	
 	//an initial guess
 	double dx = sqrt(6.0)/(len-1), yS, dxmax=1.0, dxmin=0.0;
-	std::function<double(double)> find_surface = [this](double x)->double {
-		return this->RK4integrate(len,x, SurfaceBehavior::STOP_AT_ZERO);
+	std::function<double(double)> find_surface = [this](double step)->double {
+		return this->RK4integrate(this->len, step, SurfaceBehavior::STOP_AT_ZERO);
 	};
 	rootfind::bisection_find_brackets_newton( find_surface, dx, dxmin, dxmax);
 	yS = rootfind::bisection_search(find_surface, dx, dxmin, dxmax);
-	
+	dx = 0.5*(dxmin+dxmax);
 	RK4integrate(len, dx, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 			
 	//now set physical properties of the polytrope
@@ -92,8 +93,9 @@ Polytrope::Polytrope(double n, std::size_t L)
 	name = strmakef("polytrope.%1.1f", n);
 
 	Y = new double*[len];
-	for(std::size_t i=0;i<len;i++) 
+	for(std::size_t i=0;i<len;i++) {
 		Y[i] = new double[numvar];
+	}
 	
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with y[len-1]=0.0
@@ -106,8 +108,8 @@ Polytrope::Polytrope(double n, std::size_t L)
 	//the n=5 case is an esge-case and should only come up in testing
 	if(n!=5.0){
 		double dxmax=1.0, dxmin=0;
-		std::function<double(double)> find_surface = [this](double x)->double{
-			return this->RK4integrate(len,x, SurfaceBehavior::STOP_AT_ZERO);
+		std::function<double(double)> find_surface = [this](double step)->double{
+			return this->RK4integrate(len,step, SurfaceBehavior::STOP_AT_ZERO);
 		};
 		rootfind::bisection_find_brackets_newton( find_surface, dx, dxmin,dxmax);
 		yS = rootfind::bisection_search(find_surface, dx, dxmin, dxmax);
@@ -222,6 +224,7 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 	double YC[numvar] = {yin[x], yin[y], yin[z]};
 	double K[numvar][4];
 	static const double B[4] = {0.5,0.5,1.0,0.0};
+	static const double d[4] = {6.0,3.0,3.0,6.0};
 	std::complex<double> YCN(0.0,0.0);
 	
 	for(int a = 0; a<4; a++){
@@ -240,8 +243,10 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 			YC[b] = yin[b] + B[a]*K[b][a];
 	}		
 	yout[x] = yin[x] + dx;
-	for(int b=1; b<numvar; b++)
-		yout[b] = yin[b] + K[b][0]/6.0 + K[b][1]/3.0 + K[b][2]/3.0 + K[b][3]/6.0;	
+	for(int b=1; b<numvar; b++){
+		yout[b] = yin[b];
+		for(int a=0; a<4; a++) yout[b] += K[b][a]/d[a];
+	}
 }
 
 //integrate the polytrope up to Len using RK4
@@ -556,5 +561,6 @@ int Polytrope::read_star_input(Calculation::InputData& calcdata, FILE* input_fil
 	return 0;
 }
 
+// TODO echo, write methods
 
 #endif

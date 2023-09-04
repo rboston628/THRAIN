@@ -569,15 +569,10 @@ void MESA::printBV(const char *const c, double const g){
 }
 
 void MESA::printCoefficients(const char *const c, double const g){
-	// char filename[256];
-	// char rootname[256];
-	// char txtname[256];
-	// char outname[256];
+
 	std::string filename, rootname, txtname, outname;
 	filename = addstring(c, "/wave_coefficient");
 	system( ("mkdir -p " + filename).c_str() );
-	
-	const char* title = graph_title().c_str();
 	
 	//print the coefficients of the center and surface, for series analysis
 	txtname = filename + "/center.txt";
@@ -671,7 +666,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	fprintf(gnuplot, "set term png size 1000,800\n");
 	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
-	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title);
+	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'A*, U, V_g, c_1'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -690,7 +685,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	txtname = filename + "/centerfit.txt";
 	outname = filename + "/centerfit.png";
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
-	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title);
+	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -707,7 +702,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	txtname = filename + "/surfacefit.txt";
 	txtname = filename + "/surfacefit.png";
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
-	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title);
+	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'difference'\n");
 	fprintf(gnuplot, "set logscale y\n");
@@ -806,8 +801,7 @@ double MESA::SSR(){
 	fprintf(gnuplot, "set term png size 1600,800\n");
 	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", "SSR.png");
-	const char* title = graph_title().c_str();
-	fprintf(gnuplot, "set title 'error for %s'\n", title);
+	fprintf(gnuplot, "set title 'error for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
 	fprintf(gnuplot, "set ylabel 'error'\n");
 	fprintf(gnuplot, "set logscale y 10\n");

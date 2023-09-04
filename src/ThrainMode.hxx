@@ -242,6 +242,8 @@ int mode_finder(Calculation::OutputData &data){
 				}
 
 //STEP 4d: if we didn't find it, try to move brackets
+				mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
+				mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 				//accounts for fact multiple w2in lead to same k
 				if(ktry > ktarget && w2in < w2max && w2try>0.0){
 					w2max = w2in;

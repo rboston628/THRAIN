@@ -68,21 +68,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	
 	//CHANDRASEKHAR WD INPUT
 	else if(calcdata.model==model::CHWD){
-		calcdata.input_params.reserve(3);
-		fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the central y value
-		printf("y0=%lf\n", calcdata.input_params[0]);
-		//read in an integer designating the chemical composition to use for mu
-		fscanf(input_file, " %lf", &calcdata.input_params[1]);
-		switch((int) calcdata.input_params[1]){
-			case 0:
-				printf("standard Chandrasekhar WD\n");
-				break;
-			case 1:
-				printf("using logistic composition\n");
-				break;
-		}
-		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
-		calcdata.Ngrid = std::size_t(calcdata.input_params[2]);
+		if(ChandrasekharWD::read_star_input(calcdata, input_file)) return 1;
 	}
 	
 	//MESA INPUT
@@ -459,28 +445,25 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.period.reserve(data_out.mode_num);
 	data_out.mode_SSR.reserve(data_out.mode_num);
 
-
 	//setup error columns
 	data_out.i_err = 0;
 	//if the star is a simple model, use RMSR to estimate mode error
-	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) | (data_out.model==model::CHWD));
+	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) || (data_out.model==model::CHWD));
 	//if the star is a realistic model, use overlap c_0 to estimate mode error
-	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) | (data_out.model==model::SWD));
+	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) || (data_out.model==model::SWD));
 	//if it is a polytrope with n=0, use the Pekeris formula to compare
-	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) & (data_out.input_params[0]==0.0));
+	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) && (data_out.input_params[0]==0.0));
 	//if it is a Newtonian polytrope with Gamma=5/3 and n=1.5,3,4, then compare to JCD-DJM
-	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &
-		(data_out.regime==regime::PN0) &
-		(data_out.input_params[0]==1.5 | data_out.input_params[0]==3.0 | data_out.input_params[0]==4.0) &
-		(fabs(data_out.adiabatic_index - 5./3.)<1.e-5);
-
+	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &&
+		(data_out.regime==regime::PN0) &&
+		(data_out.input_params[0]==1.5 || data_out.input_params[0]==3.0 || data_out.input_params[0]==4.0) &&
+		(fabs(data_out.adiabatic_index - 5./3.)<1.e-3);
 	//count the number of pertinent errors
 	for(int e=0; e<error::numerror; e++)
 		if(data_out.error[e]) data_out.i_err++;
 	//create the error columns
 	data_out.err = new double*[data_out.i_err];
 	for(int e=0; e<data_out.i_err; e++) data_out.err[e] = new double[data_out.mode_num];
-	
 	printf("done\n");
 	return 0;
 }

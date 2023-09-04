@@ -78,11 +78,10 @@ private:
 	double *mass;
 	double *base; //= pow(y,n-1), avoids repeated calls to pow(y,n)
 	double GG;
-	
+		
+	//integrate Lane-Emden using basic RK4
 	void centerInit(double ycenter[numvar]);
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
-	
-	//integrate Lane-Emden using basic RK4
 	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
 	double RK4integrate(const std::size_t, double, SurfaceBehavior);
 	
@@ -90,7 +89,6 @@ private:
 	double ac[4], as[6];	//expansion coefficients of y near center, surface
 	void setupCenter();		//prepare values of ac[]
 	void setupSurface();	//prepare values of as[]
-	char polyname[40];		//a name of the polytrope... not yet implemented properly
 public:
 	//methods to find central, surfae power series expansions of key variables in pulsation
 	void getAstarCenter(double *, int&, double g=0) override;
