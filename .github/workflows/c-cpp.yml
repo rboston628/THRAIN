@@ -132,7 +132,9 @@ jobs:
         if: startsWith(matrix.config.os, 'windows')
         #  replace gcc with cl
         run: |
-          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt
+          rm makefile
+          mv changed.txt makefile
         # there is no choco support for cxxtest, so this will not work
         # run: |
         #   choco install cxxtest
