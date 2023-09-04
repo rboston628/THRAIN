@@ -69,7 +69,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	};
 	rootfind::bisection_find_brackets_newton(surface, dxi, dximin, dximax);
 	yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
-	dxi = 0.5*(dximin+dximax);
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 	printf("edge  =\t%le %le\n", yS, Y[len-1][y]-1.0);
 

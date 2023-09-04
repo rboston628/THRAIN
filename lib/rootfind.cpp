@@ -19,9 +19,9 @@ double rootfind::pseudo_unif(){
 // one bracket is moved to one side until the function changes sign, to find brackets
 void rootfind::bisection_find_brackets_move(
 	std::function<double(double)>& func,    //the function to find zero of
-	const double x0,                        //an initial guess for the zero
-	double& xmin,                           //the lower bracket -- will be returned
-	double& xmax                            //the upper bracket -- will be returned
+	double const x0,                        //an initial guess for the zero
+	double &xmin,                           //the lower bracket -- will be returned
+	double &xmax                            //the upper bracket -- will be returned
 ){
 	// test two points near first guess
 	double DX = 0.01;
@@ -147,12 +147,12 @@ void rootfind::bisection_find_brackets_move(
 //    because Newton's method can fail, but bisection searches can go to nearly arbitrary accuracy
 void rootfind::bisection_find_brackets_newton(
 	std::function<double(double)>& func, //the function to find zero of
-	double x,                            //an initial guess for the zero
+	double const x0,                     //an initial guess for the zero
 	double& xmin,                        //the lower bracket -- will be returned
 	double& xmax                         //the upper bracket -- will be returned
 ){
-	double y1=func(x), y2=y1;	
-	double x1=x, x2=x;
+	double y1=func(x0), y2=y1;	
+	double x1=x0, x2=x0;
 	double xdx, ydx;
 	double ymax, ymin;
 	//while the two ys are on same side of axis, keep reposition until zero is bound
@@ -225,8 +225,8 @@ void rootfind::bisection_find_brackets_newton(
 double rootfind::bisection_search(
 	std::function<double(double)>& func, //the function to find zero of
 	double &x,                           //the location of zero -- will be returned
-	double xmin,                         //the lower bracket
-	double xmax                          //the upper bracket
+	double &xmin,                         //the lower bracket
+	double &xmax                          //the upper bracket
 ){
 	//now use bisection to find dx so that y=0.0
 	x = 0.5*(xmin+xmax);

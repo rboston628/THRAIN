@@ -131,8 +131,8 @@ namespace Chandrasekhar {
 		void operator()(double const x, double const dydxi, double& mu, double& dmu){
 			double F  = Chandrasekhar::factor_f(x);
 			double z = -log(F/F0);
-			double zeec = -log(1e-5); // TODO why 1e-5?
-			double EXP = exp(k*(z-zeec));	// the expoential
+			double zeec = -log(1e-5);     // TODO why 1e-5?
+			double EXP = exp(k*(z-zeec)); // the expoential
 			mu =  mu1 + (mu0-mu1)/(1.+EXP);
 			//   dmudx  = k f'(x)/f(x) * EXP/(1+EXP)^2           = 8k x^4/y/f       * EXP/(1+EXP)^2
 			//   dmudxi = dmudx * dx/dxi = dmudx * (y/x * dydxi) = 8k x^3/f * dydxi * EXP/(1+EXP)^2
