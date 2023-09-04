@@ -141,7 +141,7 @@ double EOS::invertNewton(double rho_last, double P, double T, Abundance const& c
 	std::function<double(double)> presDiff = [this,P,T,chem](double x)->double {
 		return P - (*this)(x,T,chem);
 	};
-	y = rootfind::newton_search<double>(presDiff, x, dx, 1.e-10, 1000UL);
+	y = rootfind::newton_search<double>(presDiff, x, dx, 1.e-10, std::size_t(1000));
 	rho_last = x;
 	return x;
 }
