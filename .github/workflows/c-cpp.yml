@@ -127,11 +127,11 @@ jobs:
         # the last line will replace gcc with clang inside makefile
         # p7zip is already installed on the macos runners
 
-      - name: Install dependencies on macos
+      - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          Set-ExecutionPolicy RemoteSigned -scope CurrentUser 
-          iex (new-object net.webclient).downloadstring('https://get.scoop.sh')
+          irm get.scoop.sh | iex
+          irm get.scoop.sh -Proxy 'http://<ip:port>' | iex
           scoop install cxxtest
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
         # the last line will replace gcc with clang inside makefile
