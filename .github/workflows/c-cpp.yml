@@ -144,11 +144,11 @@ jobs:
         run: make
 
       - name: Build THRAIN tests
-        if: ! startsWith(matrix.config.os, 'windows')
+        if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
         shell: bash
         run: make tests
 
       - name: Run tests
-        if: ! startsWith(matrix.config.os, 'windows')
+        if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
         shell: bash
         run: ./tests/tests.out
