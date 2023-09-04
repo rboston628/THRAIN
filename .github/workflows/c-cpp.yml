@@ -127,12 +127,13 @@ jobs:
         # the last line will replace gcc with clang inside makefile
         # p7zip is already installed on the macos runners
 
-      there is no choco support for cxxtest, so this will not work
+      
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         #  replace gcc with cl
         run: |
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+        # there is no choco support for cxxtest, so this will not work
         # run: |
         #   choco install cxxtest
 
