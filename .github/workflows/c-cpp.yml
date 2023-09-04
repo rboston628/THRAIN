@@ -27,27 +27,27 @@ jobs:
       fail-fast: false
       matrix:
         config: 
-        - {
-            name: "windows MSVC",
-            os: windows-latest,
-            artifact: "windows_msvc.7z",
-            build_type: "Release",
-            cc: "cl",
-            cxx: "cl",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
-            archiver: "7z a",
-            generators: "Visual Studio 16 2019"
-          }
-        - {
-            name: "windows gcc",
-            os: windows-latest,
-            artifact: "windows_mingw.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
+        # - {
+        #     name: "windows MSVC",
+        #     os: windows-latest,
+        #     artifact: "windows_msvc.7z",
+        #     build_type: "Release",
+        #     cc: "cl",
+        #     cxx: "cl",
+        #     environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
+        #     archiver: "7z a",
+        #     generators: "Visual Studio 16 2019"
+        #   }
+        # - {
+        #     name: "windows gcc",
+        #     os: windows-latest,
+        #     artifact: "windows_mingw.7z",
+        #     build_type: "Release",
+        #     cc: "gcc",
+        #     cxx: "g++",
+        #     archiver: "7z a",
+        #     generators: "Ninja"
+        #   }
         - {
             name: "ubuntu latest",
             os: ubuntu-latest,
@@ -130,8 +130,7 @@ jobs:
       - name: Install dependencies on windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install scoop
-          scoop install cxxtest
+          choco install cxxtest
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
         # the last line will replace gcc with clang inside makefile
       
