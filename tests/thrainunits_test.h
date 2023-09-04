@@ -39,6 +39,20 @@ public:
         return fakeData;
     }
 
+    void do_test_setUnits_noparams(units::Units unitType){
+        Calculation::OutputData fakeData;
+        fakeData.star = nullptr;
+        fakeData.driver = nullptr;
+        fakeData.i_err = 0;
+        fakeData.params = 0;
+        TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData));
+        // assert nothing is set
+        TS_ASSERT(fakeData.mass == 0.0);
+        TS_ASSERT(fakeData.radius == 0.0);
+        TS_ASSERT(fakeData.zsurf == 0.0);
+        TS_ASSERT(fakeData.logg == 0.0);
+    }    
+
     void do_test_setUnits(units::Units unitType){
         Calculation::OutputData fakeData = setupFakeCalcData(unitType);
         // assert units set properly

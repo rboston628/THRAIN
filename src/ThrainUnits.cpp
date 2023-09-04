@@ -46,9 +46,6 @@ int format_units(Calculation::OutputData& data){
 	
 	//the user can specify certain parameters of the star for the model; this calculates the others
 	switch(data.params){
-		case 0:
-			data.mass = data.radius = data.zsurf = data.logg = 0.0;
-			break;
 		case (ParamType::pmass|ParamType::pradius):
 			data.logg = getLoggFromRM(data);
 			data.zsurf = getZsurfFromRM(data);
@@ -74,6 +71,10 @@ int format_units(Calculation::OutputData& data){
 			data.mass   = 0.0;
 			data.radius = 0.0;
 			throw std::runtime_error("Unimplemented paramsets zsurf and logg, try another\n");
+			break;
+		case 0:
+		default:
+			data.mass = data.radius = data.zsurf = data.logg = 0.0;
 			break;
 	}
 	

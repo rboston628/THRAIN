@@ -8,6 +8,7 @@
 // time profile 100 dets and inversions
 // time profile det, inversion of one enormous matrix
 // have tests requiring certain time performance
+// TODO: check singular, sparse matrices
 
 // create a matrix using some function to fill in elements
 template<std::size_t N, std::size_t M, class T>
