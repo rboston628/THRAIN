@@ -14,6 +14,7 @@ namespace Chandrasekhar {
 }
 
 namespace FermiDirac {
+	const double m_pi = 3.141592653589793;
 	//Abscissae (x) and weights (w) for 24-point Gauss quadrature method due to Sagar 1991
 	static const double xFermiDirac1Half[] = {
 		1.065765457622244303e-01, 4.230728669515992804e-01, 9.419850084605768359e-01, 

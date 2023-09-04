@@ -1,3 +1,8 @@
+// Tests of the simple string functions
+// which are intended to enable better support
+// for simple c-style strings and c-style formatting,
+// mixed with the more modern std::string objects
+
 #include "../src/constants.h"
 #include "../lib/string.h"
 #include <cxxtest/TestSuite.h>

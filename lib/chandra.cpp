@@ -234,27 +234,27 @@ double FermiDirac::FermiDiracEtaLarge5Half(double eta){
 double FermiDirac::FermiDiracEtaLarge1Half(double eta, double beta){
 	if(beta == 0.0) beta = 1.0;
 	double y = sqrt( pow(1. + eta*beta, 2.) - 1.);
-	double C1 = pow(M_PI*beta,2)/6./y;
-	double C2 = pow(M_PI*beta/y/y,2)*C1*7./20.;
-	double C3 = pow(M_PI*beta/y/y,4)*C1*31./168.;
+	double C1 = pow(m_pi*beta,2)/6./y;
+	double C2 = pow(m_pi*beta/y/y,2)*C1*7./20.;
+	double C3 = pow(m_pi*beta/y/y,4)*C1*31./168.;
 	return (FermiDiracLittleF1Half(y) 
 			+ (1.+eta*beta)*(C1 + C2 + C3*(4.*y*y+7.)))/sqrt(2.*beta*beta*beta);
 }
 double FermiDirac::FermiDiracEtaLarge3Half(double eta, double beta){
 	if(beta == 0.0) beta = 1.0;
 	double y = sqrt( pow(1. + eta*beta, 2.) - 1.);
-	double C1 = pow(M_PI*beta,2)/6./y;
-	double C2 = pow(M_PI*beta/y/y,2)*C1*7./20.;
-	double C3 = pow(M_PI*beta/y/y,4)*C1*31./168.;
+	double C1 = pow(m_pi*beta,2)/6./y;
+	double C2 = pow(m_pi*beta/y/y,2)*C1*7./20.;
+	double C3 = pow(m_pi*beta/y/y,4)*C1*31./168.;
 	return (FermiDiracLittleF3Half(y) 
 			+ C1*(3.+2*eta*beta) - C2 - C3*( (4.*eta*beta+6.)*eta*beta + 3.))/sqrt(2.*pow(beta,5));
 }
 double FermiDirac::FermiDiracEtaLarge5Half(double eta, double beta){
 	if(beta == 0.0) beta = 1.0;
 	double y = sqrt( pow(1. + eta*beta, 2.) - 1.);
-	double C1 = pow(M_PI*beta,2)/6./y;
-	double C2 = pow(M_PI*beta/y/y,2)*C1*7./20.;
-	double C3 = pow(M_PI*beta/y/y,4)*C1*31./168.;
+	double C1 = pow(m_pi*beta,2)/6./y;
+	double C2 = pow(m_pi*beta/y/y,2)*C1*7./20.;
+	double C3 = pow(m_pi*beta/y/y,4)*C1*31./168.;
 	return (FermiDiracLittleF5Half(y) 
 			+ C1*(5.+eta*beta) - C2*((((2.*eta*beta+10.)*eta*beta + 15.)*eta*beta+15.)*eta*beta+5.)
 			+ C3*(3.+5.*eta*beta))/sqrt(2.*pow(beta,7));
