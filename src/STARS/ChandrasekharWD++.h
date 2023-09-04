@@ -15,6 +15,7 @@
 
 #include "Star.h"
 #include "../../lib/chandra.h"
+#include <functional>
 
 namespace Calculation {
 	struct InputData;
