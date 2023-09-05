@@ -8,7 +8,7 @@ Linux users can try the same with their own package manager.  On ubuntu
 ```
 sudo apt-get install cxxtest
 ```
-Windows users should consider installing a real operating system.  Neither `winget` nor `choco` currently work for cxxtest.  Consider asking the cxxtest admin to build a choco package.
+Windows users should consider installing a real operating system.
 
 From the top directory, the tests can be compiled and run using 
 ```
