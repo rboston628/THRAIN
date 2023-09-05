@@ -145,14 +145,16 @@ void Isopycnic::setupCenter(){}
 
 void Isopycnic::getAstarCenter(double *Ac, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
-	for(int k=0; k<=maxPow/2; k++){
+	if(maxPow>=0) Ac[0] = 0.0;
+	for(int k=1; k<=maxPow/2; k++){
 		Ac[k] = -2./Gam1;
 	}
 }
 
 void Isopycnic::getVgCenter(double *Vc, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
-	for(int k=0; k<=maxPow/2; k++){
+	if(maxPow>=0) Vc[0] = 0.0;
+	for(int k=1; k<=maxPow/2; k++){
 		Vc[k] = 2./Gam1;
 	}
 }
@@ -218,5 +220,28 @@ void Isopycnic::getC1Surface(double *cs, int& maxPow){
 		cs[k] = 0.0;
 	}
 }
+
+// consider dictionary-based approach...
+// std::map<int,double> Isopycnic::getAstarSurface(int& maxPow){
+// 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+// 	std::map<int,double> as;
+// 	if(maxPow>= -1) as[-1] = -1./Gam1;
+// 	if(maxPow>=  0) as[ 0] = 1.5/Gam1;
+// 	for(int k=1; k<= maxPow; k++){
+// 		as[k] = -pow(2,k+1)/Gam1;
+// 	}
+// 	return as;
+// }
+
+// std::map<int,double> Isopycnic::getC1Surface(int& maxPow){
+// 	std::map<int,double> cs;
+// 	if(maxPow>=0) cs[0] = 1.0;
+// 	for(int k=1; k<=maxPow; k++){
+// 		cs[k] = 0.0;
+// 	}
+// 	return cs;
+// }
+
+
 
 #endif
