@@ -23,6 +23,7 @@
 #include <cstring>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
+#define _GNU_SOURCE
 #include <stdio.h>
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
