@@ -32,9 +32,10 @@ double surface_expand_zero(double const t, double const *const ac, int const max
 double surface_expand_inverse(double const t, double const *const ac, int const maxPow){
     const int O=1;
     double value = ac[O-1]/t + ac[O];
-    for(int i=1; i<=maxPow; i++){
-        value += ac[i+O]*pow(t,i);
-    }
+    value += ac[O+1]*t;
+    value += ac[O+2]*pow(t,2);
+    value += ac[O+3]*pow(t,3);
+    value += ac[O+4]*pow(t,4);
     return value;
 }
 
@@ -125,7 +126,7 @@ void test_uniform_boundaries(){
     constexpr std::size_t NC=10;
     constexpr int Ncent = 3;
     int maxPow = 2*(Ncent-1); // the integer passed needs to be mutable
-    double Ac[Ncent], Vc[Ncent], Uc[Ncent], cc[Ncent];
+    double Ac[Ncent]={0.}, Vc[Ncent]={0.}, Uc[Ncent]={0.}, cc[Ncent]={0.};
     
     testStar->getAstarCenter(Ac, maxPow, GAM1);
     testStar->getVgCenter(Vc, maxPow, GAM1);
@@ -154,7 +155,7 @@ void test_uniform_boundaries(){
     constexpr std::size_t NS=10;
     constexpr int Nsurf = 6;
     maxPow = 4; // the integer passed needs to be mutable
-    double As[Nsurf], Vs[Nsurf], Us[Nsurf], cs[Nsurf];
+    double As[Nsurf]={0.}, Vs[Nsurf]={0.}, Us[Nsurf]={0.}, cs[Nsurf]={0.};
     testStar->getAstarSurface(As, maxPow, GAM1);
     testStar->getVgSurface(Vs, maxPow, GAM1);
     testStar->getUSurface(Us, maxPow);
@@ -181,7 +182,7 @@ void do_test_center(Star* testStar, double const tol){
     constexpr double GAM1 = 5./3.;
     constexpr int Ncent = 3;
     int maxPow = 2*(Ncent-1); // the integer passed needs to be mutable
-    double Ac[Ncent], Vc[Ncent], Uc[Ncent], cc[Ncent];
+    double Ac[Ncent]={0.}, Vc[Ncent]={0.}, Uc[Ncent]={0.}, cc[Ncent]={0.};
     
     testStar->getAstarCenter(Ac, maxPow, GAM1);
     testStar->getVgCenter(Vc, maxPow, GAM1);
@@ -204,7 +205,7 @@ void do_test_surface(Star* testStar, double const tol){
     constexpr double GAM1 = 5./3.;
     constexpr int Nsurf = 6;
     int maxPow = 4; // the integer passed needs to be mutable
-    double As[Nsurf], Vs[Nsurf], Us[Nsurf], cs[Nsurf];
+    double As[Nsurf]={0.}, Vs[Nsurf]={0.}, Us[Nsurf]={0.}, cs[Nsurf]={0.};
     testStar->getAstarSurface(As, maxPow, GAM1);
     testStar->getVgSurface(Vs, maxPow, GAM1);
     testStar->getUSurface(Us, maxPow);
@@ -322,8 +323,8 @@ void test_several_polytropes(){
     Star *testStar;
     for(double n : INDEX){
         testStar = new Polytrope(n, LEN);
-        do_test_center(testStar, 1.e-2);
-        do_test_center(testStar, 1.e-2);
+        do_test_center(testStar, 1.e-4);
+        do_test_center(testStar, 1.e-4);
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-8);
         delete testStar;
     }
