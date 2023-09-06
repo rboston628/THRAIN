@@ -8,8 +8,14 @@
 #ifndef STARCLASS
 #define STARCLASS
 
+#include <limits>
 #include "Star.h"
 #include "../lib/string.h"
+
+//in Newtonian, light speed is infinity
+double Star::light_speed2() {
+	return std::numeric_limits<double>::infinity();
+}
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
 void Star::writeStar(const char *const c){

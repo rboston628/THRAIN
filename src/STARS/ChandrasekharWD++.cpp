@@ -70,7 +70,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	rootfind::bisection_find_brackets_newton(surface, dxi, dximin, dximax);
 	yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-	printf("edge  =\t%le %le\n", yS, Y[len-1][y]-1.0);
 
 	//now set physical properties of the white dwarf
 	init_arrays();
@@ -106,6 +105,40 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 	setupCenter();
 	setupSurface();
 	printf("%0.2lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
+}
+
+//initalize white dwarf from central value of y and length
+ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, double const B0)
+	: Y0(Y0), len(L), 
+	chemical_gradient(Chandrasekhar::constant_mu{1.0}),
+	A0(A0), B0(B0)
+{
+	basic_setup();
+
+	//we find an appropriate grid spacing for array holding star data
+	//we need for dx to be such that the integration ends with x[len-1]=0.0
+	//we will find the proper dx with a bisection search
+
+	double dxi = 1./double(len); //2.*sqrt(6.0)/(len-1); //an initial guess from constant volume star
+	double dximax=1.0, dximin=0, yS;
+	std::function<double(double)> surface = [this](double step) -> double {
+		return RK4integrate(step, SurfaceBehavior::STOP_AT_ZERO);
+	};
+	rootfind::bisection_find_brackets_newton(surface, dxi, dximin, dximax);
+	yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
+	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+
+	//now set physical properties of the white dwarf
+	init_arrays();
+	indexFit = len/2;
+	for(std::size_t X=1; X<len-1; X++){
+		//scan through x, set matching point where x[X] = 0.5
+		if(Y[X-1][x]>0.5 & Y[X+1][x]<=0.5) indexFit = X;
+	}
+	indexFit /= 2;
+	setupCenter();
+	setupSurface();
+	printf("%0.8lf\t%le\t%le\n", 1./Y02, Mass()/MSOLAR, Radius());
 }
 
 ChandrasekharWD::~ChandrasekharWD(){
@@ -348,16 +381,16 @@ void ChandrasekharWD::getC1Center(double *cc, int& maxPow){
 void ChandrasekharWD::setupSurface(){}
 
 void ChandrasekharWD::getAstarSurface(double *As, int& maxPow, double g){
-	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+	double Gam1 = (g==0.0 ? Gamma1(len-2) : g);
 	double x1 = Y[len-1][xi];
 	double a1 =-Y[len-1][z]*x1;
 	int O=1;
 	//depending on power requested, return appropriate number of terms
-	if(maxPow>=-1) As[O-1] = 1.5;
+	if(maxPow>=-1) As[O-1] = 0.0;
 	if(maxPow>= 0) As[O  ] = 0.75*a1;
-	if(maxPow>= 1) As[O+1] = 0.75*a1 + 8.*a1*a1/Gam1 - 3.*a1*a1/8.;
-	if(maxPow>= 2) As[O+2] = a1*3./16.*pow(a1-2.,2)+4./3.*a1*a1*(12.+5.*a1)/Gam1;
-	if(maxPow>= 3) As[O+3] = -3.*a1*pow(a1-2,3)/32.+(724.*a1*a1/45. + 20.*a1 + 24.)*a1*a1/Gam1;
+	if(maxPow>= 1) As[O+1] = 0.75*a1 - (8./Gam1 + 0.375)*a1*a1;
+	if(maxPow>= 2) As[O+2] = 0.0;
+	if(maxPow>= 3) As[O+3] = 0.0;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
 }
@@ -368,11 +401,11 @@ void ChandrasekharWD::getVgSurface(double *Vs, int& maxPow, double g){
 	double a1 =-Y[len-1][z]*x1;
 	int O=1;
 	//depending on power requested, return appropriate number of terms
-	if(maxPow>=-1) Vs[O-1] = 0.0;
-	if(maxPow>= 0) Vs[O  ] = 0.0;
-	if(maxPow>= 1) Vs[O+1] = -8.*a1*a1/Gam1;
-	if(maxPow>= 2) Vs[O+2] = -4./3.*a1*a1*(12.+5.*a1)/Gam1;
-	if(maxPow>= 3) Vs[O+3] = -(724.*a1*a1/45. + 20.*a1 + 24.)*a1*a1/Gam1;
+	if(maxPow>=-1) Vs[O-1] = 1.5;
+	if(maxPow>= 0) Vs[O  ] = 0.75*a1;
+	if(maxPow>= 1) Vs[O+1] = 0.75*a1 + 8.*a1*a1/Gam1 - 3.*a1*a1/8.;
+	if(maxPow>= 2) Vs[O+2] = a1*3./16.*pow(a1-2.,2)+4./3.*a1*a1*(12.+5.*a1)/Gam1;
+	if(maxPow>= 3) Vs[O+3] = -3.*a1*pow(a1-2,3)/32.+(724.*a1*a1/45. + 20.*a1 + 24.)*a1*a1/Gam1;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
 }

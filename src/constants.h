@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include <limits>
 #include "../lib/Splinor.h"
 #include "../lib/matrix.h"
 #include "../lib/string.h"

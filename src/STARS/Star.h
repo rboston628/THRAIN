@@ -57,7 +57,7 @@ public:
 	virtual double Radius() =0;
 	virtual double Mass() =0;
 	virtual double Gee() =0;
-	virtual double light_speed2() =0;
+	virtual double light_speed2();
 	//print relevant values of the star in .txt and gnuplot
 	virtual void writeStar(const char *const c = NULL);
 	virtual void printStar(const char *const c = NULL);

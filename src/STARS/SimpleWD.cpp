@@ -1202,8 +1202,6 @@ void SimpleWD::populateBruntVaisala(){
 double SimpleWD::Radius(){return Rstar;}	//total radius
 double SimpleWD::Mass(){  return Mstar;}	//total mass
 double SimpleWD::Gee(){   return G_CGS;}
-//in Newtonian, light speed is infinity...
-double SimpleWD::light_speed2(){return C_CGS*C_CGS;}
 
 // **************************  CENTRAL BOUNDARY **************************************
 // the following provide coefficients for central expansions of A*, Vg, U, c1 in trms of x=r/R

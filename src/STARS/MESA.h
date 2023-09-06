@@ -20,7 +20,6 @@ public:
 	double Mass() override;
 	double Radius() override;
 	double Gee() override;
-	double light_speed2() override;
 	std::string graph_title () override {
 		return strmakef("MESA model w/ Mass=%lg", Mtot);
 	}

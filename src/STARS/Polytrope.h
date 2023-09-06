@@ -35,8 +35,6 @@ public:
 	double Radius() override;	//total radius
 	double Mass() override;		//total mass
 	double Gee() override {return GG;};
-	//in Newtonian, light speed is infinity
-	virtual double light_speed2() override {return std::numeric_limits<double>::infinity();};
 	
 	//these return value of indicated variable -- used in testing
 	double getX(std::size_t X){     return Y[X][x];}

@@ -37,8 +37,6 @@ public:
 	double Radius() override;	//total radius
 	double Mass() override;	    //total mass
 	double Gee() override;
-	//in Newtonian, light speed is infinity...
-	virtual double light_speed2() override;
 	
 	double rad(std::size_t) override;
 	double rho(std::size_t) override, drhodr(std::size_t) override;

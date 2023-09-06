@@ -165,7 +165,6 @@ MESA::~MESA(){
 double MESA::Radius(){return Rstar;} //total radius in appropriate units
 double MESA::Mass()  {return Mstar;} //total mass   in appropriate units
 double MESA::Gee()   {return G_CGS;} //Newton's constant in appropriate units
-double MESA::light_speed2(){return C_CGS*C_CGS;} //light speed in appropriate units
 
 //Here we define functions to access radius, pressure, etc.
 double MESA::rad(std::size_t X){

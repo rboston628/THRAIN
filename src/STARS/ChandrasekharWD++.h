@@ -34,16 +34,13 @@ public:
 	typedef std::function<void(double const, double const, double&, double&)> ChemicalGrad;
 	ChandrasekharWD(double, std::size_t,               ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, const double, ChemicalGrad);
+	ChandrasekharWD(double, std::size_t, double const A0, double const B0);
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
 	double Radius() override;	//total radius
 	double Mass() override;//total mass
 	double Gee() override; //{return G_CGS;};
-	//in Newtonian, light speed is infinity...
-	virtual double light_speed2() override {
-		return std::numeric_limits<double>::infinity();
-	}
 	
 	double rad(std::size_t) override;
 	double rho(std::size_t) override, drhodr(std::size_t) override;

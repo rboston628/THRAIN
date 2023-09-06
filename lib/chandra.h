@@ -5,8 +5,12 @@
 #include "../src/constants.h"
 
 namespace Chandrasekhar {
-	const double A0 = 6.0406e22;
-	const double B0 = 9.8848e5;
+	double const A0 = 6.0406e22;
+	double const B0 = 9.8848e5;
+
+	//these values taken from Chandrasekhar's book
+	double const A01939 = 6.01e22;
+	double const B01939 = 9.82e5;
 
 	double factor_f(double x);
 	double factor_g(double x);
