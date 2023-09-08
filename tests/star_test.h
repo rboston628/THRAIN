@@ -43,6 +43,10 @@ double surface_expand_inverse(double const t, double const *const ac, int const 
 class StarTest : public CxxTest::TestSuite {
 public:
 
+StarTest() {
+    system( "mkdir -p tests/artifacts" );
+}
+
 void test_bad_SSR(){
     /* Tests that low number of grid points
     *  will produce a bad SSR*/
@@ -396,6 +400,7 @@ void test_against_chandrasekhar(){
     for(std::size_t n=0; n<num_rows; n++) {
         Y0[n] = 1./sqrt(invY0sq[n]);
     }
+    
 
     char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
     system( "mkdir -p tests/artifacts/" );
