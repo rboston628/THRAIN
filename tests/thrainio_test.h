@@ -618,4 +618,7 @@ public:
         TS_ASSERT_EQUALS(outdata.error[3], true);
     }
 
+    ~IOBaseTest(){
+        system("rm tests/test_file.txt");
+    }
 };

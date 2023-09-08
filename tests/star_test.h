@@ -233,7 +233,7 @@ void test_polytrope_n0(){
     const double INDEX = 0.0;
     const std::size_t LEN = 1000;
     Star *uniform = new Isopycnic(LEN);
-    Star *testStar = new Polytrope(INDEX,LEN);
+    Polytrope *testStar = new Polytrope(INDEX,LEN);
 
     // use the SSR of the polytrope to quantify acceptable error
     const double residual = pow(10.0,ceil(log10(testStar->SSR())));
@@ -254,6 +254,15 @@ void test_polytrope_n0(){
         TS_ASSERT_DELTA( uniform->P(i),   testStar->P(i),   residual );
     }
 
+    double xi, theta;
+    FILE *fp = fopen("tests/artifacts/exact_0.txt", "w");
+    for(std::size_t i=0; i<LEN; i++){
+        xi = testStar->getX(i);
+        theta = 1. - xi*xi/6.;
+        fprintf(fp, "%lf\t%le\n", xi, std::abs(theta-testStar->getY(i)));
+    }
+    fclose(fp);
+
     do_test_center(testStar, 1.e-12);
     do_test_surface(testStar, 1.e-4);
 
@@ -265,7 +274,7 @@ void test_polytrope_n1(){
     printf("STAR TESTS n=1.0 POLYTROPE\n");
     const double INDEX = 1.0;
     const std::size_t LEN = 1000;
-    Star *testStar = new Polytrope(INDEX,LEN);
+    Polytrope *testStar = new Polytrope(INDEX,LEN);
 
     const double residual = pow(10.0,ceil(log10(testStar->SSR())));
     TS_ASSERT_LESS_THAN( residual, 1.e-8 );
@@ -276,12 +285,15 @@ void test_polytrope_n1(){
     TS_ASSERT_DELTA( testStar->Mass(), Rn*(INDEX+1)*m_pi, residual );
 
     double x, theta;
+    FILE *fp = fopen("tests/artifacts/exact_1.txt", "w");
     for(std::size_t i=1; i<LEN; i++){
         x = testStar->rad(i)/Rn;
         theta = sin(x)/x;
         TS_ASSERT_DELTA( testStar->P(i),   pow(theta,2), residual );
         TS_ASSERT_DELTA( testStar->rho(i), theta, residual );
+        fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
     }
+    fclose(fp);
 
     do_test_center(testStar, 1.e-4);
     do_test_surface(testStar, 1.e-4);
@@ -303,13 +315,16 @@ void test_polytrope_n5(){
     TS_ASSERT_LESS_THAN( residual, 1.e-8 );
 
     double x, theta;
-    for(std::size_t i=1; i<LEN; i++){
+    FILE *fp = fopen("tests/artifacts/exact_5.txt", "w");
+    for(std::size_t i=0; i<LEN; i++){
         x = testStar->getX(i);
         theta = pow( 1.0 + x*x/3.0, -0.5);
         TS_ASSERT_DELTA( testStar->getY(i), theta, residual );
         TS_ASSERT_DELTA( testStar->P(i),   pow(theta,INDEX+1), residual );
         TS_ASSERT_DELTA( testStar->rho(i), pow(theta,INDEX), residual );
+        fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
     }
+    fclose(fp);
 
     do_test_center(testStar, 1.e-4);
     // there is no surface
@@ -329,6 +344,41 @@ void test_several_polytropes(){
         delete testStar;
     }
 }
+
+void test_make_exact_error_graph(){
+	//plot everything in single graph, for simplicity
+	FILE *gnuplot = popen("gnuplot -persist", "w");
+	fprintf(gnuplot, "reset\n");
+	fprintf(gnuplot, "set term png size 2000,1000\n");
+	fprintf(gnuplot, "set output 'tests/artifacts/polytrope_exact_differences.png'\n");
+	fprintf(gnuplot, "set title 'Errors in Analytic Polytropes, N_{star} = %d'\n",1000);
+	fprintf(gnuplot, "set xrange [0:1.01]\n");
+	fprintf(gnuplot, "set xlabel 'Scaled Radius r/R'\n");
+	fprintf(gnuplot, "set ylabel 'log_{10} |θ_{num}-θ_{exact}|\n");
+	fprintf(gnuplot, "set logscale y\n");
+	fprintf(gnuplot, "set format y '10^{%%L}'\n");
+	fprintf(gnuplot, "plot");
+    fprintf(gnuplot, " '%s' u 1:2 w l t 'n=0',", "tests/artifacts/exact_0.txt");
+    fprintf(gnuplot, " '%s' u 1:2 w l t 'n=1',", "tests/artifacts/exact_1.txt");
+    fprintf(gnuplot, " '%s' u 1:2 w l t 'n=5'", "tests/artifacts/exact_5.txt");
+	fprintf(gnuplot, "\n");
+	pclose(gnuplot);
+
+    // remove the text files
+    system("rm tests/artifacts/exact_0.txt");
+    system("rm tests/artifacts/exact_1.txt");
+    system("rm tests/artifacts/exact_5.txt");
+}
+
+void test_make_polytrope_scale_graph(){
+
+}
+
+// TODO: make the following for polytrope
+// * scaling of exact errors
+// * physical errors
+// * scaling of physical errors
+// * scaling of theta
 
 /***** TESTS OF CHANDRASEKHAR WD ******/
 

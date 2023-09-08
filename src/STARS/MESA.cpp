@@ -17,7 +17,6 @@
 
 #include "MESA.h"
 
-//initalize polytrope from index and tolerance
 MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	printf("Beginning read-in of MESA data.\n");
 	FILE *infile;
