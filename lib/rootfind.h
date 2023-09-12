@@ -15,7 +15,7 @@ double pseudo_unif();
 
 // this will find brackets using a simple expansion/movement search
 // one bracket is moved to one side until the function changes sign, to find brackets
-void bisection_find_brackets_move(
+int bisection_find_brackets_move(
 	std::function<double(double)>& func,	//the function to find zero of
 	double const x0,						//an initial guess for the zero
 	double& xmin,							//the lower bracket -- will be returned
@@ -25,7 +25,7 @@ void bisection_find_brackets_move(
 // this will find brackets using newton's method to look for the next zero, then a bit beyond it
 // why use one zero-finding method to prepare another zero-finding method? 
 //    because Newton's method can fail, but bisection searches can go to nearly arbitrary accuracy
-void bisection_find_brackets_newton(
+int bisection_find_brackets_newton(
 	std::function<double(double)>& func,	//the function to find zero of
 	double const x0,						//an initial guess for the zero
 	double& xmin,							//the lower bracket -- will be returned

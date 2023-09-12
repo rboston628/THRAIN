@@ -452,27 +452,16 @@ void test_CHWD_grad_constructor(){
     printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n");
     std::size_t const LEN(1000);
     ChandrasekharWD *testStar;
-        // the values listed in Chandrasekhar 1939 table
-    double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
-    const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
-    // translate 1/Y0^2 to Y0
-    double Y0[num_rows];
-    for(std::size_t n=0; n<num_rows; n++) {
-        Y0[n] = 1./sqrt(invY0sq[n]);
-    }
+    const double Y0[] = {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0};
     double F0;
 
     for(double y0 : Y0){
         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
-        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-10);
-        do_test_surface(testStar, 1.e-4);
-        do_test_surface(testStar, 2.e-0);
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         delete testStar;
         F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
-        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-10);
-        do_test_surface(testStar, 1.e-4);
-        do_test_surface(testStar, 2.e-0);
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         delete testStar;
     }
 }

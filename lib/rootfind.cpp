@@ -17,7 +17,7 @@ double rootfind::pseudo_unif(){
 
 // this will find brackets using a simple expansion/movement search
 // one bracket is moved to one side until the function changes sign, to find brackets
-void rootfind::bisection_find_brackets_move(
+int rootfind::bisection_find_brackets_move(
 	std::function<double(double)>& func,    //the function to find zero of
 	double const x0,                        //an initial guess for the zero
 	double &xmin,                           //the lower bracket -- will be returned
@@ -34,7 +34,7 @@ void rootfind::bisection_find_brackets_move(
 	if(y==0.0){
 		xmin = x0;
 		xmax = x0;
-		return;
+		return 0;
 	}
 
 	// happy path 2
@@ -42,12 +42,12 @@ void rootfind::bisection_find_brackets_move(
 	if(y1*y < 0.0) { // if y1 and y are on opposite side
 		xmin = x1;
 		xmax = x0;
-		return;
+		return 0;
 	}
 	if(y2*y < 0.0) { // if y2 and y are on opposite sides
 		xmax = x2;
 		xmin = x0;
-		return;
+		return 0;
 	}
 
 	// all sampled points on same side
@@ -79,7 +79,7 @@ void rootfind::bisection_find_brackets_move(
 			}
 			xmin = x1;
 			xmax = x0;
-			return;
+			return 0;
 		} break;
 		case Slope::CONCAVE_DOWN:
 		case Slope::DOWN: {
@@ -90,13 +90,13 @@ void rootfind::bisection_find_brackets_move(
 			}
 			xmax = x2;
 			xmin = x0;
-			return;
+			return 0;
 		} break;
 		default:{
 			xmin = nan("");
 			xmax = nan("");
 			perror("Unable to find a root near this guess");
-			return;
+			return 1;
 		}
 		}
 	}
@@ -112,7 +112,7 @@ void rootfind::bisection_find_brackets_move(
 			}
 			xmax = x2;
 			xmin = x0;
-			return;
+			return 0;
 		} break;
 		case Slope::DOWN: {
 			while(y1 < 0.0){
@@ -122,13 +122,13 @@ void rootfind::bisection_find_brackets_move(
 			}
 			xmin = x1;
 			xmax = x0;
-			return;
+			return 0;
 		} break;
 		default:{
 			xmin = nan("");
 			xmax = nan("");
 			perror("Unable to find a root near this guess");
-			return;
+			return 1;
 		}
 		}
 	}
@@ -138,14 +138,15 @@ void rootfind::bisection_find_brackets_move(
 	if(xmin > xmax){
 		double temp = xmax;
 		xmax = xmin; xmin = temp;
-		return;
+		return 0;
 	}
+	return 0;
 }
 
 // this will find brackets using newton's method to look for the next zero, then a bit beyond it
 // why use one zero-finding method to prepare another zero-finding method? 
 //    because Newton's method can fail, but bisection searches can go to nearly arbitrary accuracy
-void rootfind::bisection_find_brackets_newton(
+int rootfind::bisection_find_brackets_newton(
 	std::function<double(double)>& func, //the function to find zero of
 	double const x0,                     //an initial guess for the zero
 	double& xmin,                        //the lower bracket -- will be returned
@@ -218,6 +219,7 @@ void rootfind::bisection_find_brackets_newton(
 		temp = ymax;
 		ymax = ymin; ymin = temp;
 	}
+	return 0;
 }
 
 //given brackets bounding a single zero, find the zero

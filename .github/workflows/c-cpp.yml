@@ -27,8 +27,8 @@ jobs:
       - name: run cppcheck
         run: |
           sudo apt-get install -y cppcheck
-          cppcheck lib/
-          cppcheck src/
+          cppcheck lib/ --error-exitcode=1 --std=c++14
+          cppcheck src/ --error-exitcode=1 --std=c++14
 
   # build and test the code
   build-and-test:

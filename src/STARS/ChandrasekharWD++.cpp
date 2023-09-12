@@ -32,7 +32,7 @@ void ChandrasekharWD::basic_setup(){
 	// prepare stellar arrays
 	Y = new double*[len];
 	for(std::size_t i=0; i<len; i++){
-		Y[i] = new double[numvar];
+		Y[i] = new double[numvar]{0.0};
 	}
 }
 
@@ -67,8 +67,18 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	std::function<double(double)> surface = [this](double step) -> double {
 		return RK4integrate(step, SurfaceBehavior::STOP_AT_ZERO);
 	};
-	rootfind::bisection_find_brackets_newton(surface, dxi, dximin, dximax);
-	yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
+	int status = rootfind::bisection_find_brackets_move(surface, dxi, dximin, dximax);
+	if(!status){
+		yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
+	}
+	else {
+		perror("Unable to fit a CHWD with this Y0 -- too close to Chandrasekhar limit\n");
+		mass = new double[1];
+		mue = new double[1];
+		dmue = new double [1];
+		x3 = new double[1]; // set to avoid segfault at destruction
+		return;
+	}
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 
 	//now set physical properties of the white dwarf
