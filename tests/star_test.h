@@ -31,11 +31,10 @@ double surface_expand_zero(double const t, double const *const ac, int const max
 
 double surface_expand_inverse(double const t, double const *const ac, int const maxPow){
     const int O=1;
-    double value = ac[O-1]/t + ac[O];
-    value += ac[O+1]*t;
-    value += ac[O+2]*pow(t,2);
-    value += ac[O+3]*pow(t,3);
-    value += ac[O+4]*pow(t,4);
+    double value = ac[O-1]/t;
+    for(int i=0; i<=maxPow; i++){
+        value += ac[O+i]*pow(t,i);
+    }
     return value;
 }
 
@@ -46,6 +45,8 @@ public:
 StarTest() {
     system( "mkdir -p tests/artifacts" );
 }
+
+/***** basic tests of the SSR function *****/
 
 void test_bad_SSR(){
     /* Tests that low number of grid points
@@ -84,6 +85,8 @@ void test_scale_SSR(){
     // make sure it at least scales this well
     TS_ASSERT_LESS_THAN( 6.0, scale_factor );
 }
+
+/***** tests of some basic functions using a uniform star *****/
 
 void test_uniform_star(){
     /* This test really only ensures that the SSR will be 
@@ -337,6 +340,7 @@ void test_polytrope_n5(){
 }
 
 void test_several_polytropes(){
+    printf("STAR TESTS SSR FOR SEVERAL POLYTROPES\n");
     double const INDEX[] = {1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
     std::size_t const LEN = 1000;
     Star *testStar;
@@ -348,6 +352,28 @@ void test_several_polytropes(){
         delete testStar;
     }
 }
+
+void test_polytrope_MR_constructor(){
+    printf("STAR TESTS POLYTROPE M,R CONSTRUCTOR\n");
+    const double BigM[] = {0.2, 0.6, 1.0, 2.0, 10.0};
+    const double BigR[] = {0.1, 1.1, 1.2, 20.0};
+    const double index[] = {1.0, 1.5, 3.0};
+    const std::size_t LEN = 1000;
+    Polytrope *testStar;
+
+    for(double M : BigM){
+        for(double R : BigR){
+            for(double n : index){
+                testStar = new Polytrope(M*MSOLAR, R*REARTH, n, LEN);
+                TS_ASSERT_DELTA(M, testStar->Mass()/MSOLAR, 1.e-14);
+                TS_ASSERT_DELTA(R, testStar->Radius()/REARTH, 1.e-14);
+                TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-8);
+                delete testStar;
+            }
+        }
+    }
+}
+
 
 void test_make_exact_error_graph(){
 	//plot everything in single graph, for simplicity
@@ -374,33 +400,31 @@ void test_make_exact_error_graph(){
     system("rm tests/artifacts/exact_5.txt");
 }
 
-void test_make_polytrope_scale_graph(){
-
-}
-
 // TODO: make the following for polytrope
 // * scaling of exact errors
 // * physical errors
 // * scaling of physical errors
 // * scaling of theta
 
-/***** TESTS OF CHANDRASEKHAR WD ******/
+/***** TESTS OF CHANDRASEKHAR WD *****/
 
-void test_against_chandrasekhar(){
+void test_CHWD_against_chandrasekhar(){
+    printf("STAR TEST CHANDRASEKHAR TABLE\n")
     // Chandrasekhar 1939 table 27 has properties of several WDs
     // to compare must use values of A0, B0 that were in use in 1939
 
-    std::size_t LEN(2000);
+    std::size_t const LEN(2000);
     ChandrasekharWD *testStar;
+    // the values listed in Chandrasekhar 1939 table
     double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
     double M1939[] = {5.51, 5.32, 4.87, 4.33, 3.54, 2.95, 2.45, 2.02, 1.62, 0.88};
     double R1939[] = {4.13e8, 5.44e8, 7.69e8, 9.92e8, 1.29e9, 1.51e9, 1.72e9, 1.93e9, 2.15e9, 2.79e9};
     const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
+    // translate 1/Y0^2 to Y0
     double Y0[num_rows];
     for(std::size_t n=0; n<num_rows; n++) {
         Y0[n] = 1./sqrt(invY0sq[n]);
     }
-    
 
     char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
     system( "mkdir -p tests/artifacts/" );
@@ -424,8 +448,48 @@ void test_against_chandrasekhar(){
     fclose(fp);
 }
 
+void test_CHWD_grad_constructor(){
+    printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n")
+    std::size_t const LEN(1000);
+    ChandrasekharWD *testStar;
+        // the values listed in Chandrasekhar 1939 table
+    double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
+    const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
+    // translate 1/Y0^2 to Y0
+    double Y0[num_rows];
+    for(std::size_t n=0; n<num_rows; n++) {
+        Y0[n] = 1./sqrt(invY0sq[n]);
+    }
+    double F0;
+
+    for(double y0 : Y0){
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-10);
+        do_test_surface(testStar, 1.e-4);
+        do_test_surface(testStar, 2.e-0);
+        delete testStar;
+        F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        testStar = new ChandrasekharWS(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-10);
+        do_test_surface(testStar, 1.e-4);
+        do_test_surface(testStar, 2.e-0);
+        delete testStar;
+    }
+}
+
+// TODO read in star outputs, compare
+
 /***** TESTS OF MESA WRAPPER ******/
 
+// TODO read in MESA modle, previous output, compare
+
 /***** TESTS OF SIMPLE WD MODELS ******/
+
+void test_SWD_constructor(){
+// TODO create a SWD, save its output
+// then create one here, compare to previous
+
+}
+
 
 };

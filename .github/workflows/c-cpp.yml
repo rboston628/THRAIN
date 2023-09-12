@@ -18,11 +18,23 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+  # perform static analysis of the code, to ensure no uncaught undefined behavior
+  cppcheck:
+    name: cpp-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: run cppcheck
+        run: |
+          sudo apt-get install -y cppcheck
+          cppcheck lib/
+          cppcheck src/
+
+  # build and test the code
   build-and-test:
     # The type of runner that the job will run on
     name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }} # будет запускаться по очереди на всех типах машин
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:

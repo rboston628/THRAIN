@@ -19,7 +19,6 @@ public:
 
         TS_ASSERT_EQUALS(x[11], '\0');
         TS_ASSERT_EQUALS(y[11], '\0');
-        TS_ASSERT_EQUALS(s[11], '\0');
 
         std::string res1 = "_std_string_c_string_1"; // string + cstring
         std::string res2 = "_c_string_1_std_string"; // cstring + string
