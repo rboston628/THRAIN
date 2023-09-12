@@ -474,11 +474,8 @@ void test_CHWD_grad_constructor(){
 
 /***** TESTS OF SIMPLE WD MODELS ******/
 
-void test_SWD_constructor(){
 // TODO create a SWD, save its output
 // then create one here, compare to previous
-
-}
 
 
 };

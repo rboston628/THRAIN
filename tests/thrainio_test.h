@@ -40,6 +40,7 @@ public:
     }
 
     void test_fail_bad_calcname() {
+        printf("START IO TESTS:");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Nombre: espanol\n";
