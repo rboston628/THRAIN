@@ -409,7 +409,7 @@ void test_make_exact_error_graph(){
 /***** TESTS OF CHANDRASEKHAR WD *****/
 
 void test_CHWD_against_chandrasekhar(){
-    printf("STAR TEST CHANDRASEKHAR TABLE\n")
+    printf("STAR TEST CHANDRASEKHAR TABLE\n");
     // Chandrasekhar 1939 table 27 has properties of several WDs
     // to compare must use values of A0, B0 that were in use in 1939
 
@@ -449,7 +449,7 @@ void test_CHWD_against_chandrasekhar(){
 }
 
 void test_CHWD_grad_constructor(){
-    printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n")
+    printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n");
     std::size_t const LEN(1000);
     ChandrasekharWD *testStar;
         // the values listed in Chandrasekhar 1939 table
@@ -469,7 +469,7 @@ void test_CHWD_grad_constructor(){
         do_test_surface(testStar, 2.e-0);
         delete testStar;
         F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-        testStar = new ChandrasekharWS(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-10);
         do_test_surface(testStar, 1.e-4);
         do_test_surface(testStar, 2.e-0);
