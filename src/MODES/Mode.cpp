@@ -12,7 +12,7 @@
 #define MODECLASS
 
 #include "Mode.h"
-#include "../lib/rootfind.h"
+#include "../../lib/rootfind.h"
 
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching

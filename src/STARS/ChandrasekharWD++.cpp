@@ -91,7 +91,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	indexFit /= 2;
 	setupCenter();
 	setupSurface();
-	printf("%0.8lf\t%le\t%le\n", 1./Y02, Mass()/MSOLAR, Radius());
 }
 
 //initalize white dwarf from central value of y and length, with specific step size
@@ -148,7 +147,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, dou
 	indexFit /= 2;
 	setupCenter();
 	setupSurface();
-	printf("%0.8lf\t%le\t%le\n", 1./Y02, Mass()/MSOLAR, Radius());
 }
 
 ChandrasekharWD::~ChandrasekharWD(){
@@ -525,7 +523,7 @@ void ChandrasekharWD::printChem(char const *const outputdir){
 }
 
 
-int ChandrasekharWD::read_star_input(Calculation::InputData& calcdata, FILE* input_file){
+int ChandrasekharWD::read_star_input(FILE* input_file, Calculation::InputData& calcdata){
 	char input_buffer[512];
 	std::string instring;
 	

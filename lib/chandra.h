@@ -8,7 +8,7 @@ namespace Chandrasekhar {
 	double const A0 = 6.0406e22;
 	double const B0 = 9.8848e5;
 
-	//these values taken from Chandrasekhar's book
+	//these values taken from Chandrasekhar 1932, pg 416 in Dover reprint
 	double const A01939 = 6.01e22;
 	double const B01939 = 9.82e5;
 

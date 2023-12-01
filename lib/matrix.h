@@ -1,6 +1,6 @@
 // **************************************************************************************
 // matrix.h
-//		This file describes certain matri operations for the GRPulse code.  
+//		This file describes certain matrix operations for the GRPulse code.  
 // **************************************************************************************
 
 #include <cmath>
@@ -10,7 +10,7 @@
 #ifndef MATRIX
 #define MATRIX
 
-namespace matrix{
+namespace matrix {
 
 template <std::size_t N, std::size_t M, class T>
 void swap_rows(T (&m)[N][M], std::size_t i, std::size_t j){
@@ -178,6 +178,29 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 	return 0;
 }
 
+// will destroy the diagonal vectors
+// this is needed by classes where N cannot be known at compile time
+template <class T>
+int invertTridiagonal(T *left, T *diag, T *rite, T *RHS, T *x, std::size_t const N){
+	double w;
+	
+	// sweep foward changing coefficients
+	rite[0] /= diag[0];
+	RHS[0] /= diag[0];
+	diag[0] = 1.0;
+	for(int k=1; k<N; k++){
+		w = left[k]/diag[k-1];
+		diag[k] -= w * rite[k-1];
+		RHS[k]  -= w * RHS[k-1];
+	}
+
+	// back-substitute
+	x[N-1] = RHS[N-1]/diag[N-1];
+	for(int k=(N-2); k>=0; k--){
+		x[k] = (RHS[k] - rite[k]*x[k+1])/diag[k];
+	}
+	return 0;
 }
 
+} // namespace matrix
 #endif

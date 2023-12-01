@@ -56,7 +56,7 @@ int rootfind::bisection_find_brackets_move(
 	// either y1 < y < y2
 	// or     y1 > y > y2
 	// in non-ideal cases 
-	// could be y1 = y = y (FLAT_)
+	// could be y1 = y = y (FLAT)
 	// could be y>y1 and y>y2, (CONCAVE)
 	// or       y<y1 and y<y2
 	enum class Slope {NONE, UP, DOWN, FLAT, CONCAVE_UP, CONCAVE_DOWN};
@@ -262,5 +262,6 @@ double rootfind::bisection_search(
 	x = 0.5*(xmin+xmax);
 	return func(x);
 }
+
 
 #endif

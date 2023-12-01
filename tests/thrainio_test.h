@@ -34,13 +34,13 @@ public:
     /* test in basic calculation setup */
 
     void test_fail_bad_file() {
+        printf("START IO TESTS:");
         Calculation::InputData data;
         char badfilename[] = "tests/nonexistent.txt";
         TS_ASSERT_EQUALS(1, io::read_input(badfilename, data));
     }
 
     void test_fail_bad_calcname() {
-        printf("START IO TESTS:");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Nombre: espanol\n";
@@ -48,6 +48,8 @@ public:
         FILE* in = fopen(testfilename.c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_calcname(in, data));
         fclose(in);
+        // also ensure read_input fails when these do
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
     }
 
      void test_fail_no_calcname() {
@@ -57,8 +59,9 @@ public:
         make_test_input(testfilename,filecontents);
         FILE* in = fopen(testfilename.c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_calcname(in, data));
-        printf("CALCNAME = %s\n", data.calcname.c_str());
         fclose(in);
+        // also ensure read_input fails when these do
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
     }
 
     void test_read_calcname() {
@@ -77,41 +80,51 @@ public:
     void test_fail_bad_model() {
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Model: GR fakemodel\n";
+        std::string filecontents = 
+            "Name: valid_test_name\n"
+            "Model: GR fakemodel\n";
         make_test_input(testfilename,filecontents);
         FILE* in = fopen(testfilename.c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_model(in, data));
         TS_ASSERT_EQUALS(data.regime, regime::PN0);
         fclose(in);
+        // also ensure read_input fails when these do
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
     }
 
     void test_fail_no_model() {
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Model: newtonian\n";
+        std::string filecontents = 
+            "Name: valid_test_name\n"
+            "Model: newtonian\n";
         make_test_input(testfilename,filecontents);
         FILE* in = fopen(testfilename.c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_model(in, data));
         TS_ASSERT_EQUALS(data.regime, regime::PN0);
         fclose(in);
+        // also ensure read_input fails when these do
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
     }
 
     void do_test_read_model(model::StellarModel m){
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Model: newtonian ";
+        std::string filecontents = 
+            "Name: valid_test_name\n"
+            "Model: newtonian ";
         switch(m){
         case model::polytrope:
-            filecontents += "polytrope\n";
+            filecontents += "polytrope\t\n";
             break;
         case model::CHWD:
-            filecontents += "CHWD\n";
+            filecontents += "CHWD\t\n";
             break;
         case model::MESA:
-            filecontents += "MESA\n";
+            filecontents += "MESA\t\n";
             break;
         case model::SWD:
-            filecontents += "SWD\n";
+            filecontents += "SWD\t\n";
             break;
         }
         make_test_input(testfilename,filecontents);

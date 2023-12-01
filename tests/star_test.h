@@ -10,6 +10,7 @@
 #include "../src/STARS/Isopycnic.h"
 #include "../src/STARS/Polytrope.h"
 #include "../src/STARS/ChandrasekharWD++.h"
+#include "../src/STARS/MESA.h"
 #include <cxxtest/TestSuite.h>
 #include <random>
 
@@ -79,7 +80,6 @@ void test_scale_SSR(){
     // further test that it SCALES like LEN^{-4}
     // if it scaled exactly like LEN^{-4}, this would equal 2^4=16
     // because it reaches limits of machine precision, will be smaller
-    printf("%le %le %le\n", SSR[1], SSR[2], SSR[3]);
     double scale_factor = (SSR[1]-SSR[2])/(SSR[2]-SSR[3]);
     TS_ASSERT_LESS_THAN( scale_factor , 16.0);
     // make sure it at least scales this well
@@ -91,7 +91,7 @@ void test_scale_SSR(){
 void test_uniform_star(){
     /* This test really only ensures that the SSR will be 
     ** approximately zero in the case of an exactly known star.  
-    ** Because it happens  that g scales linearly with radius, it 
+    ** Because it happens that g scales linearly with radius, it 
     ** happens to work out that the numerical derivatives in the 
     ** SSR are exactly correct*/
     printf("STAR TESTS ISOPYCNIC\n");
@@ -234,7 +234,7 @@ void do_test_surface(Star* testStar, double const tol){
 void test_polytrope_n0(){
     /* this tests the n=0 polytrope, by comparing it to the exactly-known
     ** solution of an isopycnic (aka uniform-density) star.  The polytrope solution 
-    ** should arrive exactly at the isopycnic solution, but through numerical 
+    ** should arrive at the isopycnic solution, but through numerical 
     ** integration as opposed to direct setting by an equation.*/
     printf("STAR TESTS n=0.0 POLYTROPE\n");
     const double INDEX = 0.0;
@@ -374,7 +374,6 @@ void test_polytrope_MR_constructor(){
     }
 }
 
-
 void test_make_exact_error_graph(){
 	//plot everything in single graph, for simplicity
 	FILE *gnuplot = popen("gnuplot -persist", "w");
@@ -431,17 +430,22 @@ void test_CHWD_against_chandrasekhar(){
     FILE *fp = fopen(filename, "w");
     double M,R;
     for(std::size_t n=0; n<num_rows; n++){
+        // use the form of the constructor that allows specifuing A0, B0
+        // must use the 1939 values, to ensure equality of results
         testStar = new ChandrasekharWD(Y0[n], LEN, Chandrasekhar::A01939, Chandrasekhar::B01939);
         M = testStar->Mass()/MSOLAR;
         R = testStar->Radius();
+        // assert reasonable numerical error
         TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
+        // assert agreement with tabular values in Chandrasekhar 1939
         TS_ASSERT_DELTA( M, M1939[n], 1.e-1);
-        TS_ASSERT_DELTA( R, R1939[n], 1.e8);
+        TS_ASSERT_DELTA( R, R1939[n], 1.e8); // note units in cm
+        // write out values to table
         fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
         
         // test expansions
         do_test_center(testStar, 1.e-4);
-        do_test_surface(testStar, 2.e-0);
+        do_test_surface(testStar, 2.e-0); // TODO why is this fit so bad? 
         
         delete testStar;
     }
@@ -450,6 +454,8 @@ void test_CHWD_against_chandrasekhar(){
 
 void test_CHWD_grad_constructor(){
     printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n");
+    // test the constructor that accepts a gradiant in mu
+    // try both a constant gradient, and a sigmoidal gradient
     std::size_t const LEN(1000);
     ChandrasekharWD *testStar;
     const double Y0[] = {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0};
@@ -458,10 +464,14 @@ void test_CHWD_grad_constructor(){
     for(double y0 : Y0){
         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        do_test_surface(testStar, 1.0);
         delete testStar;
         F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        do_test_surface(testStar, 1.0);
         delete testStar;
     }
 }
@@ -470,12 +480,30 @@ void test_CHWD_grad_constructor(){
 
 /***** TESTS OF MESA WRAPPER ******/
 
-// TODO read in MESA modle, previous output, compare
+void test_MESA_constructor(){
+    // should first calculate SSR using only the knots
+    // then check the SSR isn't very much worse
+
+    printf("STAR TEST MESA CONSTRUCTOR");
+    std::size_t const LEN(5000);
+    std::string mesa_file = "mesa_co_wd_cold.dat";
+    MESA *testStar = new MESA(mesa_file.c_str(), LEN);
+    TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-4);
+    do_test_center(testStar, 1.e-4);
+    do_test_surface(testStar, 1.e-6);
+    delete testStar;
+}
+
+// TODO make reduced data file
+
+// TODO read in MESA model, previous output, compare
 
 /***** TESTS OF SIMPLE WD MODELS ******/
 
 // TODO create a SWD, save its output
 // then create one here, compare to previous
+
+
 
 
 };

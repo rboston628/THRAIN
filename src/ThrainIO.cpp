@@ -63,12 +63,12 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	//handle the use of different parameters that help construct the stellar model
 	//POLYTROPE INPUT
 	if(calcdata.model==model::polytrope){
-		if(Polytrope::read_star_input(calcdata, input_file)) return 1;
+		if(Polytrope::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//CHANDRASEKHAR WD INPUT
 	else if(calcdata.model==model::CHWD){
-		if(ChandrasekharWD::read_star_input(calcdata, input_file)) return 1;
+		if(ChandrasekharWD::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//MESA INPUT

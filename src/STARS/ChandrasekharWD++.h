@@ -24,7 +24,7 @@ namespace Calculation {
 class ChandrasekharWD : public Star {
 public:
 
-	static int read_star_input(Calculation::InputData&, FILE* input_file);
+	static int read_star_input(FILE* input_file, Calculation::InputData&);
 
 	std::string graph_title() override {
 		return strmakef("Chandrasekhar WD with y_0=%1.2f", Y0);
@@ -139,31 +139,4 @@ namespace Chandrasekhar {
 
 }
 
-
 #endif
-
-
-// void ChandrasekharWD::chemical_gradient(
-// 	double const x, 	// the degeneracy factor
-// 	double const dydxi, // the derivative dy/dxi, needed to find dmue/dxi
-// 	double& mu, 		// return for the chemical potential mue
-// 	double& dmu			// return for the derivative of the chemical potential, dmue/dxi
-// ){
-// 	//if the relative core is set to 1, the chem gradient is constant
-// 	if(acore==1.0){
-// 		mu =  mu0;
-// 		dmu = 0.0;
-// 		return;
-// 	}
-// 	//otherwise calculate the chem gradient as a sigmoidal curve from mu0 to 1
-// 	k = 2.0; // TODO why 2.0?
-// 	double F0 = Chandrasekhar::factor_f(X0);
-// 	double F  = Chandrasekhar::factor_f(x);
-// 	double z = -log(F/F0);
-// 	double zeec = -log(1e-5); // TODO why 1e-5?
-// 	double EXP = exp(k*(z-zeec));	// the expoential
-// 	mu = (mu0-1.) + 1.0/(1.+EXP);
-// 	//   dmudx  = k f'(x)/f(x) * EXP/(1+EXP)^2           = 8k x^4/y/f       * EXP/(1+EXP)^2
-// 	//   dmudxi = dmudx * dx/dxi = dmudx * (y/x * dydxi) = 8k x^3/f * dydxi * EXP/(1+EXP)^2
-// 	dmu = 8.*k*pow(x,3)/F * EXP*pow(1.+EXP,-2) * dydxi;
-// }

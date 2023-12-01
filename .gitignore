@@ -41,6 +41,10 @@ lib/*.o
 # the test suite
 !tests/
 !tests/*.h
+# include the test inputs
+!tests/inputs/
+!tests/inputs/spline/
+!tests/inputs/spline/*
 
 ## DOCUMENTATION
 # include the documentation

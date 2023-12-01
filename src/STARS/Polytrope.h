@@ -20,7 +20,7 @@ namespace Calculation {
 class Polytrope : public Star {
 public:
 
-	static int read_star_input(Calculation::InputData&, FILE* input_file);
+	static int read_star_input(FILE* input_file, Calculation::InputData&);
 
 	std::string graph_title() override {
 		return strmakef("polytrope n=%1.2f", n);

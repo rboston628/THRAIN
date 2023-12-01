@@ -24,10 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: run cppcheck
+      - name: install cppcheck
         run: |
-          sudo apt-get install -y cppcheck
+           sudo apt-get install -y cppcheck
+      - name: cppcheck lib
+        run: |
           cppcheck lib/ --error-exitcode=1 --std=c++14
+      - name: cppcheck src
+        run: |
           cppcheck src/ --error-exitcode=1 --std=c++14
 
   # build and test the code

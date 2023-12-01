@@ -284,27 +284,27 @@ void MESA::setupCenter(){
 	dc[0] = dens->interp(0.0);
 	pc[0] = pres->interp(0.0);
 	//terms x^2
-	pc[1] = -dc[0]*dc[0]/6.;
-	dc[1] = nc*ac[2]*dc[0];
+	pc[1] = (nc+1.) * ac[2] * pc[0];
+	dc[1] = nc      * ac[2] * dc[0];
 	//terms x^4
-	pc[2] = -dc[0]*dc[1]*2./15.;
-	dc[2] = 0.5*nc*(2.*ac[4]+(nc-1.)*ac[2]*ac[2])*dc[0];
+	pc[2] = 0.5 * (nc+1.) * (2. * ac[4] +  nc     * ac[2] * ac[2]) * pc[0];
+	dc[2] = 0.5 * nc      * (2. * ac[4] + (nc-1.) * ac[2] * ac[2]) * dc[0];
 	
 	//now the variables
 	// c1
 	c0[0] = 3./dc[0];
 	c0[1] = -1.8*dc[1]/dc[0]/dc[0];
-	c0[2] = 1.08*dc[1]*dc[1]*pow(dc[0],-3) - (9./7.)*dc[2]/dc[0]/pc[0];
-	// Vg
+	c0[2] = 1.08*dc[1]*dc[1]*pow(dc[0],-3) - (9./7.)*dc[2]/dc[0]/dc[0];
+	// Vg -- deliberately exclude factor 1/Gamma1
 	V0[0] = 0.0;
-	V0[1] = 0.5*vSpline->deriv(radi[1])/radi[1];
+	V0[1] = -2.*pc[1]/pc[0];
 	V0[2] = 2.*pc[1]*pc[1]/pc[0]/pc[0] - 4.*pc[2]/pc[0];
 	// U
 	U0[0] = 3.0;
 	U0[1] = 1.2*dc[1]/dc[0];
 	U0[2] = -0.72*dc[1]*dc[1]/pc[0]/pc[0] + (12./7.)*dc[2]/dc[0];
 	// A*
-	double N20=0.5*BVfq->deriv(radi[1])/radi[1];
+	double N20=BVfq->deriv(0.0);
 	A0[0] = 0.0;
 	A0[1] = N20*c0[0];
 	A0[2] = N20*c0[1];	
@@ -352,17 +352,17 @@ void MESA::getC1Center(double *cc, int& maxPow){
 //	If maxPow = 2, we need terms -1, 0, 1
 //	We still do not have very good values for this boundary
 void MESA::setupSurface(){	
-	double Tscale = 2.*proton.mass_CGS/boltzmann_k*G_CGS*Mtot/Rtot;
-	double Cideal = N_Avogadro*boltzmann_k*Dscale*Tscale/Pscale;
-	double Crad   = radiation_a/3.*pow(Tscale,4)/Pscale;
+	double const Tscale = 2.*proton.mass_CGS/boltzmann_k*G_CGS*Mtot/Rtot;
+	double const Cideal = N_Avogadro*boltzmann_k*Dscale*Tscale/Pscale;
+	double const Crad   = radiation_a/3.*pow(Tscale,4)/Pscale;
 	//the x^0 part
-	ds[0] = dens->interp(1.0);
+	ts[0] = ts[0]; // redundant, but for consistency
 	ps[0] = pres->interp(1.0);
-	ts[0] = ts[0]; //redundant, but for consistency
+	ds[0] = dens->interp(1.0);
 	// the x^1 part
-	ts[1] = dels*ts[0]*ds[0]/ps[0];
-	ps[1] = ds[0];
-	ds[1] = (ps[1]-4.*Crad*pow(ts[0],3)*ts[1]-Cideal*ts[1]*ds[0])/(Cideal*ts[0]);
+	ts[1] = 0.0;
+	ps[1] = 0.0;
+	ds[1] = 0.0; //(ps[1]-4.*Crad*pow(ts[0],3)*ts[1]-Cideal*ts[1]*ds[0])/(Cideal*ts[0]);
 	
 	// the x^2 part
 	double tempprod=1.0;
@@ -436,97 +436,70 @@ void MESA::setupSurface(){
 	//now set the structure variables
 	// c
 	c1[0] =  1.;
-	c1[1] = -3. + ds[0];
-	c1[2] =  3. - 4.*ds[0] + ds[0]*ds[0] + 0.5*ds[1];
-	c1[3] = -1. + 19.*ds[0]/3. - 5.*ds[0]*ds[0] + ds[0]*ds[0]*ds[0] 
-			- 13.*ds[1]/6. + ds[0]*ds[1] + ds[2]/3.;
-	c1[4] = 0.; // does not atually appear in equations
+	c1[1] = -3.;
+	c1[2] =  3. + 0.5*ds[1];
+	c1[3] = -1. - 13.*ds[1]/6. + ds[2]/3.;
+	c1[4] = 0.; // does not actually appear in equations
 	// U
-	U1[0] = ds[0];
-	U1[1] = ds[1] + ds[0]*ds[0] - 3.*ds[0];
-	U1[2] = 3.*ds[0] - 4.*ds[0]*ds[0] + ds[0]*ds[0]*ds[0] - 3.*ds[1] + 1.5*ds[0]*ds[1] + ds[2];
-	U1[3] = ds[3] + 4./3.*ds[0]*ds[2] - 3.*ds[2] + ds[1]*ds[1]/2. + 2.*ds[0]*ds[0]*ds[1] - 37./6.*ds[0]*ds[1]
-			+ 3.*ds[1] + pow(ds[0],4) - 5.*pow(ds[0],3) + 19.*ds[0]*ds[0]/3. - ds[0];
-	U1[4] = ds[4] + 1.25*ds[0]*ds[3] - 3.*ds[3] + 5./6.*ds[1]*ds[2] + 5./3.*ds[0]*ds[0]*ds[2]
-			- 5.5*ds[0]*ds[2] + 3.*ds[2] + 1.25*ds[0]*ds[1]*ds[1] - 13./6.*ds[1]*ds[1] + 2.5*pow(ds[0],3)*ds[1]
-			- 31./3.*ds[0]*ds[0]*ds[1] + 121./12.*ds[0]*ds[1] - ds[1] + pow(ds[0],5) - 6.*pow(ds[0],4)
-			+ 32./3.*pow(ds[0],3) - 5.*ds[0]*ds[0];
-	int O = 1;
+	U1[0] = 0.0;
+	U1[1] = ds[1];
+	U1[2] = ds[2] - 3.*ds[1];
+	U1[3] = ds[3] - 3.*ds[2] + ds[1]*ds[1]/2. + 3.*ds[1];
+	U1[4] = ds[4] - 3.*ds[3] + 5./6.*ds[1]*ds[2] + 3.*ds[2] - 13./6.*ds[1]*ds[1] - ds[1];
 	// Vg
-	ps[1] /= ps[0];
-	ps[2] /= ps[0];
-	ps[3] /= ps[0];
-	ps[4] /= ps[0];
-	V1[O-1] = 0.0;
-	V1[O+0] = ps[1];
-	V1[O+1] = 2.*ps[2] - ps[1]*ps[1] - ps[1];
-	V1[O+2] =  ps[1]*ps[1]*(1.+ps[1]) - 2.*ps[2] - 3.*ps[1]*ps[2] + 3.*ps[3];
-	V1[O+3] =  3.*ps[1]*ps[2] - pow(ps[1],3)*(1.+ps[1]) + 4.*ps[1]*ps[1]*ps[2]
-				-2.*ps[2]*ps[2] - 3.*ps[3] - 4.*ps[1]*ps[3] + 4.*ps[4];
+	int O = 1; // an anchor index, allows more natural expression of coefficients
+	for( std::size_t i=2; i<=4; i++) ps[i] /= ps[1];
+	// for( std::size_t i=2, i<=4; i++) ds[i] /= ds[1];
+	V1[O-1] = 1.0;
+	V1[O+0] = ps[2] - 1.0;
+	V1[O+1] = 2.*ps[3] - ps[2]*(1.+ps[2]);
+	V1[O+2] = 3.*ps[4] - 3.*ps[3]*ps[2] - 2.*ps[3] + ps[2]*(1.+ps[2]);
+	V1[O+3] = 0.0; //4.*ps[5] - 4.*ps[4]*ps[2] - 3.*ps[4] - 2.*ps[3]*ps[3];
 	// A*
-	//using the Brassard relation
+	// actually only holding 
 	double N21 = BVfq->interp(1.0);
 	A1[O-1] = 0.0;
 	A1[O+0] = N21*c1[0];
 	A1[O+1] = N21*c1[1];
 	A1[O+2] = N21*c1[2];
 	A1[O+3] = N21*c1[3];
-	for(int i=1; i<=4; i++) { ps[i]*=ps[0];}		
+	for (std::size_t i=2; i<=4; i++) ps[i] *= ps[1];
+	// for (std::size_t i=2; i<=4; i++) ds[i] *= ds[1];		
 }
 
 void MESA::getAstarSurface(double *As, int& maxPow, double g){
-//	double gam1 = (g==0.0 ? Gam1->interp(radi[len-2]) : g);
-	int O=1;
-	if(maxPow>= -1) As[O-1] = A1[O-1];
-	if(maxPow>=  0) As[O  ] = A1[O  ];
-	if(maxPow>=  1) As[O+1] = A1[O+1];
-	if(maxPow>=  2) As[O+2] = A1[O+2];
-	if(maxPow>=  3) As[O+3] = A1[O+3];
-	//if more  terms than this requested, cap number of terms
-	if(maxPow > 3) maxPow = O+3;
+	maxPow = std::min(4, maxPow);
+	for (std::size_t n = 0; n <= maxPow; n++) {
+		As[n] = A1[n];
+	}
 }
 
 void MESA::getVgSurface(double *Vs, int& maxPow, double g){
 	double gam1 = (g==0.0 ? Gam1->interp(radi[len-1]) : g);
-	int O=1;
-	if(maxPow>= -1) Vs[O-1] = V1[O-1]/gam1;
-	if(maxPow>=  0) Vs[O  ] = V1[O  ]/gam1;
-	if(maxPow>=  1) Vs[O+1] = V1[O+1]/gam1;
-	if(maxPow>=  2) Vs[O+2] = V1[O+2]/gam1;
-	if(maxPow>=  3) Vs[O+3] = V1[O+3]/gam1;
-	//if more  terms than this requested, cap number of terms
-	if(maxPow > 3) maxPow = O+3;
+	maxPow = std::min(4, maxPow);
+	for (std::size_t n = 0; n <= maxPow; n++) {
+		Vs[n] = V1[n]/gam1;
+	}
 }
 
 void MESA::getUSurface(double *Us, int& maxPow){
-// coefficients of U must extend up to order maxPow	
-//	for(int a=0; a<=maxPow; a++) Us[a] = 0.0;
-	if(maxPow>= 0) Us[0] = U1[0];
-	if(maxPow>= 1) Us[1] = U1[1];
-	if(maxPow>= 2) Us[2] = U1[2];
-	if(maxPow>= 3) Us[3] = U1[3];
-	if(maxPow>= 4) Us[4] = U1[4];
-	//if more  terms than this requested, cap number of terms
-	if(maxPow > 4) maxPow = 4;
+	// coefficients of U must extend up to order maxPow	
+	maxPow = std::min(4, maxPow);
+	for (std::size_t n = 0; n <= maxPow; n++) {
+		Us[n] = U1[n];
+	}
 }
 
 void MESA::getC1Surface(double *cs, int& maxPow){
-// coefficients of c1 are only needed up to order maxPow-1
-	if(maxPow>= 0) cs[0] = c1[0];
-	if(maxPow>= 1) cs[1] = c1[1];
-	if(maxPow>= 2) cs[2] = c1[2];
-	if(maxPow>= 3) cs[3] = c1[3];
-	if(maxPow>= 4) cs[4] = 0.0;//does not actually appear in equations
-	//if more  terms than this requested, cap number of terms
-	if(maxPow> 4) maxPow = 4;	
+	// coefficients of c1 are only needed up to order maxPow-1
+	maxPow = std::min(4, maxPow);
+	for (std::size_t n = 0; n <= maxPow; n++) {
+		cs[n] = c1[n];
+	}
 }
 
 
 void MESA::printBV(const char *const c, double const g){
-	// char filename[256];
-	// char rootname[256];
-	// char txtname[256];
-	// char outname[256];
 	std::string filename = c, rootname, txtname, outname;
 	std::string title = graph_title();
 	
@@ -794,21 +767,6 @@ double MESA::SSR(){
 		checkPoiss += e2*e2;
 	}
 	fclose(fp);
-	FILE *gnuplot = popen("gnuplot -persist", "w");
-	fprintf(gnuplot, "reset\n");
-	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
-	fprintf(gnuplot, "set output '%s'\n", "SSR.png");
-	fprintf(gnuplot, "set title 'error for %s'\n", graph_title().c_str());
-	fprintf(gnuplot, "set xlabel 'r/R'\n");
-	fprintf(gnuplot, "set ylabel 'error'\n");
-	fprintf(gnuplot, "set logscale y 10\n");
-	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "plot '%s' u 1:2 w l t 'e1'", "SSR.txt");
-	fprintf(gnuplot, ", '%s' u 1:3 w l t 'e2'", "SSR.txt");
-	fprintf(gnuplot, "\n");
-	fprintf(gnuplot, "exit\n");
-	pclose(gnuplot);
 	return sqrt((checkPoiss+checkEuler)/double(2*len-5));
 }
 

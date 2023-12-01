@@ -5,6 +5,7 @@
 // TODO: check STEP 3c -- can't find max bracket
 // TODO: check failure if not using Mode
 // TODO: check failure if not using ModeDriver
+// TODO: check g-modes (k<0)
 
 const double ZEROW2 = 0.16;
 
