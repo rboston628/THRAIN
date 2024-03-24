@@ -65,7 +65,7 @@ Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 	for(std::size_t X=1; X<len; X++){
 		//as we scan through x,y,z, set matching point as where y[X] = 0.5
 		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
-		base[X] = pow(Y[X][y], n-1.0);
+		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
 		if(Y[X][y]<0.0){
 			std::complex<double> YN = Y[X][y];
 			YN = pow(YN,n-1);
@@ -134,7 +134,7 @@ Polytrope::Polytrope(double n, std::size_t L)
 	for(std::size_t X=1; X<len; X++){
 		//as we scan through x,y,z, set matching point as where y[X] = 0.5
 		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
-		base[X] = pow(Y[X][y], n-1.0);
+		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
 		if(Y[X][y]<0.0){
 			std::complex<double> YN = Y[X][y];
 			YN = pow(YN,n-1);
@@ -187,7 +187,7 @@ Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	mass[0] = 0.0;
 	indexFit = std::size_t(len/2);
 	for(std::size_t X=1; X<len; X++){
-		base[X] = pow(Y[X][y], n-1.);
+		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
 		if(Y[X][y]<0.0){
 			std::complex<double> YN = Y[X][y];
 			YN = pow(YN,n-1);
@@ -269,15 +269,19 @@ double Polytrope::rad(std::size_t X){
 	return (Rn*Y[X][x]);
 }
 double Polytrope::rho(std::size_t X){
+	if(n==0) return rho0;
 	return rho0*Y[X][y]*base[X];
 }
 double Polytrope::drhodr(std::size_t X){
+	if(n==0) return 0.0;
 	return n*rho0*base[X]*(Y[X][z]/Rn);
 }
 double Polytrope::P(std::size_t X){
+	if(n==0) return P0 * Y[X][y];
 	return P0*base[X]*Y[X][y]*Y[X][y];
 }
 double Polytrope::dPdr(std::size_t X){
+	if(n==0) return P0 * Y[X][z]/Rn;
 	return (n+1.)*P0*base[X]*Y[X][y]*(Y[X][z]/Rn);
 }
 double Polytrope::Phi(std::size_t X){
@@ -304,6 +308,8 @@ double Polytrope::getAstar(std::size_t X, double GamPert){
 
 double Polytrope::getU(std::size_t X){
 	if(X==0) return 3.0;
+	if(n==0) return 3.0;
+	// fprintf(stderr, "U[%lu] \t= %0.16le: xi=%0.16le y=%0.16le z=%0.16le\n", X, -Y[X][x]*base[X]*Y[X][y]/Y[X][z], Y[X][x], Y[X][y], Y[X][z]);
 	return - Y[X][x]*base[X]*Y[X][y]/Y[X][z];
 }
 
@@ -335,37 +341,41 @@ double Polytrope::Mass(){return mr(len-1);}//total mass
 //	Up to order 2N, require terms 0, 2, 4, ... , 2N
 //	The expansion coefficients must be in powers of x=r/R, not in powers of xi = r/Rn
 void Polytrope::setupCenter(){
-	//these are coefficients y(x) = 1 + th[1]xi^2 + th[2]xi^4 + th[3] xi^6 + ...
-	ac[0] = 1.0; ac[1] = -1.0/6.0; ac[2] = n/120.; ac[3] = n*(5.-8.*n)/15120.;
+	//these are coefficients y(x) = ac[0] + ac[1]xi^2 + ac[2]xi^4 + ac[3]xi^6 + ...
+	ac[0] = 1.0; 
+	ac[1] = -1.0/6.0; 
+	ac[2] = n/120.; 
+	ac[3] = n*(5.-8.*n)/15120.;
 }
 
 void Polytrope::getAstarCenter(double *AC, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
-	double x1 = Y[len-1][x];
+	// for polytrope, A* = (const) * Vg
 	double AV = (n*Gam1)/(n+1.) - 1.;
-	//depending on power requested, return appropriate number of terms
-	if(maxPow>=0) AC[0] = 0.0;
-	if(maxPow>=2) AC[1] = AV*(n+1.)/(3.*Gam1)*pow(x1,2);
-	if(maxPow>=4) AC[2] = AV*2.*(n+1.)*(1./36.-n/60.)/Gam1*pow(x1,4);
-	//if more  terms than this requested, cap number of terms
-	if(maxPow> 4) maxPow = 4;
+	this->getVgCenter(AC, maxPow, Gam1);
+	for(int i=0; i<=maxPow/2; i++){
+		AC[i] *= AV;
+	}
 }
 
 void Polytrope::getVgCenter(double *Vc, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	double x1 = Y[len-1][x];
+	//depending on power requested, return appropriate number of terms
 	if(maxPow>=0) Vc[0] = 0.0;
 	if(maxPow>=2) Vc[1] = (n+1.)/(3.*Gam1)*pow(x1,2);
-	if(maxPow>=4) Vc[2] = 2.*(n+1.)*(1./36.-n/60.)/Gam1*pow(x1,4);
+	if(maxPow>=4) Vc[2] = (n+1.)/(90.*Gam1)*(5.-3.*n)*pow(x1,4);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4; 
 }
 
 void Polytrope::getUCenter(double *Uc, int& maxPow){
 	double x1 = Y[len-1][x];
+	// fprintf(stderr, "xi1 = %0.18le\n", x1);
+	//depending on power requested, return appropriate number of terms
 	if(maxPow>=0) Uc[0] = 3.0;
-	if(maxPow>=2) Uc[1] = -n/5.*pow(x1,2);
-	if(maxPow>=4) Uc[2] = 54.*n*(7.*n/8100. - 1./1296. + (5.-8.*n)/15120.)*pow(x1,4);
+	if(maxPow>=2) Uc[1] = -0.2 * n * pow(x1,2);
+	if(maxPow>=4) Uc[2] = n*(19.*n-25.)/1050. *pow(x1,4);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }
@@ -373,9 +383,10 @@ void Polytrope::getUCenter(double *Uc, int& maxPow){
 void Polytrope::getC1Center(double *cc, int& maxPow){
 	double x1 = Y[len-1][x];
 	double z1 = Y[len-1][z];
-	if(maxPow>=0) cc[0] = -3.*z1/x1;
-	if(maxPow>=2) cc[1] = 3.*n*z1/(10.*x1)*pow(x1,2);
-	if(maxPow>=4) cc[2] = n*(2.*n+25.)*z1/(1400.0*x1)*pow(x1,4);
+	//depending on power requested, return appropriate number of terms
+	if(maxPow>=0) cc[0] = -3.0*z1/x1;
+	if(maxPow>=2) cc[1] = -0.3*n*z1*x1;
+	if(maxPow>=4) cc[2] = -n*(2.*n+25.)*z1/(1400.0)*pow(x1,3);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }

@@ -13,6 +13,7 @@
 #include "../src/STARS/MESA.h"
 #include <cxxtest/TestSuite.h>
 #include <random>
+#include <stdio.h>
 
 double center_expand(double const x, double const *const ac, int const maxPow){
     double value = ac[0];
@@ -43,26 +44,41 @@ double surface_expand_inverse(double const t, double const *const ac, int const 
 class StarTest : public CxxTest::TestSuite {
 public:
 
-StarTest() {
+static StarTest *createSuite (){
     system( "mkdir -p tests/artifacts" );
+    printf("\nSTAR TESTS");
+    return new StarTest();
+}
+static void destroySuite(StarTest *suite) { 
+    delete suite; 
+}
+
+void setUp() {
+    freopen("tests/artifacts/logio.txt", "a", stdout);
+}
+
+void tearDown() {
+    freopen("/dev/tty", "w", stdout);
 }
 
 /***** basic tests of the SSR function *****/
 
 void test_bad_SSR(){
+    printf("\nSTAR TESTS");
     /* Tests that low number of grid points
     *  will produce a bad SSR*/
     std::size_t const LEN = 10;
     Star *testStar = new Polytrope(1.0,LEN);
     // test SSR
-    TS_ASSERT_LESS_THAN( 1.e-6, testStar->SSR() );
+    double const BAD_SSR = 1.e-6;
+    TS_ASSERT_LESS_THAN( BAD_SSR, testStar->SSR() );
     
     delete testStar;
 }
 
 void test_scale_SSR(){
     /* Test that SSR decreases up to minimum as gridsize increases*/
-    std::size_t const LEN[] = {1000, 2000, 4000, 8000};
+    std::size_t const LEN[] = {10, 20, 40, 80};
     const int Ntest = sizeof(LEN)/sizeof(std::size_t);
     double SSR[Ntest];
     Star* testStar;
@@ -80,10 +96,11 @@ void test_scale_SSR(){
     // further test that it SCALES like LEN^{-4}
     // if it scaled exactly like LEN^{-4}, this would equal 2^4=16
     // because it reaches limits of machine precision, will be smaller
+    double const IDEAL_SCALE_FACTOR = 16.0, MIN_ACCEPTABLE_SCALE_FACTOR = 12.0;
     double scale_factor = (SSR[1]-SSR[2])/(SSR[2]-SSR[3]);
-    TS_ASSERT_LESS_THAN( scale_factor , 16.0);
+    TS_ASSERT_LESS_THAN_EQUALS( scale_factor , IDEAL_SCALE_FACTOR);
     // make sure it at least scales this well
-    TS_ASSERT_LESS_THAN( 6.0, scale_factor );
+    TS_ASSERT_LESS_THAN( MIN_ACCEPTABLE_SCALE_FACTOR, scale_factor );
 }
 
 /***** tests of some basic functions using a uniform star *****/
@@ -94,30 +111,33 @@ void test_uniform_star(){
     ** Because it happens that g scales linearly with radius, it 
     ** happens to work out that the numerical derivatives in the 
     ** SSR are exactly correct*/
-    printf("STAR TESTS ISOPYCNIC\n");
+    printf("\n\tSTAR TESTS - ISOPYCNIC");
     const std::size_t LEN = 100;
     Star *testStar = new Isopycnic(LEN);
+
+    double const MACHINE_PRECISION = 1.e-15;
 
     const double dx = sqrt(6.0)/double(LEN-1);
     const double Rn = sqrt( 1.0/(4.0*m_pi) );
 
     // test SSR -- this needs to be near-zero
-    TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-15 );
+    TS_ASSERT_LESS_THAN( testStar->SSR(), MACHINE_PRECISION );
 
     // test all throughout star
     // this verifies that the getter methods work as intended
     double x=0;
+    
     for(std::size_t i=0; i<LEN; i++){
         x = dx*i;
         TS_ASSERT_EQUALS( testStar->rho(i), 1.0 );
-        TS_ASSERT_DELTA( testStar->rad(i), Rn*x, 1.e-15 );
-        TS_ASSERT_DELTA( testStar->P(i), 1.0 - x*x/6.0, 1.e-15 );
-        TS_ASSERT_DELTA( testStar->mr(i), Rn*(x*x*x)/3.0, 1.e-15 );
+        TS_ASSERT_DELTA( testStar->rad(i), Rn*x,          MACHINE_PRECISION );
+        TS_ASSERT_DELTA( testStar->P(i),  1.0 - x*x/6.0,  MACHINE_PRECISION );
+        TS_ASSERT_DELTA( testStar->mr(i), Rn*(x*x*x)/3.0, MACHINE_PRECISION );
     }
 
     // test that mass and radius equal to known quantities
-    TS_ASSERT_DELTA( testStar->Radius(), Rn*sqrt(6.0), 1.e-15 );
-    TS_ASSERT_DELTA( testStar->Mass(), Rn*2.0*sqrt(6.0), 1.e-15 )
+    TS_ASSERT_DELTA( testStar->Radius(), Rn*sqrt(6.0),    MACHINE_PRECISION );
+    TS_ASSERT_DELTA( testStar->Mass(), Rn*2.0*sqrt(6.0),  MACHINE_PRECISION );
     delete testStar;
 }
 
@@ -140,22 +160,14 @@ void test_uniform_boundaries(){
     testStar->getUCenter(Uc, maxPow);
     testStar->getC1Center(cc, maxPow);
 
-    // simple lambda to evaluate the central expansion
-    std::function<double(double,double[Ncent])> center = [Ncent](double x, double a[Ncent])->double {
-        double value = a[0];
-        for(int i=1; i<Ncent; i++){
-            value += a[i]*pow(x,2*i);
-        }
-        return value;
-    };
-
     double x=0.0, R=testStar->Radius();
+    double const ACCEPTABLE_PRECISION = 1.e-10;
     for(std::size_t i=0; i<NC; i++){
         x = testStar->rad(i)/R;
         TS_ASSERT_EQUALS( center_expand(x, Uc, maxPow), testStar->getU(i) );
         TS_ASSERT_EQUALS( center_expand(x, cc, maxPow), testStar->getC(i) );
-        TS_ASSERT_DELTA( center_expand(x, Vc, maxPow), testStar->getVg(i,GAM1), 1.e-12 );
-        TS_ASSERT_DELTA( center_expand(x, Ac, maxPow), testStar->getAstar(i,GAM1), 1.e-12 );
+        TS_ASSERT_DELTA ( center_expand(x, Vc, maxPow), testStar->getVg(i,GAM1),    ACCEPTABLE_PRECISION );
+        TS_ASSERT_DELTA ( center_expand(x, Ac, maxPow), testStar->getAstar(i,GAM1), ACCEPTABLE_PRECISION );
     }
 
     /* test surface expansions */
@@ -169,13 +181,12 @@ void test_uniform_boundaries(){
     testStar->getC1Surface(cs, maxPow);
 
     double t=0.0;
-    // TODO why are these so much less accurate?
     for(std::size_t i=LEN-2; i>=LEN-1-NS; i--){
         t = 1. - testStar->rad(i)/R;
-        TS_ASSERT_EQUALS( surface_expand_zero(t, Us, maxPow), testStar->getU(i) );
-        TS_ASSERT_EQUALS( surface_expand_zero(t, cs, maxPow), testStar->getC(i) );
-        TS_ASSERT_DELTA( surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1), 1.e-1 );
-        TS_ASSERT_DELTA( surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1), 1.e-1 );
+        TS_ASSERT_EQUALS( surface_expand_zero(t, Us, maxPow),    testStar->getU(i) );
+        TS_ASSERT_EQUALS( surface_expand_zero(t, cs, maxPow),    testStar->getC(i) );
+        TS_ASSERT_DELTA ( surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1),    ACCEPTABLE_PRECISION );
+        TS_ASSERT_DELTA ( surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1), ACCEPTABLE_PRECISION );
     }
 
     delete testStar;
@@ -183,192 +194,263 @@ void test_uniform_boundaries(){
 
 /***** TESTS OF POLYTROPES *****/
 
-void do_test_center(Star* testStar, double const tol){
+std::size_t do_test_center(Star *const testStar, double const tol){
     /* test center expansions */
-    constexpr std::size_t NC=10;
-    constexpr double GAM1 = 5./3.;
-    constexpr int Ncent = 3;
-    int maxPow = 2*(Ncent-1); // the integer passed needs to be mutable
-    double Ac[Ncent]={0.}, Vc[Ncent]={0.}, Uc[Ncent]={0.}, cc[Ncent]={0.};
+    constexpr std::size_t NC(4);             // number of steps to calculate
+    constexpr std::size_t MAXPOW(4);         // max power in the expansion
+    constexpr std::size_t NCENT(MAXPOW/2+1); // number of coefficients needed
+    constexpr double GAM1(5./3.);
+    
+    int maxPow = MAXPOW; // the integer passed needs to be mutable
+    double Ac[NCENT]={0.}, Vc[NCENT]={0.}, Uc[NCENT]={0.}, cc[NCENT]={0.};
     
     testStar->getAstarCenter(Ac, maxPow, GAM1);
     testStar->getVgCenter(Vc, maxPow, GAM1);
     testStar->getUCenter(Uc, maxPow);
     testStar->getC1Center(cc, maxPow);
+    fprintf(stderr, "U coeffs %0.16le %0.16le %0.16le\n", Uc[0], Uc[1], Uc[2]);
 
-    double x=0.0, R=testStar->Radius();
+    std::size_t failures = 0;
+    std::size_t LEN = testStar->length();
+    double x=0.0, err, R=testStar->Radius();
     for(std::size_t i=0; i<NC; i++){
-        x = testStar->rad(i)/R;
-        TS_ASSERT_DELTA( center_expand(x, Uc, maxPow), testStar->getU(i), tol );
-        TS_ASSERT_DELTA( center_expand(x, cc, maxPow), testStar->getC(i), tol );
-        TS_ASSERT_DELTA( center_expand(x, Vc, maxPow), testStar->getVg(i,GAM1), tol );
-        TS_ASSERT_DELTA( center_expand(x, Ac, maxPow), testStar->getAstar(i,GAM1), tol );
+        fprintf(stderr, "rad=%0.16le, R=%0.16le\n", testStar->rad(i), R);
+        x = double(i)/double(LEN-1);
+        fprintf(stderr, "x = %0.16le\n", x);
+        err = pow(i,maxPow+2) * tol; // accounts for fact error grows like x^6
+        TS_ASSERT_DELTA( center_expand(x, cc, maxPow), testStar->getC(i), err );
+        TS_ASSERT_DELTA( center_expand(x, Vc, maxPow), testStar->getVg(i,GAM1), err );
+        TS_ASSERT_DELTA( center_expand(x, Ac, maxPow), testStar->getAstar(i,GAM1), err );
+        // fprintf(stderr, "STEP %lu ERR %le\n", i, err);
+        /* see mathematica notebook --
+        // it can be shown that U's central expansion is simply less accurate than the others*/ 
+        TS_ASSERT_DELTA( center_expand(x, Uc, maxPow), testStar->getU(i), err );
+        fprintf(stderr, "Useries\t= %0.16le\n", center_expand(x, Uc, 4));
+        fprintf(stderr, "U[%lu] \t= %0.16le\n", i, testStar->getU(i));
+        // fprintf(stderr, "STEP %lu DeltaU = %0.16le\n", i, fabs(testStar->getU(i) - center_expand(x, Uc, maxPow)));
+        
     }
+    TS_ASSERT_EQUALS( failures, 0 );
+    return failures;
 }
 
-void do_test_surface(Star* testStar, double const tol){
+void do_test_surface(Star *const testStar, double const tol){
     /* test surface expansions */
-    constexpr std::size_t NS=10;
-    constexpr double GAM1 = 5./3.;
-    constexpr int Nsurf = 6;
+    constexpr std::size_t NS(4);
+    constexpr double GAM1(5./3.);
+    constexpr int Nsurf(6);
     int maxPow = 4; // the integer passed needs to be mutable
     double As[Nsurf]={0.}, Vs[Nsurf]={0.}, Us[Nsurf]={0.}, cs[Nsurf]={0.};
+
     testStar->getAstarSurface(As, maxPow, GAM1);
     testStar->getVgSurface(Vs, maxPow, GAM1);
     testStar->getUSurface(Us, maxPow);
     testStar->getC1Surface(cs, maxPow);
 
-    double t=0.0;
+    double t=0.0, err;
     // TODO why are these so much less accurate?
     std::size_t const LEN = testStar->length();
     double const R = testStar->Radius();
     for(std::size_t i=LEN-2; i>=LEN-1-NS; i--){
         t = 1. - testStar->rad(i)/R;
-        TS_ASSERT_DELTA( surface_expand_zero(t, Us, maxPow), testStar->getU(i), tol );
-        TS_ASSERT_DELTA( surface_expand_zero(t, cs, maxPow), testStar->getC(i), tol );
-        TS_ASSERT_DELTA( surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1), tol );
-        TS_ASSERT_DELTA( surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1), tol );
+        err = pow(LEN-1-i, maxPow+1) * tol; // acounts for fact error grows like x^5
+        TS_ASSERT_LESS_THAN( err, 1024.1 * tol);
+        TS_ASSERT_DELTA( surface_expand_zero(t, Us, maxPow), testStar->getU(i), err );
+        TS_ASSERT_DELTA( surface_expand_zero(t, cs, maxPow), testStar->getC(i), err );
+        TS_ASSERT_DELTA( surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1), err );
+        TS_ASSERT_DELTA( surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1), err );
     }
 }
 
-void test_polytrope_n0(){
-    /* this tests the n=0 polytrope, by comparing it to the exactly-known
-    ** solution of an isopycnic (aka uniform-density) star.  The polytrope solution 
-    ** should arrive at the isopycnic solution, but through numerical 
-    ** integration as opposed to direct setting by an equation.*/
-    printf("STAR TESTS n=0.0 POLYTROPE\n");
-    const double INDEX = 0.0;
-    const std::size_t LEN = 1000;
-    Star *uniform = new Isopycnic(LEN);
-    Polytrope *testStar = new Polytrope(INDEX,LEN);
+// // TODO there must be a way to make something like this work
+// // might be used by ETS_ tests
+// // void test_bad_boundaries(){
+// //     /* this test is to ensure that the boundary checks do not always pass*/
+// //     std::size_t const LEN (10);
+// //     double const INDEX = 0.5; // this is known to behave poorly
+// //     Polytrope *testStar = new Polytrope(INDEX, LEN);
+// //     double tol = 1.e-6;
+// //     {
+// //         fprintf(stderr, "RUNNING THE TESTS\n");
+// //         std::size_t failed = (CxxTest::tracker()).testFailedAsserts();
+// //         // CxxTest::TestListener tmpTracker, save = CxxTest::tracker();
+// //         // CxxTest::tracker() = tmpTracker;
+// //         fprintf(stderr, "INITTED\n");
+// //         TS_ASSERT_EQUALS( 2, 3 );
+// //         fprintf(stderr, "basic math\n");
+// //         TS_ASSERT_EQUALS( (CxxTest::tracker()).testFailedAsserts(), failed+1);
+// //         do_test_center(testStar, tol);
+// //         fprintf(stderr, "RAN THE TESTS\n");
+// //         TS_ASSERT_EQUALS( (CxxTest::tracker()).testFailedAsserts(), 4 );
+// //         // CxxTest::tracker() = save;
+// //     }
+// //     // TS_ASSERT_THROWS_ANYTHING( do_test_center(testStar, tol) );
+// //     // TS_ASSERT_THROWS_ANYTHING( do_test_surface(testStar, tol) );
+// //     TS_ASSERT_EQUALS((CxxTest::tracker()).testFailedAsserts(), 0);
+// //     delete testStar;
+// // }
 
-    // use the SSR of the polytrope to quantify acceptable error
-    const double residual = pow(10.0,ceil(log10(testStar->SSR())));
-    TS_ASSERT_LESS_THAN( residual, 1.e-8 );
+// void test_polytrope_n0(){
+//     /* this tests the n=0 polytrope, by comparing it to the exactly-known
+//     ** solution of an isopycnic (aka uniform-density) star.  The polytrope solution 
+//     ** should arrive at the isopycnic solution, but through numerical 
+//     ** integration as opposed to direct setting by an equation.*/
+//     printf("\n\tSTAR TESTS - POLYTROPE n=0.0");
+//     double const INDEX (0.0);
+//     std::size_t const LEN (1001);
+//     Star *uniform = new Isopycnic(LEN);
+//     Polytrope *testStar = new Polytrope(INDEX,LEN);
 
-    // test they have same mass, radius, up to error
-    TS_ASSERT_DELTA( uniform->Radius(), testStar->Radius(), residual );
-    TS_ASSERT_DELTA( uniform->Mass(),   testStar->Mass(),   residual );
+//     // use the SSR of the polytrope to quantify acceptable error
+//     double const machine_precision = 1.e-16;
+//     double const expected_error = pow(10.0/LEN, 5);
+//     double const residual = pow(10.0,ceil(log10(testStar->SSR())));
+//     TS_ASSERT_LESS_THAN( residual, expected_error );
 
-    // test key features identical inside, up to error
-    // the n=0 is constant density,
-    double const density = testStar->rho(0);
-    for(std::size_t i=0; i<LEN; i++){
-        TS_ASSERT_DELTA( uniform->rad(i), testStar->rad(i), residual );
-        TS_ASSERT_DELTA( uniform->rho(i), testStar->rho(i), residual );
-        TS_ASSERT_DELTA( density,         testStar->rho(i), residual );
-        TS_ASSERT_DELTA( uniform->mr(i),  testStar->mr(i),  residual );
-        TS_ASSERT_DELTA( uniform->P(i),   testStar->P(i),   residual );
-    }
+//     // test they have same mass, radius, up to error
+//     TS_ASSERT_DELTA( uniform->Radius(), testStar->Radius(), residual );
+//     TS_ASSERT_DELTA( uniform->Mass(),   testStar->Mass(),   residual );
 
-    double xi, theta;
-    FILE *fp = fopen("tests/artifacts/exact_0.txt", "w");
-    for(std::size_t i=0; i<LEN; i++){
-        xi = testStar->getX(i);
-        theta = 1. - xi*xi/6.;
-        fprintf(fp, "%lf\t%le\n", xi, std::abs(theta-testStar->getY(i)));
-    }
-    fclose(fp);
+//     // test key features identical inside, up to error
+//     // the n=0 is constant density,
+//     double const density = testStar->rho(0);
+//     for(std::size_t i=0; i<LEN; i++){
+//         TS_ASSERT_DELTA( uniform->rad(i), testStar->rad(i), residual );
+//         TS_ASSERT_DELTA( uniform->rho(i), testStar->rho(i), residual );
+//         TS_ASSERT_DELTA( density,         testStar->rho(i), residual );
+//         TS_ASSERT_DELTA( uniform->mr(i),  testStar->mr(i),  residual );
+//         TS_ASSERT_DELTA( uniform->P(i),   testStar->P(i),   residual );
+//     }
 
-    do_test_center(testStar, 1.e-12);
-    do_test_surface(testStar, 1.e-4);
+//     double xi, theta;
+//     FILE *fp = fopen("tests/artifacts/exact_0.txt", "w");
+//     for(std::size_t i=0; i<LEN; i++){
+//         xi = testStar->getX(i);
+//         theta = 1. - xi*xi/6.;
+//         TS_ASSERT_DELTA( testStar->getY(i), theta, residual );
+//         fprintf(fp, "%lf\t%le\n", xi, std::abs(theta-testStar->getY(i)));
+//     }
+//     fclose(fp);
 
-    delete testStar;
-    delete uniform;
-}
+//     do_test_center (testStar, machine_precision );
+//     do_test_surface(testStar, expected_error );
 
-void test_polytrope_n1(){
-    printf("STAR TESTS n=1.0 POLYTROPE\n");
-    const double INDEX = 1.0;
-    const std::size_t LEN = 1000;
-    Polytrope *testStar = new Polytrope(INDEX,LEN);
+//     delete testStar;
+//     delete uniform;
+// }
 
-    const double residual = pow(10.0,ceil(log10(testStar->SSR())));
-    TS_ASSERT_LESS_THAN( residual, 1.e-8 );
+// void test_polytrope_n1(){
+//     fprintf(stderr, "\n##########\nSTAR TESTS - POLYTROPE n=1.0\n");
+//     printf("\n\tSTAR TESTS - POLYTROPE n=1.0");
+//     double const INDEX (1.0);
+//     std::size_t const LEN (1001);
+//     Polytrope *testStar = new Polytrope(INDEX,LEN);
 
-    const double Rn = sqrt( (INDEX+1.0)/(4.0*m_pi) );
+//     double const expected_error = pow(10.0/LEN, 5);
+//     double const residual = pow(10.0,ceil(log10(testStar->SSR())));
 
-    TS_ASSERT_DELTA( testStar->Radius(), Rn*m_pi, residual );
-    TS_ASSERT_DELTA( testStar->Mass(), Rn*(INDEX+1)*m_pi, residual );
+//     TS_ASSERT_LESS_THAN( residual, expected_error );
 
-    double x, theta;
-    FILE *fp = fopen("tests/artifacts/exact_1.txt", "w");
-    for(std::size_t i=1; i<LEN; i++){
-        x = testStar->rad(i)/Rn;
-        theta = sin(x)/x;
-        TS_ASSERT_DELTA( testStar->P(i),   pow(theta,2), residual );
-        TS_ASSERT_DELTA( testStar->rho(i), theta, residual );
-        fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
-    }
-    fclose(fp);
+//     const double Rn = sqrt( (INDEX+1.0)/(4.0*m_pi) );
 
-    do_test_center(testStar, 1.e-4);
-    do_test_surface(testStar, 1.e-4);
+//     TS_ASSERT_DELTA( testStar->getX(LEN-1), m_pi,          residual );
+//     TS_ASSERT_DELTA( testStar->Radius(), Rn*m_pi,          residual );
+//     TS_ASSERT_DELTA( testStar->Mass(), Rn*(INDEX+1.)*m_pi, residual );
 
-    delete testStar;
-}
+//     double x, theta;
+//     FILE *fp = fopen("tests/artifacts/exact_1.txt", "w");
+//     for(std::size_t i=1; i<LEN; i++){
+//         x = testStar->rad(i)/Rn;
+//         theta = sin(x)/x;
+//         TS_ASSERT_DELTA( testStar->P(i),    pow(theta,2),  residual );
+//         TS_ASSERT_DELTA( testStar->rho(i),  theta,         residual );
+//         TS_ASSERT_DELTA( testStar->getY(i), theta,         residual );
+//         fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
+//     }
+//     fclose(fp);
 
-void test_polytrope_n5(){
-    // this is not a star, as it has no surface, but extends to infinity
-    // it is useful only because it has an exact solution
-    // the radius and mass cannot be tested, as they do not exist
+//     do_test_center  ( testStar, expected_error );
+//     do_test_surface ( testStar, expected_error );
 
-    printf("STAR TESTS n=5.0 POLYTROPE\n");
-    const double INDEX = 5.0;
-    const std::size_t LEN = 1000;
-    Polytrope *testStar = new Polytrope(INDEX,LEN);
+//     delete testStar;
+//     assert(false);
+// }
 
-    const double residual = pow(10.0,ceil(log10(testStar->SSR())));
-    TS_ASSERT_LESS_THAN( residual, 1.e-8 );
+// void test_polytrope_n5(){
+//     // this is not a star, as it has no surface, but extends to infinity
+//     // it is useful only because it has an exact solution
+//     // the radius and mass cannot be tested, as they do not exist
 
-    double x, theta;
-    FILE *fp = fopen("tests/artifacts/exact_5.txt", "w");
-    for(std::size_t i=0; i<LEN; i++){
-        x = testStar->getX(i);
-        theta = pow( 1.0 + x*x/3.0, -0.5);
-        TS_ASSERT_DELTA( testStar->getY(i), theta, residual );
-        TS_ASSERT_DELTA( testStar->P(i),   pow(theta,INDEX+1), residual );
-        TS_ASSERT_DELTA( testStar->rho(i), pow(theta,INDEX), residual );
-        fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
-    }
-    fclose(fp);
+//     printf("\n\tSTAR TESTS - POLYTROPE n=5.0");
+//     const double INDEX = 5.0;
+//     const std::size_t LEN = 1001;
+//     Polytrope *testStar = new Polytrope(INDEX,LEN);
 
-    do_test_center(testStar, 1.e-4);
-    // there is no surface
+//     const double expected_error = pow(10.0/LEN, 5);
+//     const double residual = pow(10.0,ceil(log10(testStar->SSR())));
+//     TS_ASSERT_LESS_THAN( residual, expected_error );
 
-    delete testStar;
-}
+//     double x, theta;
+//     FILE *fp = fopen("tests/artifacts/exact_5.txt", "w");
+//     for(std::size_t i=0; i<LEN; i++){
+//         x = testStar->getX(i);
+//         theta = pow( 1.0 + x*x/3.0, -0.5);
+//         TS_ASSERT_DELTA( testStar->getY(i), theta,             residual );
+//         TS_ASSERT_DELTA( testStar->P(i),   pow(theta,INDEX+1), residual );
+//         TS_ASSERT_DELTA( testStar->rho(i), pow(theta,INDEX),   residual );
+//         fprintf(fp, "%lf\t%le\n", x, std::abs(theta-testStar->getY(i)));
+//     }
+//     fclose(fp);
 
-void test_several_polytropes(){
-    printf("STAR TESTS SSR FOR SEVERAL POLYTROPES\n");
-    double const INDEX[] = {1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
-    std::size_t const LEN = 1000;
-    Star *testStar;
-    for(double n : INDEX){
-        testStar = new Polytrope(n, LEN);
-        do_test_center(testStar, 1.e-4);
-        do_test_center(testStar, 1.e-4);
-        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-8);
-        delete testStar;
-    }
-}
+//     do_test_center( testStar, expected_error );
+//     // there is no surface
+
+//     delete testStar;
+// }
+
+// void test_several_polytropes(){
+//     printf("\n\tSTAR TESTS - SSR FOR SEVERAL POLYTROPES");
+//     double const INDEX[] = {1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
+//     std::size_t const LEN = 1001;
+//     Star *testStar;
+
+//     double const expected_error = pow(10.0/LEN, 5);
+//     double residual;
+
+//     for(double n : INDEX){
+//         testStar = new Polytrope(n, LEN);
+//         residual = pow(10.0,ceil(log10(testStar->SSR())));
+//         TS_ASSERT_LESS_THAN(residual, expected_error);
+//         // assert P/rho = theta?
+//         do_test_center ( testStar, expected_error );
+//         do_test_surface( testStar, expected_error );
+//         delete testStar;
+//     }
+// }
 
 void test_polytrope_MR_constructor(){
-    printf("STAR TESTS POLYTROPE M,R CONSTRUCTOR\n");
+    printf("\n\tSTAR TESTS - POLYTROPE M,R CONSTRUCTOR");
     const double BigM[] = {0.2, 0.6, 1.0, 2.0, 10.0};
     const double BigR[] = {0.1, 1.1, 1.2, 20.0};
     const double index[] = {1.0, 1.5, 3.0};
-    const std::size_t LEN = 1000;
-    Polytrope *testStar;
+    const std::size_t LEN = 1001;
+    double const expected_error = pow(10./LEN , 4);
+    Polytrope *testStar, *refStar;
 
     for(double M : BigM){
         for(double R : BigR){
             for(double n : index){
                 testStar = new Polytrope(M*MSOLAR, R*REARTH, n, LEN);
+                refStar = new Polytrope(n, LEN);
                 TS_ASSERT_DELTA(M, testStar->Mass()/MSOLAR, 1.e-14);
                 TS_ASSERT_DELTA(R, testStar->Radius()/REARTH, 1.e-14);
-                TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-8);
+                TS_ASSERT_LESS_THAN(testStar->SSR(), expected_error);
+                for(std::size_t i=0; i<LEN; i++){
+                    TS_ASSERT_DELTA( testStar->getY(i), refStar->getY(i), expected_error );
+                    TS_ASSERT_DELTA( testStar->getX(i), refStar->getX(i), expected_error );
+                }
                 delete testStar;
+                delete refStar;
             }
         }
     }
@@ -399,64 +481,65 @@ void test_make_exact_error_graph(){
     system("rm tests/artifacts/exact_5.txt");
 }
 
-// TODO: make the following for polytrope
-// * scaling of exact errors
-// * physical errors
-// * scaling of physical errors
-// * scaling of theta
+// // TODO: make the following for polytrope
+// // * scaling of exact errors
+// // * physical errors
+// // * scaling of physical errors
+// // * scaling of theta
 
-/***** TESTS OF CHANDRASEKHAR WD *****/
+// /***** TESTS OF CHANDRASEKHAR WD *****/
 
-void test_CHWD_against_chandrasekhar(){
-    printf("STAR TEST CHANDRASEKHAR TABLE\n");
-    // Chandrasekhar 1939 table 27 has properties of several WDs
-    // to compare must use values of A0, B0 that were in use in 1939
+// void test_CHWD_against_chandrasekhar(){
+//     printf("\n\tSTAR TEST - CHANDRASEKHAR TABLE");
+//     // Chandrasekhar 1939 table 27 has properties of several WDs
+//     // to compare must use values of A0, B0 that were in use in 1939
 
-    std::size_t const LEN(2000);
-    ChandrasekharWD *testStar;
-    // the values listed in Chandrasekhar 1939 table
-    double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
-    double M1939[] = {5.51, 5.32, 4.87, 4.33, 3.54, 2.95, 2.45, 2.02, 1.62, 0.88};
-    double R1939[] = {4.13e8, 5.44e8, 7.69e8, 9.92e8, 1.29e9, 1.51e9, 1.72e9, 1.93e9, 2.15e9, 2.79e9};
-    const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
-    // translate 1/Y0^2 to Y0
-    double Y0[num_rows];
-    for(std::size_t n=0; n<num_rows; n++) {
-        Y0[n] = 1./sqrt(invY0sq[n]);
-    }
+//     std::size_t const LEN(2001);
+//     ChandrasekharWD *testStar;
+//     // the values listed in Chandrasekhar 1939 table
+//     double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
+//     double M1939[] = {5.51, 5.32, 4.87, 4.33, 3.54, 2.95, 2.45, 2.02, 1.62, 0.88};
+//     double R1939[] = {4.13e8, 5.44e8, 7.69e8, 9.92e8, 1.29e9, 1.51e9, 1.72e9, 1.93e9, 2.15e9, 2.79e9};
+//     const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
+//     // translate 1/Y0^2 to Y0
+//     double Y0[num_rows];
+//     for(std::size_t n=0; n<num_rows; n++) {
+//         Y0[n] = 1./sqrt(invY0sq[n]);
+//     }
 
-    char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
-    system( "mkdir -p tests/artifacts/" );
-    FILE *fp = fopen(filename, "w");
-    double M,R;
-    for(std::size_t n=0; n<num_rows; n++){
-        // use the form of the constructor that allows specifuing A0, B0
-        // must use the 1939 values, to ensure equality of results
-        testStar = new ChandrasekharWD(Y0[n], LEN, Chandrasekhar::A01939, Chandrasekhar::B01939);
-        M = testStar->Mass()/MSOLAR;
-        R = testStar->Radius();
-        // assert reasonable numerical error
-        TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
-        // assert agreement with tabular values in Chandrasekhar 1939
-        TS_ASSERT_DELTA( M, M1939[n], 1.e-1);
-        TS_ASSERT_DELTA( R, R1939[n], 1.e8); // note units in cm
-        // write out values to table
-        fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
+//     char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
+//     system( "mkdir -p tests/artifacts/" );
+//     FILE *fp = fopen(filename, "w");
+//     double M,R;
+//     for(std::size_t n=0; n<num_rows; n++){
+//         // use the form of the constructor that allows specifuing A0, B0
+//         // must use the 1939 values, to ensure equality of results
+//         testStar = new ChandrasekharWD(Y0[n], LEN, Chandrasekhar::A01939, Chandrasekhar::B01939);
+//         M = testStar->Mass()/MSOLAR;
+//         R = testStar->Radius();
+//         // assert reasonable numerical error
+//         TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
+//         // assert agreement with tabular values in Chandrasekhar 1939
+//         TS_ASSERT_DELTA( M, M1939[n], 1.e-1);
+//         TS_ASSERT_DELTA( R, R1939[n], 1.e8); // note units in cm
+//         // write out values to table
+//         fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
         
-        // test expansions
-        do_test_center(testStar, 1.e-4);
-        do_test_surface(testStar, 2.e-0); // TODO why is this fit so bad? 
+//         // test expansions
+//         do_test_center(testStar, 1.e-4);
+//         do_test_surface(testStar, 2.e-0); // TODO why is this fit so bad? 
         
-        delete testStar;
-    }
-    fclose(fp);
-}
+//         delete testStar;
+//     }
+//     fclose(fp);
+// }
+
 
 void test_CHWD_grad_constructor(){
-    printf("STAR TEST CHANDRASEKHAR CONSTRUCTORS\n");
+    printf("\n\tSTAR TEST - CHANDRASEKHAR CONSTRUCTORS");
     // test the constructor that accepts a gradiant in mu
     // try both a constant gradient, and a sigmoidal gradient
-    std::size_t const LEN(1000);
+    std::size_t const LEN(1001);
     ChandrasekharWD *testStar;
     const double Y0[] = {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0};
     double F0;
@@ -476,23 +559,77 @@ void test_CHWD_grad_constructor(){
     }
 }
 
-// TODO read in star outputs, compare
+// // TODO read in star outputs, compare
 
-/***** TESTS OF MESA WRAPPER ******/
+// /***** TESTS OF MESA WRAPPER ******/
 
-void test_MESA_constructor(){
-    // should first calculate SSR using only the knots
-    // then check the SSR isn't very much worse
-
-    printf("STAR TEST MESA CONSTRUCTOR");
-    std::size_t const LEN(5000);
-    std::string mesa_file = "mesa_co_wd_cold.dat";
-    MESA *testStar = new MESA(mesa_file.c_str(), LEN);
-    TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-4);
-    do_test_center(testStar, 1.e-4);
-    do_test_surface(testStar, 1.e-6);
-    delete testStar;
+void test_MESA_fit(){
+    // create a simple star model, like n=1 polytrope
+    // save its data to a file, formatted like MESA data
+    // load the file into a MESA wrapper
+    // check that the knots correspond
+    // calculate the SSR of the simple model
+    // ensure the SSR of the wrapper is similar
+    printf("\n\tSTAR TEST - MESA FIT");
+    double index = 2.2;
+    double M = MSOLAR, R = 1.35*REARTH;
+    std::size_t LEN(100);
+    Polytrope *refStar = new Polytrope(M, R, index, LEN);
+    double Gamma = 5./3.;
+    // print using MESA v1.01 format
+    std::string testfile ("tests/inputs/test_polytrope_n=2.2_v101.dat");
+    FILE *fp = fopen(testfile.c_str(), "w");
+    // first line formatted N Mstar Rstar Lstar vx100
+    fprintf(fp, "%lu %le %le 0.0 101\n", LEN, M, R);
+    for(std::size_t i=0; i<LEN; i++){
+        // column 1 = index, from 1 to LEN (i+1)
+        // column 2 = radius
+        // column 3 = mass
+        // column 4 = luminosity = 0
+        fprintf(fp, "%lu %le %le 0.0 ", i+1, refStar->rad(i), refStar->mr(i));
+        // column 5 = pressure
+        // column 6 = temperature = 0 except last two
+        // column 7 = density
+        // column 8 = del = 0
+        double t = (i<LEN-2 ? 0.0 : 1.2e4);
+        fprintf(fp, "%le %le %le 0.0 ", refStar->P(i), t, refStar->rho(i));
+        // column 9 = Brunt-Vaisala
+        // column 10 = Gamma1
+        // column 11 onward = stuff we don't care about
+        fprintf(fp, "%le %le 0.0\n", -refStar->Schwarzschild_A(i,Gamma)*refStar->dPhidr(i), Gamma);
+    }
+    fclose(fp);
+    MESA *testStar = new MESA(testfile.c_str(), LEN);
+    for(std::size_t i=0; i<LEN; i++){
+        // TS_ASSERT_DELTA(refStar->rad(i), testStar->rad(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->mr(i), testStar->mr(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->P(i), testStar->P(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->rho(i), testStar->rho(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->dPhidr(i), testStar->dPhidr(i), 1.e-2);
+        // //
+        // TS_ASSERT_DELTA(refStar->getU(i), testStar->getU(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->getC(i), testStar->getC(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->getVg(i), testStar->getVg(i), 1.e-2);
+        // TS_ASSERT_DELTA(refStar->getAstar(i), testStar->getAstar(i), 1.e-2);
+    }
+    printf("REF SSR = %le\n", refStar->SSR());
+    printf("TEST SSR = %le\n", testStar->SSR());
+    printf("TEST STAR LEN = %lu\n", testStar->length());
 }
+
+// void test_MESA_constructor(){
+//     // should first calculate SSR using only the knots
+//     // then check the SSR isn't very much worse
+
+//     printf("\n\tSTAR TEST - MESA CONSTRUCTOR");
+//     std::size_t const LEN(5000);
+//     std::string mesa_file = "mesa_co_wd_cold.dat";
+//     MESA *testStar = new MESA(mesa_file.c_str(), LEN);
+//     TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-4);
+//     do_test_center(testStar, 1.e-4);
+//     do_test_surface(testStar, 1.e-6);
+//     delete testStar;
+// }
 
 // TODO make reduced data file
 

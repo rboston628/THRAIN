@@ -18,8 +18,7 @@ SplinorTest() {
 }
 
 void test_slinor_basic(){
-    printf("SPLINE BASIC\n");
-
+    printf("\nSPLINE TESTS");
     // range of test data
     double x0=0.0, x1=1.0;
 
@@ -96,8 +95,6 @@ void test_slinor_basic(){
 }
 
 void test_splinor_line_natural(){
-    printf("SPLINOR LINE NATURAL\n");
-
     // test distribution, line of slope 1
     std::size_t const num_points = 10;
     double xtest[num_points], ytest[num_points];
@@ -137,8 +134,6 @@ void test_splinor_line_natural(){
 }
 
 void test_splinor_line_clamped(){
-    printf("SPLINOR LINE CLAMPED\n");
-
     // test distribution, line of slope 1
     std::size_t const num_points = 10;
     std::uniform_real_distribution<double> sample_x_axis(0.0,double(num_points));
@@ -180,8 +175,6 @@ void test_splinor_line_clamped(){
 }
 
 void test_splinor_quadratic(){
-    printf("SPLINOR QUADRATIC\n");
-
     double x0 = 0.0, x1 = 10.0;
     std::uniform_real_distribution<double> sample_x_axis(x0,x1);
 
@@ -238,8 +231,6 @@ void test_splinor_quadratic(){
 }
 
 void test_splinor_cubic(){
-    printf("SPLINOR CUBIC\n");
-    
     double A=1.2, B=0.5, C=3.0, D=-5.0;
     std::function<double(double)> cubic = [A,B,C,D](double x)->double {return ((A*x+B)*x+C)*x+D;};
     
@@ -274,8 +265,6 @@ void test_graphical_fits(){
     /** This test utilizes several test data files to fit cubic splines
      * and creates graphs of the spline fits for visual validation.
     */
-
-   printf("SPLINOR GRAPHS\n");
    std::string tests[] = {"log", "cosine", "runge", "step", "window"};
    std::size_t N;
    double *xdata, *ydata;

@@ -5,6 +5,22 @@
 class UnitsBaseTest : public CxxTest::TestSuite {
 public:
 
+    static UnitsBaseTest *createSuite (){
+        printf("\nUNIT TESTS");
+        return new UnitsBaseTest;
+    }
+    static void destroySuite(UnitsBaseTest *suite) { 
+        delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
+
     Calculation::OutputData setupFakeCalcData(units::Units unitType){
         Calculation::OutputData fakeData;
         fakeData.star = nullptr;

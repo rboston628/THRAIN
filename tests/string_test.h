@@ -11,6 +11,7 @@ class StringFormatterTest : public CxxTest::TestSuite {
 public:
 
     void test_string_addition( void ){
+        printf("\nSTRING");
 
         // test adding string and c-string
         char x[] = "_c_string_1";
@@ -35,8 +36,6 @@ public:
     }
 
     void test_string_format( void ) {
-        printf("TEST OF STRING FORMAT\n");
-
         // test formating integers
         std::string integers = strmakef("x%d%d", 2,7);
         TS_ASSERT_EQUALS(integers, "x27");

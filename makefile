@@ -98,6 +98,9 @@ obj/MODES:
 
 tests: thrain tests/*.h
 	cxxtestgen --error-printer -o tests/tests.cpp tests/*.h
+#	this line makes cxxtest print to stderr so that stdout can be captured
+	sed 's/CxxTest::ErrorPrinter tmp;/CxxTest::ErrorPrinter tmp(std::cerr);/' \
+		tests/tests.cpp > changed.cpp && mv changed.cpp tests/tests.cpp
 	$(CC) -o tests/tests.out \
 		$(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(ODIR)/ThrainStellar.o \
 		$(MODEOBJ) $(STAROBJ) $(DRVOBJ) tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a

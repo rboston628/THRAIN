@@ -5,6 +5,22 @@
 class IOBaseTest : public CxxTest::TestSuite {
 public:
 
+    static IOBaseTest *createSuite (){
+        printf("\nIO TESTS");
+        return new IOBaseTest();
+    }
+    static void destroySuite(IOBaseTest *suite) { 
+        delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
+
     void make_test_input(std::string filename, std::string towrite){
         FILE* outfile = fopen(filename.c_str(), "w");
         if(!outfile){
@@ -31,16 +47,19 @@ public:
         delete[] read_buffer;
     }
 
-    /* test in basic calculation setup */
+    /* test basic calculation setup */
 
     void test_fail_bad_file() {
-        printf("START IO TESTS:");
+        printf("IO TEST - BAD FILE\n");
+        freopen("tests/artifacts/logio.txt", "a", stderr);
         Calculation::InputData data;
         char badfilename[] = "tests/nonexistent.txt";
         TS_ASSERT_EQUALS(1, io::read_input(badfilename, data));
+        freopen("/dev/tty", "w", stderr);
     }
 
     void test_fail_bad_calcname() {
+        printf("IO TEST - BAD CALCNAME\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Nombre: espanol\n";
@@ -53,6 +72,7 @@ public:
     }
 
      void test_fail_no_calcname() {
+        printf("IO TEST - NO CALCNAME\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Name:\n";
@@ -65,6 +85,7 @@ public:
     }
 
     void test_read_calcname() {
+        printf("IO TEST - READ CALCNAME\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Name: valid_test_name\n";
@@ -78,6 +99,7 @@ public:
     /* tests of reading models */
 
     void test_fail_bad_model() {
+        printf("IO TEST - BAD MODEL\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = 
@@ -93,6 +115,7 @@ public:
     }
 
     void test_fail_no_model() {
+        printf("IO TEST - NO MODEL\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = 
@@ -110,9 +133,7 @@ public:
     void do_test_read_model(model::StellarModel m){
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
-        std::string filecontents = 
-            "Name: valid_test_name\n"
-            "Model: newtonian ";
+        std::string filecontents = "Model: newtonian ";
         switch(m){
         case model::polytrope:
             filecontents += "polytrope\t\n";
@@ -136,6 +157,7 @@ public:
     }
 
     void test_real_all_models(){
+        printf("IO TEST - TEST ALL MODELS\n");
         do_test_read_model(model::polytrope);
         do_test_read_model(model::CHWD);
         do_test_read_model(model::MESA);
@@ -145,6 +167,7 @@ public:
     /* tests of reading the units */
 
     void test_fail_no_units() {
+        printf("IO TEST - NO UNITS\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Unidades: buenos\n";
@@ -155,6 +178,7 @@ public:
     }
 
     void test_fail_bad_units() {
+        printf("IO TEST - BAD UNITS\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Units: fakeunits\n";
@@ -190,6 +214,7 @@ public:
     }
 
     void test_read_all_units() {
+        printf("IO TEST - ALL UNITS\n");
         do_test_units_types(units::Units::astro);
         do_test_units_types(units::Units::geo);
         do_test_units_types(units::Units::SI);
@@ -199,6 +224,7 @@ public:
     /* tests of reading the modes */
 
     void test_no_modetype() {
+        printf("IO TEST - NO MODETYPE\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Frequencies: 5/3\n"; //will become nonradial mode
@@ -211,6 +237,7 @@ public:
     }
 
     void test_read_bad_modetype() {
+        printf("IO TEST - BAD MODETYPE\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Frequencies: fakemode 5/3\n"; //will become nonradial mode
@@ -248,6 +275,7 @@ public:
     }
 
     void test_read_all_modetypes() {
+        printf("IO TEST - ALL MODETYPES\n");
         do_test_modetype(modetype::radial);
         do_test_modetype(modetype::cowling);
         do_test_modetype(modetype::nonradial);
@@ -266,6 +294,7 @@ public:
     }
 
     void test_read_adiabatic_index(){
+        printf("IO TEST - ALL ADIABATIC INDICES\n");
         do_test_adiabatic_index("5/3", 5./3.);
         do_test_adiabatic_index("4/3", 4./3.);
         do_test_adiabatic_index("5/2", 2.5);
@@ -279,6 +308,7 @@ public:
     }
 
     void test_read_mode_list() {
+        printf("IO TEST - READ MODE LIST\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = "Frequencies: nonradial 5/3\n";
@@ -308,6 +338,7 @@ public:
     }
 
     void test_read_mode_list_unordered() {
+        printf("IO TEST - READ UNORDERED MODE LIST\n");
         // tests that duplicate L,K will be removed
         // and that they will be put in order
         Calculation::InputData data;
@@ -345,6 +376,7 @@ public:
     }
 
     void test_read_mode_list_no_dipole_f() {
+        printf("IO TEST - REMOVE L=1 F-MODE\n");
         // tests that duplicate L,K will be removed
         // and that they will be put in order
         Calculation::InputData data;
@@ -380,6 +412,7 @@ public:
     }
 
     void test_read_bad_mode_list() {
+        printf("IO TEST - READ BAD MODE LIST\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = 
@@ -405,6 +438,7 @@ public:
     /* test reading polytrope input data */
 
     void test_fail_bad_params() {
+        printf("IO TEST - BAD PARAMS\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = 
@@ -424,6 +458,7 @@ public:
     }
 
     void test_open_file_polytrope() {
+        printf("IO TEST - OPEN FILE\n");
         Calculation::InputData data;
         std::string testfilename("tests/test_file.txt");
         std::string filecontents = 

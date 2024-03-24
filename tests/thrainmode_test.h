@@ -12,6 +12,22 @@ const double ZEROW2 = 0.16;
 class ModeBaseTest : public CxxTest::TestSuite {
 public:
 
+    static ModeBaseTest *createSuite (){
+        printf("\nMODE FINDER TESTS I");
+        return new ModeBaseTest;
+    }
+    static void destroySuite(ModeBaseTest *suite) { 
+        delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
+
     // test that result fails if given bad polytrope index
     void test_compare_JCD_bad_n(){
         TS_ASSERT(std::isnan(mode::compare_JCD(1.2, 1, 1, 0.01)));
@@ -161,7 +177,6 @@ public:
         TS_ASSERT_EQUALS(kmax, 5);
         TS_ASSERT_EQUALS(w2max, 4.0);
     }
-
 };
 
 class FakeModeDriver : public ModeDriver {
@@ -225,12 +240,21 @@ public:
     // this function will make output files for better debugging
     static ModeFinderTest *createSuite (){
         system("mkdir -p ./output/../tests/modefinder/../tests");
-        system("rm ./output/../tests/modefinder/../tests/modefinder.txt");
+        system("rm -f ./output/../tests/modefinder/../tests/modefinder.txt");
         system("touch ./output/../tests/modefinder/../tests/modefinder.txt");
+        printf("\nMODE FINDER TESTS II");
         return new ModeFinderTest();
     }
     static void destroySuite(ModeFinderTest *suite) { 
         delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
     }
 
     Calculation::OutputData mode_finder_test_setup(
@@ -508,11 +532,20 @@ public:
 
     // this will destroy one of the extraneous dirs created
     static ControlledModeFinderTest *createSuite (){
+        printf("\nMODE FINDER TESTS III");
         return new ControlledModeFinderTest();
     }
     static void destroySuite(ControlledModeFinderTest *suite) { 
         system("rm -r ./tests/modefinder/");
         delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
     }
 
     void do_test_mode_finder_fake_classes(

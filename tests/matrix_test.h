@@ -104,6 +104,7 @@ MatrixTest() {
 }
 
 void test_det_singular(){
+    printf("\nMATRIX TESTS");
     const double ZERO = 0.0;
     double m[4][4] = {{1,4,6,2},{-7,2,1,4}, {0,0,0,0}, {1,9,8,5}};
     TS_ASSERT_EQUALS(matrix::determinant(m), ZERO);

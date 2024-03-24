@@ -21,7 +21,7 @@
 #define CONSTANTS
 
 //good ol' pi!
-const double m_pi = 3.141592653589793;
+const double m_pi = 3.1415926535897932384626433832795;
 //speed of light in CGS
 const double C_CGS = 2.99792458e10;// in CGS
 //gravitational constant in CGS

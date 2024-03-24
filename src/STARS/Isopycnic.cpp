@@ -190,7 +190,7 @@ void Isopycnic::getAstarSurface(double *As, int& maxPow, double g){
 	if(maxPow>= -1) As[O-1] = -1./Gam1;
 	if(maxPow>=  0) As[O  ] = 1.5/Gam1;
 	for(int k=1; k<= maxPow; k++){
-		As[O+k] = -pow(2,k+1)/Gam1;
+		As[O+k] = -pow(2,-k-1)/Gam1;
 	}
 }
 
@@ -201,7 +201,7 @@ void Isopycnic::getVgSurface(double *Vs, int& maxPow, double g){
 	if(maxPow>= -1) Vs[O-1] = 1./Gam1;
 	if(maxPow>=  0) Vs[O  ] = -1.5/Gam1;
 	for(int k=1; k<= maxPow; k++){
-		Vs[O+k] = pow(2,k+1)/Gam1;
+		Vs[O+k] = pow(2,-k-1)/Gam1;
 	}
 }
 
@@ -228,7 +228,7 @@ void Isopycnic::getC1Surface(double *cs, int& maxPow){
 // 	if(maxPow>= -1) as[-1] = -1./Gam1;
 // 	if(maxPow>=  0) as[ 0] = 1.5/Gam1;
 // 	for(int k=1; k<= maxPow; k++){
-// 		as[k] = -pow(2,k+1)/Gam1;
+// 		as[k] = -pow(2,-k-1)/Gam1;
 // 	}
 // 	return as;
 // }
