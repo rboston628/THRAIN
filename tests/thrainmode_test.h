@@ -5,27 +5,44 @@
 // TODO: check STEP 3c -- can't find max bracket
 // TODO: check failure if not using Mode
 // TODO: check failure if not using ModeDriver
+// TODO: check g-modes (k<0)
 
 const double ZEROW2 = 0.16;
 
 class ModeBaseTest : public CxxTest::TestSuite {
 public:
 
+    static ModeBaseTest *createSuite (){
+        printf("\nMODE FINDER TESTS I");
+        return new ModeBaseTest;
+    }
+    static void destroySuite(ModeBaseTest *suite) { 
+        delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
+
     // test that result fails if given bad polytrope index
     void test_compare_JCD_bad_n(){
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 1, 1, 0.01));
+        TS_ASSERT(std::isnan(mode::compare_JCD(1.2, 1, 1, 0.01)));
     }
 
     // test that result fails if given bad L or K for lookup
     void test_compare_JCD_bad_lk(){
         // fail L too low
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 0, 1, 0.01));
+        TS_ASSERT(std::isnan(mode::compare_JCD(1.5, 0, 1, 0.01)));
         // fail L too high
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 4, 1, 0.01));
+        TS_ASSERT(std::isnan(mode::compare_JCD(1.5, 4, 1, 0.01)));
         // fail K too low
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 1, 0, 0.01));
+        TS_ASSERT(std::isnan(mode::compare_JCD(1.5, 2, 0, 0.01)));
         // fail K too high
-        TS_ASSERT_IS_NAN(mode::compare_JCD(1.2, 1, 36, 0.01));
+        TS_ASSERT(std::isnan(mode::compare_JCD(1.5, 1, 36, 0.01)));
     }
 
     void test_compare_JCD(){
@@ -138,7 +155,8 @@ public:
     }
 
     void test_min_from_set_largest(){
-        // test will not find a min
+        // the target is larger than all members of set
+        // will return the max of the set as the min
         std::set<int> kbrackets {5,6,7};
         std::map<int, double> w2brackets {{5,4.0},{6,12.0},{7,14.0}};
         double w2min=0.0;
@@ -148,6 +166,17 @@ public:
         TS_ASSERT_EQUALS(w2min, 14.0);
     }
 
+    void test_max_from_set_smallest(){
+        // the target is smaller than all members of set
+        // will return the min of the set as the max
+        std::set<int> kbrackets {5,6,7};
+        std::map<int, double> w2brackets {{5,4.0},{6,12.0},{7,14.0}};
+        double w2max=0.0;
+        int ktarget = 2, kmax = 1;
+        mode::get_max_from_set(kbrackets, w2brackets, ktarget, kmax, w2max);
+        TS_ASSERT_EQUALS(kmax, 5);
+        TS_ASSERT_EQUALS(w2max, 4.0);
+    }
 };
 
 class FakeModeDriver : public ModeDriver {
@@ -211,12 +240,21 @@ public:
     // this function will make output files for better debugging
     static ModeFinderTest *createSuite (){
         system("mkdir -p ./output/../tests/modefinder/../tests");
-        system("rm ./output/../tests/modefinder/../tests/modefinder.txt");
+        system("rm -f ./output/../tests/modefinder/../tests/modefinder.txt");
         system("touch ./output/../tests/modefinder/../tests/modefinder.txt");
+        printf("\nMODE FINDER TESTS II");
         return new ModeFinderTest();
     }
     static void destroySuite(ModeFinderTest *suite) { 
         delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
     }
 
     Calculation::OutputData mode_finder_test_setup(
@@ -494,11 +532,20 @@ public:
 
     // this will destroy one of the extraneous dirs created
     static ControlledModeFinderTest *createSuite (){
+        printf("\nMODE FINDER TESTS III");
         return new ControlledModeFinderTest();
     }
     static void destroySuite(ControlledModeFinderTest *suite) { 
         system("rm -r ./tests/modefinder/");
         delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
     }
 
     void do_test_mode_finder_fake_classes(

@@ -2,11 +2,13 @@
 #include <cxxtest/TestSuite.h>
 #include <functional>
 #include <random>
+#include <cmath>
 
 // TODO: time-profile solutions
 // time profile 100 dets and inversions
 // time profile det, inversion of one enormous matrix
 // have tests requiring certain time performance
+// TODO: check singular, sparse matrices
 
 // create a matrix using some function to fill in elements
 template<std::size_t N, std::size_t M, class T>
@@ -76,6 +78,8 @@ bool matrix_triangular(T const (&m)[N][N]){
         for(int j=0; j<i && upper; j++){
             upper &= (m[i][j]==T(0));
         }
+        //further ensure the diagonal is not zero
+        upper &= (m[i][i]!=T(0));
     }
     return upper;
 }
@@ -100,6 +104,7 @@ MatrixTest() {
 }
 
 void test_det_singular(){
+    printf("\nMATRIX TESTS");
     const double ZERO = 0.0;
     double m[4][4] = {{1,4,6,2},{-7,2,1,4}, {0,0,0,0}, {1,9,8,5}};
     TS_ASSERT_EQUALS(matrix::determinant(m), ZERO);
@@ -138,10 +143,7 @@ void test_det_3x3(){
 
 void test_many_2x2(){
     const std::size_t N=2, num_trials = 100;
-
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution(0.0,10.0);
-
+    
     double sum = 0.0;
     double m[N][N];
     for(int I=0; I<num_trials; I++){
@@ -318,5 +320,37 @@ void test_invert_many_NxN_complex(){
     TS_ASSERT_LESS_THAN( sum, 1.e-12 );
 }
 
+
+void test_invert_tridiagonal(){
+    const int N=20, num_trials = 100;
+
+    // solving T*x = b where T is tridiagonal
+    // specify each diagonal, x, solve for b.
+    // then invert to solve for x and compare.
+    double sum = 0.0;
+    double left[N], diag[N], rite[N];
+    double ans[N], b[N];
+    for(int I=0; I<num_trials; I++){
+        for(int i=0; i<N; i++) left[i] = this->rando();
+        for(int i=0; i<N; i++) rite[i] = this->rando();
+        for(int i=0; i<N; i++) diag[i] = 2.0*(left[i]+rite[i]);
+        for(int i=0; i<N; i++) ans[i] = this->rando();
+        left[0] = rite[N-1] = 0.0;
+        b[0] = diag[0]*ans[0] + rite[0]*ans[1];
+        for(int i=1; i<N-1; i++){
+            b[i] = left[i]*ans[i-1] + diag[i]*ans[i] + rite[i]*ans[i+1];
+        }
+        b[N-1] = left[N-1]*ans[N-2] + diag[N-1]*ans[N-1];
+        double res[N];
+        matrix::invertTridiagonal(left,diag,rite,b,res, N);
+        sum = 0.0;
+        for(int i=0; i<N; i++){
+            // TS_ASSERT_EQUALS( ans[i], res[i] );
+            sum += fabs(ans[i] - res[i])/fabs(ans[i]); 
+        }
+        sum /= N;
+        TS_ASSERT_LESS_THAN( sum, 1.e-12 );
+    }
+}
 };
 

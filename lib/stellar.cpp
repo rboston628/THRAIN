@@ -662,7 +662,6 @@ double energy_deg_trap(double rho, double T, Abundance X){
 }
 
 
-
 //ELECTRON DEGENERACY PRESSURE -- PARTIAL DEGENERACY
 //pressure of electron gas under partial degeneracy (T finite)
 //  uses a combination of methods depending on degeneracy
@@ -672,7 +671,7 @@ PartialPressure deg_partial = {
 	energy_deg_partial, UpartialRho_deg_partial, UpartialT_deg_partial, UpartialX_deg_partial};
 double pressure_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return pressure_deg_zero(rho,T,X);
@@ -683,7 +682,7 @@ double pressure_deg_partial(double rho, double T, Abundance X){
 }
 double partialRho_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return partialRho_deg_zero(rho,T,X);
@@ -694,7 +693,7 @@ double partialRho_deg_partial(double rho, double T, Abundance X){
 }
 double partialT_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return partialT_deg_zero(rho,T,X);
@@ -705,7 +704,7 @@ double partialT_deg_partial(double rho, double T, Abundance X){
 }
 double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return partialX_deg_zero(i,rho,T,X);
@@ -716,7 +715,7 @@ double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance X)
 }
 double energy_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return energy_deg_zero(rho,T,X);
@@ -727,7 +726,7 @@ double energy_deg_partial(double rho, double T, Abundance X){
 }
 double UpartialRho_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return UpartialRho_deg_zero(rho,T,X);
@@ -738,7 +737,7 @@ double UpartialRho_deg_partial(double rho, double T, Abundance X){
 }
 double UpartialT_deg_partial(double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return UpartialT_deg_zero(rho,T,X);
@@ -749,7 +748,7 @@ double UpartialT_deg_partial(double rho, double T, Abundance X){
 }
 double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance X){
 	static const double 
-		w_coeff = 0.5*pow(plank_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
+		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
 	double w = w_coeff*ne*pow(T, -1.5);
 	if      (w >10.0) return UpartialX_deg_zero(i,rho,T,X);

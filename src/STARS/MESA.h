@@ -1,5 +1,11 @@
-//Class to calculate read in MESA data for pulsation calculations d
-//Reece Boston, Mar 24, 2022
+//**************************************************************************************
+//							MESA Wrapper
+// MESA.h
+//		This is a simple wrapper, intended to work with data generated using MESA
+//	
+// Reece Boston, Sep 02, 2023
+//**************************************************************************************
+
 
 #ifndef MESACLASSH
 #define MESACLASSH
@@ -8,13 +14,12 @@
 
 class MESA : public Star {
 public:	
-	MESA(const char*, int);	//constructor
+	MESA(const char*, std::size_t);	//constructor
 	virtual ~MESA(); //destructor - clears all space in memory
 	int length() override {return len;}
 	double Mass() override;
 	double Radius() override;
 	double Gee() override;
-	double light_speed2() override;
 	std::string graph_title () override {
 		return strmakef("MESA model w/ Mass=%lg", Mtot);
 	}
@@ -34,16 +39,7 @@ public:
 	double sound_speed2(int, double GamPert=0) override;
 	
 private:
-	void printSection(int, int);
-	void subgridCubicSpline(const int, const int, const int*);
-	void spline(
-		const int, const int, const int *const,
-		const double *const,  const double *const,
-		double*, double*
-	);
-	void getSplineCoefficients(const int, double*, const double *const, const double *const);
-		
-	int Ntot, len, subgrid;  //Ntot = grid size from MESA
+	std::size_t Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
 	//in units of g, cm, erg/s, respectively
 	double Mtot, Rtot, Ltot;
@@ -53,7 +49,6 @@ private:
 	double *radi;	
 	Splinor *dens, *pres, *mass, *grav, *Gam1, *BVfq;
 	Splinor *aSpline, *vSpline, *uSpline, *cSpline;
-	
 	
 	//for BCs of modes
 	double nc;// effective polytropic index at center
