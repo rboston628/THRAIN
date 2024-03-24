@@ -17,7 +17,8 @@ _STARTYPES = \
 		STARS/Polytrope \
 		STARS/ChandrasekharWD++ \
 		STARS/MESA \
-		STARS/SimpleWD
+		STARS/SimpleWD \
+		STARS/Isopycnic 
 _STARDEPS = constants.h 
 
 STARDEPS = $(patsubst %, $(IDIR)/%.h, $(_STARTYPES)) $(patsubst %, $(IDIR)/%, $(_STARDEPS))
@@ -97,14 +98,24 @@ obj/MODES:
 
 tests: thrain tests/*.h
 	cxxtestgen --error-printer -o tests/tests.cpp tests/*.h
-	$(CC) -o tests/tests.out $(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(MODEOBJ) $(STAROBJ) $(DRVOBJ) tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
+#	this line makes cxxtest print to stderr so that stdout can be captured
+	sed 's/CxxTest::ErrorPrinter tmp;/CxxTest::ErrorPrinter tmp(std::cerr);/' \
+		tests/tests.cpp > changed.cpp && mv changed.cpp tests/tests.cpp
+	$(CC) -o tests/tests.out \
+		$(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(ODIR)/ThrainStellar.o \
+		$(MODEOBJ) $(STAROBJ) $(DRVOBJ) tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
 
-.PHONY: clean pull library clean-test
+cppcheck:
+	cppcheck lib/ --error-exitcode=1 --std=c++14
+	cppcheck src/ --error-exitcode=1 --std=c++14
+
+.PHONY: clean pull library
 
 library:
 	rm -f lib/*.o
 	rm -f lib/*.a
 	$(MAKE) -C lib --makefile=makelib library
+	rm -f lib/*.o
 
 ## this command is used on my local machine to handle centralized versioning
 pull:

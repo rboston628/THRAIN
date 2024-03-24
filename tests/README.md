@@ -4,7 +4,11 @@ These are some unit tests to ensure correct operation of the program.  They requ
 ```
 brew install CxxTest
 ```
-Linux users can try the same with their own package manager.  Windows users should consider installing a real operating system.
+Linux users can try the same with their own package manager.  On ubuntu
+```
+sudo apt-get install cxxtest
+```
+Windows users should consider installing a real operating system.
 
 From the top directory, the tests can be compiled and run using 
 ```

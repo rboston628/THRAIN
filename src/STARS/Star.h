@@ -18,7 +18,7 @@ public:
 	std::string name;	
 	virtual std::string graph_title() =0;
 	//this is the index where shooting methods for modes should join
-	int indexFit;
+	std::size_t indexFit;
 
 	// boundary conditions
 	//must return stellar structure expanded in powers of x=r/R near center
@@ -57,7 +57,7 @@ public:
 	virtual double Radius() =0;
 	virtual double Mass() =0;
 	virtual double Gee() =0;
-	virtual double light_speed2() =0;
+	virtual double light_speed2();
 	//print relevant values of the star in .txt and gnuplot
 	virtual void writeStar(const char *const c = NULL);
 	virtual void printStar(const char *const c = NULL);

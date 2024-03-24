@@ -13,12 +13,6 @@
 //     TS_ASSERT_EQUALS(testStar->P(0), 1.0);
 //     TS_ASSERT_EQUALS(testStar->P(99), 0.0);
 
-
-
 // }
-
-
-
-
 
 // };

@@ -1,6 +1,9 @@
 # This is a basic workflow to help you get started with Actions
 # inspired by gist example: NickNaso / cpp.yml
 # https://gist.github.com/NickNaso/0d478f1481686d5bcc868cac06620a60
+# I also found this article helpful:
+# https://www.incredibuild.com/blog/using-github-actions-with-your-c-project
+# See this issue in the CxxTest github page: https://github.com/CxxTest/cxxtest/issues/158
 name: C/C++ CI
 
 # Controls when the action will run. Triggers the workflow on push
@@ -15,11 +18,27 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+  # perform static analysis of the code, to ensure no uncaught undefined behavior
+  cppcheck:
+    name: cpp-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install cppcheck
+        run: |
+           sudo apt-get install -y cppcheck
+      - name: cppcheck lib
+        run: |
+          cppcheck lib/ --error-exitcode=1 --std=c++14
+      - name: cppcheck src
+        run: |
+          cppcheck src/ --error-exitcode=1 --std=c++14
+
+  # build and test the code
   build-and-test:
     # The type of runner that the job will run on
     name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }} # будет запускаться по очереди на всех типах машин
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -64,10 +83,11 @@ jobs:
             archiver: "7za a",
             generators: "Ninja"
           }
+        # TODO setup windows runners
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Print env
         run: |
@@ -79,6 +99,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cxxtest
+          sudo apt-get install -y gnuplot
           gcc --version
 
       - name: Install dependencies on ubuntu w/ gcc9
@@ -90,26 +111,27 @@ jobs:
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cxxtest gcc-9 g++-9
+          sudo apt-get install -y gnuplot
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
           echo gcc version after
           gcc --version
 
       - name: Install dependencies on macos
         if: startsWith(matrix.config.os, 'macos')
+        # the last line will replace gcc with clang inside makefile
         run: |
           brew install cxxtest 
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
-
-        # p7zip is already installed on the macos runners
-      
+    
       - name: Build library
         shell: bash
         run: make library
 
       - name: Build THRAIN
         shell: bash
-        run: make 
+        run: make
 
+      # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
       - name: Build THRAIN tests
         shell: bash
         run: make tests

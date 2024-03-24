@@ -45,7 +45,7 @@ RootFindTest(){
 }
 
 void test_find_brackets_move_lines(){
-    printf("FIND LINE BRACKETS BY MOVING\n");
+    printf("\nROOTFINDING TESTS");
 
     double xmin, xmax, xguess;
 
@@ -122,8 +122,6 @@ void test_find_brackets_move_lines(){
 }
 
 void test_find_brackets_move_sine(){
-    printf("FIND SINE BRACKETS BY MOVING\n");
-
     double xmin, xmax, xguess;
 
     /* test situation
@@ -242,9 +240,6 @@ void test_find_brackets_move_sine(){
 }
 
 void test_find_brackets_move_failures(){
-    printf("FIND FAILURES IN MOVING BRACKETS\n");
-
-
     double xmin, xmax, xguess;
 
     /* test situation
@@ -253,8 +248,8 @@ void test_find_brackets_move_failures(){
     #              */
     xguess = under_root;
     rootfind::bisection_find_brackets_move(flat, xguess, xmin, xmax);
-    TS_ASSERT_IS_NAN(xmin);
-    TS_ASSERT_IS_NAN(xmax);
+    TS_ASSERT(std::isnan(xmin));
+    TS_ASSERT(std::isnan(xmax));
 
     /* test situation
     #  \   /
@@ -264,14 +259,12 @@ void test_find_brackets_move_failures(){
     #              */
     xguess = root;
     rootfind::bisection_find_brackets_move(parabola, xguess, xmin, xmax);
-    TS_ASSERT_IS_NAN(xmin);
-    TS_ASSERT_IS_NAN(xmax);
+    TS_ASSERT(std::isnan(xmin));
+    TS_ASSERT(std::isnan(xmax));
 }
 
 void test_find_brackets_newton(){
-    printf("FIND SINE BRACKETS BY NEWTON's METHOD\n");
-
-    double xmin, xmax, xguess;
+   double xmin, xmax, xguess;
 
     /* test situation
     #  /\        /\
@@ -389,8 +382,6 @@ void test_find_brackets_newton(){
 }
 
 void test_bisection_search(){
-    printf("RUNNING BISECTION SEARCH\n");
-
     double xmin, xmax, xguess;
 
     /* test situation
@@ -461,8 +452,6 @@ void test_bisection_search(){
 }
 
 void test_newton_search_1d(){
-    printf("RUNNING NEWTON 1D SEARCH\n");
-
     double xguess, tol = 1.e-10;
     
     // happy path -- the guess is the root
@@ -491,8 +480,6 @@ void test_newton_search_1d(){
 }
 
 void test_newton_search_target_1d(){
-    printf("RUNNING NEWTON 1D SEARCH\n");
-
     double xguess, tol = 1.e-10;
     double xtarget = 1./3., ytarget=0.5;
     
@@ -514,8 +501,6 @@ void test_newton_search_target_1d(){
 }
 
 void test_newton_search_1d_complex(){
-    printf("RUNNING NEWTON 1D COMPLEX SEARCH\n");
-
     typedef std::complex<double> C;
     C croot {this->root, 0.5*this->root};
     std::function<C(C)> up_complex = [croot](C x)->C{return (x-croot);};
@@ -556,8 +541,6 @@ void test_newton_search_1d_complex(){
 }
 
 void test_newton_search_2d(){
-    printf("RUNNING NEWTON 2D\n");
-    
     double xguess[2];
     double dx[2] = {0.1,0.2};
     double tol = 1.0e-10;

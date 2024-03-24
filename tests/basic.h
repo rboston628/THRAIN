@@ -5,6 +5,16 @@
 
 class MostBasicTest : public CxxTest::TestSuite {
 public:
+
+    static MostBasicTest *createSuite (){
+        printf("\ntest of testing: ");
+        system("rm tests/artifacts/logio.txt");
+        return new MostBasicTest;
+    }
+    static void destroySuite(MostBasicTest *suite) { 
+        delete suite; 
+    }
+
     void testAddition( void ) {
         TS_ASSERT( 1 + 1 > 1 );
         TS_ASSERT_EQUALS( 1 + 1, 2 );

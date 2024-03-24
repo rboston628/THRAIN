@@ -27,9 +27,7 @@ public:
 	double Radius() override;		//total radius
 	double Mass() override;			//total mass
 	double Gee() override {return GG;};
-	//in Newtonian, light speed is infinity... just use the max value to represent this
-	virtual double light_speed2() override {return std::numeric_limits<double>::max();};
-			
+
 	double rad(int) override;
 	double rho(int) override, drhodr(int) override;
 	double   P(int) override,   dPdr(int) override;
