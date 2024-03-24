@@ -87,7 +87,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Print env
         run: |
@@ -99,6 +99,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cxxtest
+          sudo apt-get install -y gnuplot
           gcc --version
 
       - name: Install dependencies on ubuntu w/ gcc9
@@ -110,6 +111,7 @@ jobs:
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cxxtest gcc-9 g++-9
+          sudo apt-get install -y gnuplot
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
           echo gcc version after
           gcc --version
