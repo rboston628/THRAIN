@@ -369,7 +369,7 @@ void SimpleWD::initFromChandrasekhar(){
 //**************************************************************************************/
 void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){	
 	std::size_t n=0;
-	double q = 0.0; //the center
+	double q = 5.0e-324; //the center
 	logQ[0] = log(q);
 	
 	//core
