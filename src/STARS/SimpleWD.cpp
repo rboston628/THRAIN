@@ -368,8 +368,8 @@ void SimpleWD::initFromChandrasekhar(){
 //        resulting in gradually tapering step size in m towars surface
 //**************************************************************************************/
 void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){	
-	std::size_t n=0;
-	double q = 5.0e-324; //the center
+	int n=0;
+	double q = 4.94066e-324; //the center
 	logQ[0] = log(q);
 	
 	//core

@@ -173,11 +173,11 @@ StellarVar log(const StellarVar &x);
 
 
 struct PartialPressure {
-	typedef double (*funcptr)(double,double,Abundance const&;
+	typedef double (*funcptr)(double,double,Abundance const&);
 	funcptr P, partialRho, partialT;
-	double (*partialX)(chemical::elem, double,double,Abundance const&;
+	double (*partialX)(chemical::elem, double,double,Abundance const&);
 	funcptr U, UpartialRho, UpartialT;
-	double (*UpartialX)(chemical::elem, double,double,Abundance const&;	
+	double (*UpartialX)(chemical::elem, double,double,Abundance const&);	
 	double operator()(double rho, double T, Abundance const& chem) {return P(rho,T,chem);};
 };
 

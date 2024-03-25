@@ -63,7 +63,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	//handle the use of different parameters that help construct the stellar model
 	//POLYTROPE INPUT
 	if(calcdata.model==model::polytrope){
-		if(Polytrope::read_star_input(calcdata, input_file)) return 1;
+		if(Polytrope::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//CHANDRASEKHAR WD INPUT
@@ -100,7 +100,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		calcdata.input_params.reserve(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
-		printf("Ngrid=%d\n", calcdata.Ngrid);
+		printf("Ngrid=%lu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
 		FILE *swd = fopen("swd.txt", "w");
@@ -271,7 +271,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 		fscanf(input_file, "%s\n", input_buffer);
 		calcdata.mode_num++;
 	}
-	printf("Number of frequencies: %d\n", calcdata.mode_num);
+	printf("Number of frequencies: %lu\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
 	//now read in the L,K as specified 
 	for(int j=0; j<calcdata.mode_num; j++){
@@ -334,7 +334,7 @@ int echo_input(Calculation::InputData &calcdata){
 		case model::SWD:
 			fprintf(output_file, "SWD ");
 	}
-	fprintf(output_file, "%d\n", calcdata.Ngrid);
+	fprintf(output_file, "%lu\n", calcdata.Ngrid);
 	
 	switch(calcdata.model){
 		case model::polytrope:
@@ -631,7 +631,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 			break;
 	}
 	fprintf(output_file, "%s  \n", dwarf[d++]);
-	fprintf(output_file, "%s  Number of grid points : %d\n", dwarf[d++], calcdata.Ngrid);
+	fprintf(output_file, "%s  Number of grid points : %lu\n", dwarf[d++], calcdata.Ngrid);
 	fprintf(output_file, "%s  Fractional RMS error  : %1.3le\n", dwarf[d++], calcdata.star_SSR);
 	//bottom bar
 	fprintf(output_file, "#");

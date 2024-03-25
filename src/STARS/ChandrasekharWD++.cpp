@@ -252,7 +252,7 @@ double ChandrasekharWD::RK4integrate(const std::size_t Len, double dx){
 	return y[Len-1]-1.;
 }
 
-std::size_t ChandrasekharWD::RK4integrate(const std::size_t Len, double dx, std::size_t grid){
+std::size_t ChandrasekharWD::RK4integrate(const std::size_t Len, double dx, int grid){
 	grid=1;
 	//the YC, ZC, XC are mid-point values of y, z, x to be used in equations
 	double YC,ZC,XC;
@@ -366,9 +366,6 @@ double ChandrasekharWD::sound_speed2(std::size_t X, double GamPert){
 double ChandrasekharWD::Radius(){return Rn*xi[len-1];}	//total radius
 double ChandrasekharWD::Mass(){return mr(len-1);}//total mass
 double ChandrasekharWD::Gee(){return G_CGS;}
-//in Newtonian, light speed is infinity...
-double ChandrasekharWD::light_speed2(){return 1.0;}
-
 
 
 // **************************  CENTRAL BOUNDARY **************************************
@@ -509,7 +506,7 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 }
 
 
-void ChandrasekharWD::writeStar(char *c){
+void ChandrasekharWD::writeStar(char const *const c){
 	//create names for files to be opened
 	std::string filename, rootname, txtname, outname;
 	if(c==NULL)	filename = "./out/" + name;
