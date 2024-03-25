@@ -2,6 +2,7 @@
 #define STELLARHELPSCPP
 
 #include "stellar.h"
+#include "rootfind.h"
 
 double chemical::partial_mean_A(elem i, Abundance const& X){
 	return -pow(X.mean_A(),2)*
@@ -33,8 +34,6 @@ StellarVar log(const StellarVar &x){
 	for(int j=0; j<num_var; j++) val[j] = std::log(x[j]);
 	return val;
 }
-
-int EOS::rando(39);
 
 double EOS::U(double rho, double T, Abundance const& chem){
 	double U = 0.0;
@@ -116,9 +115,6 @@ double EOS::partialT(double rho, double T, Abundance const& chem){
 	return dPdT;
 }
 
-
-
-
 //retrieve a particular partial-pressure term
 PartialPressure EOS::operator[](int n){
 	return pressure[n];
@@ -127,79 +123,13 @@ PartialPressure EOS::operator[](int n){
 // Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
 // uses a combination of Newton method and bisection search
 double EOS::invert(double rho_last, double P, double T, Abundance const& chem){
-	double x1=rho_last, x2 = rho_last, x, x3, dx;
-	double y1 = P - (*this)(x1,T,chem), y2 = y1, y, y3;
-	y2=y1;
-	//if the two are on same side adjust x1 until y1 is on other side
-	if(y1*y2 > 0.0){
-		x3 = 1.01*x2;
-		y3 = P - (*this)(x3,T,chem);
-		dx = -y2*(x3-x2)/(y3-y2);
-		if(!std::isnan(dx)) dx = 0.0;
-		x1 = x2 + dx;
-		if(x1 < 0.0) x1 = 0.0;
-		y1 = P - (*this)(x1,T,chem);
-	}
-	//now keep adjusting x1
-	int term = 0;
-	while(y1*y2 > 0.0){	
-		//compute numerical derivative
-		x3 = 1.01*x1;					//use x3 = x1 + dx
-		y3 = P - (*this)(x3,T,chem);	//find y3 = f(x3) = f(x1+dx)
-		dx = -y1*(x3-x1)/(y3-y1);		//this is the needed shift to x1 to approach zero
-		if(y3 == y1) dx = 0.0;
-		x3 = x1 + dx;					//now update
-		if(x3  > 10.0*x1) x3 = x1 + 0.01*dx;
-		if(x3  < 0.01*x1) x3 = x1 + 0.01*dx;
-		//Newton's method can fail at this if it only approaches the zero from one direction
-		//In such a case, slightly broaden the bracket to get to other side of zero
-		if( x3 == x1 ) { 				//if the new (x3) is same as old (x1), bracket stagnant
-			if( x3 > x2 ) x3 *= 1.01;	//if x3 should be bigger than x2, make even bigger
-			if( x3 < x2 ) x3 *= 0.99;	//if x3 should be smaller than x2, make even smaller
-		}
-		//update and repeat
-		x1 = x3;					    //
-		y1 = P - (*this)(x1,T,chem);	//
-		if(++term>1000) {
-			return x1;
-		}
-	}
-	
-	//if brackets are backward, swap
-	if(x2 < x1) {					//if y2 (the presumed max bracket) is smaller than y1
-		double temp = y2;			//save value of y2
-		y2 = y1;					//replace y2 with y1
-		y1 = temp;					//replace y1 with saved y2
-		temp = x2;					//same value of x2
-		x2 = x1;					//replace x2 with x1
-		x1 = temp;					//replace x1 with samed x2
-	}
-	//now close brackets
-	term = 0;
-	while(fabs(x2-x1)/fabs(rho_last)>1.0e-10){
-		x = 0.5*(x1+x2);			//pick halfway point
-		y = P - (*this)(x,T,chem);	//evalute function at that point
-		if(y==y1 | y==y2){//if the problem becomes stuck in a loop
-			rando = (a*rando+b)%r; //generates a psuedo-random integer in (0,r)
-			x = x1 + (double(rando)/double(r))*fabs(x2-x1);
-			y = P - (*this)(x,T,chem);
-		}
-		if(y*y1 > 0.0) {			//if on same side as min bracket
-			if(x > x1){				//and if it is closer than min bracket
-				y1 = y;				//replace values
-				x1 = x;
-			}
-		}
-		else if(y*y2 > 0.0) {		//if on same side as max bracket
-			if(x < x2){				//and if it is closer than max bracket
-				y2 = y;				//replace values
-				x2 = x;
-			}
-		}
-		//if(term>1000) printf("STUX %le\n", P);
-		if(++term>1000) break;
-	}
-	x = 0.5*(x1+x2);				//pick the halfway point again
+	double x=rho_last, xmin, xmax, y;
+	std::function<double(double)> presDiff = [this,P,T,chem](double x)->double {
+		return P - (*this)(x, T, chem);
+	};
+	rootfind::bisection_find_brackets_newton(presDiff, x, xmin, xmax);
+	y = rootfind::bisection_search(presDiff, x, xmin, xmax);
+	x = 0.5*(xmin+xmax);
 	rho_last =x;
 	return x;
 }
@@ -207,26 +137,13 @@ double EOS::invert(double rho_last, double P, double T, Abundance const& chem){
 // Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
 // uses nothing but Newton's method
 double EOS::invertNewton(double rho_last, double P, double T, Abundance const& chem){
-	double x1=rho_last, x2 = rho_last, x, x3, dx;
-	double y1 = P - (*this)(x1,T,chem), y2 = y1, y, y3;
-	int term = 0;
-	while(fabs(y1) > 1.e-10){	
-		//compute numerical derivative
-		x3 = 1.01*x1;					//use x3 = x2 + dx
-		y3 = P - (*this)(x3,T,chem);	//find y3 = f(x3) = f(x2+dx)
-		dx = -y1*(x3-x1)/(y3-y1);		//this is the needed shift to x1 to approach zero
-		if(y3 == y1) break;
-		x3 = x1 + dx;					//now update
-		//limit amount of change allowed in single step
-		if(x3 > 1.01*x1) x3 = x1 + 0.01*dx;	//if we increased, don't increase too much
-		if(x3 < 0.99*x1) x3 = x1 + 0.01*dx;	//if we decreased, don't decrease too much
-		//update and repeat
-		x1 = x3;					    //
-		y1 = P - (*this)(x1,T,chem);	//
-		if(++term>1000) break;
-	}
-	rho_last = x1;
-	return x1;
+	double x=rho_last, dx = 0.01*x, y;  //x2 = rho_last, x, x3, dx;
+	std::function<double(double)> presDiff = [this,P,T,chem](double x)->double {
+		return P - (*this)(x,T,chem);
+	};
+	y = rootfind::newton_search<double>(presDiff, x, dx, 1.e-10, std::size_t(1000));
+	rho_last = x;
+	return x;
 }
 
 //  Adding new terms to the EOS will add them to the vector of function pointers
@@ -237,7 +154,7 @@ void EOS::push_back(PartialPressure p){
 
 //************************************************************************************
 //	PARTIAL PRESSURE FUNCTIONS for EQUATION OF STATE
-//		Each must take arguments double rho, double T, Abundance X
+//		Each must take arguments double rho, double T, Abundance const& X
 //		Output must be a double, the pressure 
 //		For references, see:
 //		*	Chandrasekhar 1939
@@ -558,109 +475,46 @@ PartialPressure deg_trap = {
 	pressure_deg_trap,  partialRho_deg_finite,  partialT_deg_finite,  partialX_deg_finite,
 	  energy_deg_trap, UpartialRho_deg_finite, UpartialT_deg_finite, UpartialX_deg_finite};
 double density_trap(double eta, double beta, double mue){
-	using namespace Chandrasekhar;
-	using namespace FermiDirac;
-	static const double rho_coeff = 3.*sqrt(2.)*B0*mue*pow(beta, 1.5);
+	static const double rho_coeff = 3.*sqrt(2.)*Chandrasekhar::B0*mue*pow(beta, 1.5);
 	return rho_coeff*(FermiDirac::FermiDirac(0.5,eta,beta) + beta*FermiDirac::FermiDirac(1.5,eta,beta));
 }
 double findEta_trap(double rho, double beta, double mue){
-	using namespace Chandrasekhar;
-	using namespace FermiDirac;
 	//approximate eta as in Cox and Giuli eq 24.29', pg 793 (but using 24.327b)
+	static const double B0 = Chandrasekhar::B0;
 	static const double eta_coeff = pow(8.*B0*B0*mue*mue, -1./3.);
-	static const double rho_coeff = 3.*sqrt(2.)*B0*mue*pow(beta, 1.5);
-	double x1 = eta_coeff*pow(rho, 2./3.)/beta;
-	double y1 = rho-density_trap(x1, beta, mue);
-	double x3 = 1.01*x1;
-	double y3 = rho-density_trap(x3,beta,mue);
-	double x2 = x1 - y1*(x3-x1)/(y3-y1);
-	double y2 = rho-density_trap(x2, beta, mue);
-	
-	double x, dx;
-	double y, dydx;
-	//now keep adjusting x1
-	int term = 0;
-	while(y1*y2 > 0.0){	
-		//compute numerical derivative
-		x3 = 1.01*x1;					//use x3 = x1 + dx
-		y3 = rho - density_trap(x3,beta,mue);	//find y3 = f(x3) = f(x1+dx)
-		dx = -y1*(x3-x1)/(y3-y1);		//this is the needed shift to x1 to approach zero
-		if(y3 == y1) dx = 0.0;
-		x3 = x1 + dx;
-		//if(x3  > 10.0*x1) x3 = x1 + 0.001*dx;
-		//if(x3  < 0.01*x1) x3 = x1 + 0.001*dx;
-		//Newton's method can fail at this if it only approaches the zero from one direction
-		//In such a case, slightly broaden the bracket to get to other side of zero
-		if( x3 == x1 ) { 				//if the new (x3) is same as old (x1), bracket stagnant
-			if( x3 > x2 ) x3 *= 1.01;	//if x3 should be bigger than x2, make even bigger
-			if( x3 < x2 ) x3 *= 0.99;	//if x3 should be smaller than x2, make even smaller
-		}
-		//update and repeat
-		x1 = x3;					    //
-		y1 = rho - density_trap(x1, beta, mue);//
-		if(++term>1000) {
-			return x1;
-		}
-	}
-	//if brackets are backward, swap
-	if(x2 < x1) {					//if y2 (the presumed max bracket) is smaller than y1
-		double temp = y2;			//save value of y2
-		y2 = y1;					//replace y2 with y1
-		y1 = temp;					//replace y1 with saved y2
-		temp = x2;					//same value of x2
-		x2 = x1;					//replace x2 with x1
-		x1 = temp;					//replace x1 with samed x2
-	}
-	//now close brackets
-	x = 0.5*(x1+x2);
-	term = 0;
-	while(fabs(x2-x1)/fabs(x)>1.0e-14){
-		x = 0.5*(x1+x2);			//pick halfway point
-		y = rho - density_trap(x, beta, mue);	//evalute function at that point
-		if(y*y1 > 0.0) {			//if on same side as min bracket
-			if(x > x1){				//and if it is closer than min bracket
-				y1 = y;				//replace values
-				x1 = x;
-			}
-		}
-		else if(y*y2 > 0.0) {		//if on same side as max bracket
-			if(x < x2){				//and if it is closer than max bracket
-				y2 = y;				//replace values
-				x2 = x;
-			}
-		}
-		if(++term>1000) break;
-	}
-	x = 0.5*(x1+x2);				//pick the halfway point again
+	double x = eta_coeff*pow(rho, 2./3.)/beta, xmin, xmax, y;
+
+	std::function<double(double)> F = [rho,beta,mue](double x)->double {
+		return rho - density_trap(x,beta,mue);
+	};
+
+	rootfind::bisection_find_brackets_newton(F, x, xmin, xmax);
+	y = rootfind::bisection_search(F, x, xmin, xmax);
+	x = 0.5*(xmin+xmax);
 	return x;
 }
 //pressure of electron gas under partial degeneracy (T finite)
 //	following Chandrasekhar 1939, Cox & Giuli 1980 (especially pg 851)
 //  the Fermi-Dirac functions calculated with trapezoidal integration
 double pressure_deg_trap(double rho, double T, Abundance const& X){
-	using namespace Chandrasekhar;
-	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
 	double mue = X.mu_e();
 	//approximate eta as in Cox and Giuli eq 24.29', pg 793 (but using 24.327b)
 	double eta = findEta_trap(rho, beta, mue);
 	//return the pressure, as in Cox and Giuli eq 24.326b, pg 850
-	double P =  16.*sqrt(2.)*A0*pow(beta,2.5)*(
+	double P =  16.*sqrt(2.)*Chandrasekhar::A0*pow(beta,2.5)*(
 		FermiDirac::FermiDirac(1.5,eta,beta) + 0.5*beta*FermiDirac::FermiDirac(2.5,eta,beta));
 	return P;
 }
 double energy_deg_trap(double rho, double T, Abundance const& X){
-	using namespace Chandrasekhar;
-	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
 	double mue = X.mu_e();
 	double eta = findEta_trap(rho, beta, mue);
 	//return the pressure, as in Cox and Giuli eq 24.326b, pg 850
-	double U =  24.*sqrt(2.)*A0*pow(beta,2.5)*(
+	double U =  24.*sqrt(2.)*Chandrasekhar::A0*pow(beta,2.5)*(
 		FermiDirac::FermiDirac(1.5,eta,beta) + beta*FermiDirac::FermiDirac(2.5,eta,beta));
 	return U;
 }
-
 
 //ELECTRON DEGENERACY PRESSURE -- PARTIAL DEGENERACY
 //pressure of electron gas under partial degeneracy (T finite)
