@@ -35,7 +35,7 @@ public:
 	double Radius() override;	//total radius
 	double Mass() override;		//total mass
 	double Gee() override {return GG;};
-	
+
 	//these return value of indicated variable -- used in testing
 	double getX(std::size_t X){     return Y[X][x];}
 	double getY(std::size_t X){     return Y[X][y];}
