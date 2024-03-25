@@ -80,8 +80,14 @@ private:
 	//integrate Lane-Emden using basic RK4
 	void centerInit(double ycenter[numvar]);
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
-	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
-	double RK4integrate(const std::size_t, double, SurfaceBehavior);
+
+	//integrate Lane-Emden using basic RK4
+	double RK4integrate(const std::size_t, double);
+ 	//a grid-multiplying RK4 method
+ 	std::size_t RK4integrate(const std::size_t, double, int);
+	//find the location of edge of star for last step of solution
+ 	void findEdge(std::size_t);
+ 	double integrateEdge(std::size_t Nedge, double dx);
 	
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface

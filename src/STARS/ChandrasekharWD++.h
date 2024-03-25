@@ -34,11 +34,11 @@ public:
 	double Mass() override;//total mass
 	double Gee() override; //{return G_CGS;};
 	
-	double rad(std::size_t override);
-	double rho(std::size_t override), drhodr(std::size_t override);
-	double   P(std::size_t override),   dPdr(std::size_t override);
-	double Phi(std::size_t override), dPhidr(std::size_t override);
-	double mr(std::size_t override);
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double mr(std::size_t) override;
 	
 	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
 	double getAstar(std::size_t, double GamPert=0.0) override;
@@ -47,7 +47,7 @@ public:
 	double getC(std::size_t) override;
 	double Gamma1(std::size_t) override;
 	double sound_speed2(std::size_t, double GamPert=0.0) override;
-	double Ledoux(std::size_t, double GamPert=0.0) override;
+	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
 	double Y0;		// central value of y, y^2=1+x^2
@@ -96,7 +96,7 @@ public:
 	void getC1Surface(double*, int&) override;
 
 	//a particular output generation for this model of white dwarf
-	void writeStar(char *c=NULL) override;
+	void writeStar(char const *const c=NULL) override;
 };
 
 #endif

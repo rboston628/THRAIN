@@ -691,8 +691,8 @@ void Polytrope::writeStar(const char *const c){
 }
 
 
-int Polytrope::read_star_input(Calculation::InputData& calcdata, FILE* input_file){
-	char input_buffer[128];
+int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdata){
+ 	char input_buffer[512];
 	std::string instring;
 	
 	calcdata.input_params.reserve(2);
