@@ -16,10 +16,10 @@
 #include "Polytrope.h"
 
 //initalize polytrope from index and length, fit to mass M, radius R
-Polytrope::Polytrope(double BigM, double BigR, double n, int L)
+Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 	: n(n), len(L), Gamma(1.0+1.0/n)
 {
-	int Nedge = 0; //deprecated functionality for finer surface resolution
+	std::size_t Nedge = 0; //deprecated functionality for finer surface resolution
 	//if index is out of range, fail
 	if( n >= 5.0 || n < 0.0 ){
 		n = nan(""); len = 0;
@@ -36,10 +36,10 @@ Polytrope::Polytrope(double BigM, double BigR, double n, int L)
 	//an initial guess
 	double dx = sqrt(6.0)/(len-1), yS=1.0, ddx = dx;
 	Y = new double*[len];
-	for(int i=0;i<len;i++) 
+	for(std::size_t i=0;i<len;i++) 
 		Y[i] = new double[numvar];
 	double dxmax=1.0, dxmin=0, ySmax=-1.0, ySmin=1.0;
-	int stop=0;
+	std::size_t stop=0;
 	double dxold = 1.0;
 		
 	yS = RK4integrate(len, dx);
@@ -110,7 +110,7 @@ Polytrope::Polytrope(double BigM, double BigR, double n, int L)
 	base[0] = 1.0;
 	mass[0] = 0.0;
 	indexFit = len/2;
-	for(int X=1; X<len; X++){
+	for(std::size_t X=1; X<len; X++){
 		//as we scan through x,y,z, set matching point as where y[X] = 0.5
 		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
 		base[X] = pow(Y[X][y], n-1.0);
@@ -128,10 +128,10 @@ Polytrope::Polytrope(double BigM, double BigR, double n, int L)
 	setupSurface();
 }
 
-Polytrope::Polytrope(double n, int L)
+Polytrope::Polytrope(double n, std::size_t L)
 	: n(n), len(L), Gamma(1.0+1.0/n)
 {
-	int Nedge = 0; //deprecated functionality for finer surface resolution
+	std::size_t Nedge = 0; //deprecated functionality for finer surface resolution
 	if(n<5.0) Nedge = 0;
 	//if index is out of range, fail
 	if( n > 5.0 || n < 0.0 ){
@@ -149,10 +149,10 @@ Polytrope::Polytrope(double n, int L)
 	//an initial guess
 	double dx = sqrt(6.0)/(len-1), yS=1.0, ddx = dx;
 	Y = new double*[len];
-	for(int i=0;i<len;i++) 
+	for(std::size_t i=0;i<len;i++) 
 		Y[i] = new double[numvar];
 	double dxmax=1.0, dxmin=0, ySmax=-1.0, ySmin=1.0;
-	int stop=0;
+	std::size_t stop=0;
 	double dxold = 1.0;
 	
 	//for n=5, there is no edge, so skip the search for dx
@@ -233,7 +233,7 @@ Polytrope::Polytrope(double n, int L)
 	base[0] = 1.0;
 	mass[0] = 0.0;
 	indexFit = len/2;
-	for(int X=1; X<len; X++){
+	for(std::size_t X=1; X<len; X++){
 		//as we scan through x,y,z, set matching point as where y[X] = 0.5
 		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
 		base[X] = pow(Y[X][y], n-1.0);
@@ -254,10 +254,10 @@ Polytrope::Polytrope(double n, int L)
 
 //initalize polytrope from index, length, and dx
 //this method is intended only for use in testing scaling relations
-Polytrope::Polytrope(double n, int L, const double dx)
+Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	: n(n), len(L), Gamma(1.0+1.0/n)
 {
-	int Nedge = 0;
+	std::size_t Nedge = 0;
 	if(n<5.0) Nedge = 20;
 	//if index is out of range, fail
 	if( n > 5.0 || n < 0.0 ){
@@ -270,7 +270,7 @@ Polytrope::Polytrope(double n, int L, const double dx)
 	name = strmakef("polytrope.%1.1f", n);
 	//reserve room for arrays
 	Y = new double*[len];
-	for(int i=0;i<len;i++) 
+	for(std::size_t i=0;i<len;i++) 
 		Y[i] = new double[numvar];
 	
 	//we know dx, so no need for bisection search
@@ -289,8 +289,8 @@ Polytrope::Polytrope(double n, int L, const double dx)
 	//for polytrope, take advantage of having z = dtheta/dx to avoid differencing
 	base[0] = 1.0;
 	mass[0] = 0.0;
-	indexFit = int(len/2);
-	for(int X=1; X<len; X++){
+	indexFit = std::size_t(len/2);
+	for(std::size_t X=1; X<len; X++){
 		base[X] = pow(Y[X][y], n-1.);
 		if(Y[X][y]<0.0){
 			std::complex<double> YN = Y[X][y];
@@ -311,7 +311,7 @@ Polytrope::Polytrope(double n, int L, const double dx)
 }
 
 Polytrope::~Polytrope(){
-	for(int i=0; i<len; i++)
+	for(std::size_t i=0; i<len; i++)
 		delete[] Y[i];
 	delete[] mass;
 	delete[] base;
@@ -330,7 +330,7 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 	static const double B[4] = {0.5,0.5,1.0,0.0};
 	std::complex<double> YCN(0.0,0.0);
 	
-	for(int a = 0; a<4; a++){
+	for(std::size_t a = 0; a<4; a++){
 		//use complex y^n to avoid NaNs when y<0
 		YCN = YC[y];
 		YCN = pow(YCN,n);
@@ -342,22 +342,22 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 		if(YC[x]==0) K[z][a] = -dx/3.0; //at very center, need analytic expression for dz/dx
 		//calculate "corrected" positions using previous shift vectors
 		YC[x] = yin[x] + B[a]*dx;
-		for(int b=1; b<numvar; b++)
+		for(std::size_t b=1; b<numvar; b++)
 			YC[b] = yin[b] + B[a]*K[b][a];
 	}		
 	yout[x] = yin[x] + dx;
-	for(int b=1; b<numvar; b++)
+	for(std::size_t b=1; b<numvar; b++)
 		yout[b] = yin[b] + K[b][0]/6.0 + K[b][1]/3.0 + K[b][2]/3.0 + K[b][3]/6.0;	
 }
 
 //integrate the polytrope up to Len using RK4
 //the return is used to refine choice of dx to ensure the model ends at surface
-double Polytrope::RK4integrate(const int Len, double dx){
+double Polytrope::RK4integrate(const std::size_t Len, double dx){
 
 	//set initial conditions
 	centerInit(Y[0]);
 
-	for(int X = 0; X<Len-1; X++){
+	for(std::size_t X = 0; X<Len-1; X++){
 		RK4step(dx, Y[X], Y[X+1]);
 		//sometimes, for noninteger n, at surface values y<0 lead to nans
 		//if these occur, it is safe to terminate the integration, as we found surface
@@ -368,22 +368,22 @@ double Polytrope::RK4integrate(const int Len, double dx){
 
 //integrate the polytrope up to Len using RK4
 //to be used after the correct value of dx has been found 
-int    Polytrope::RK4integrate(const int Len, double dx, int grid){
+std::size_t Polytrope::RK4integrate(const std::size_t Len, double dx, int grid){
 	grid=1;
 
 	//set initial conditions
 	centerInit(Y[0]);
 
 	//integrastr with RK4
-	for(int X = 0; X<Len-1; X++){
+	for(std::size_t X = 0; X<Len-1; X++){
 		RK4step(dx, Y[X], Y[X+1]);
 	}
 	return Len;
 }
 
 //Uses bisection method to find edge
-void Polytrope::findEdge(int Nedge){
-	int R = len-1;
+void Polytrope::findEdge(std::size_t Nedge){
+	std::size_t R = len-1;
 	double dxmax, dxmin;
 	double fmax, fmin, f1, f2;
 	
@@ -396,7 +396,7 @@ void Polytrope::findEdge(int Nedge){
 	//find brackets
 	double incr = (fabs(f2)>fabs(f1)? -1.1*dx1 : 1.1*dx1);
 	//while the two Ws are on same side of axis, keep increasing s and trying again
-	int stop = 0, bnd = 20;
+	std::size_t stop = 0, bnd = 20;
 	while(f1*f2 >= 0.0){
 		dx2 += incr;
 		f2 = integrateEdge(Nedge, dx2);
@@ -445,71 +445,71 @@ void Polytrope::findEdge(int Nedge){
 	}	
 }
 
-double Polytrope::integrateEdge(int Nedge, double dx){
-	for(int X=len-2-Nedge; X<len-1; X++){
+double Polytrope::integrateEdge(std::size_t Nedge, double dx){
+	for(std::size_t X=len-2-Nedge; X<len-1; X++){
 		RK4step(dx, Y[X],Y[X+1]);
 	}
 	return Y[len-1][y];
 }
 
 //Here we define functions to access radius, pressure, etc.
-double Polytrope::rad(int X){
+double Polytrope::rad(std::size_t X){
 	return (Rn*Y[X][x]);
 }
-double Polytrope::rho(int X){
+double Polytrope::rho(std::size_t X){
 	return rho0*Y[X][y]*base[X];
 }
-double Polytrope::drhodr(int X){
+double Polytrope::drhodr(std::size_t X){
 	return n*rho0*base[X]*(Y[X][z]/Rn);
 }
-double Polytrope::P(int X){
+double Polytrope::P(std::size_t X){
 	return P0*base[X]*Y[X][y]*Y[X][y];
 }
-double Polytrope::dPdr(int X){
+double Polytrope::dPdr(std::size_t X){
 	return (n+1.)*P0*base[X]*Y[X][y]*(Y[X][z]/Rn);
 }
-double Polytrope::Phi(int X){
+double Polytrope::Phi(std::size_t X){
 	//zeroed to join exterior solution at surface, where Phi->0 at infty
 	return (n+1.)*P0/rho0 *(Y[len-1][x]*Y[len-1][z]-Y[X][y]);
 }
-double Polytrope::dPhidr(int X){
+double Polytrope::dPhidr(std::size_t X){
 	return -(n+1.)*P0/rho0*Y[X][z]/Rn;
 }
-double Polytrope::mr(int X){
+double Polytrope::mr(std::size_t X){
 	//if Rn, rh0 are changed, this will have correct units
 	return pow(Rn,3)*rho0*mass[X];
 }
 
-double Polytrope::Schwarzschild_A(int X, double GamPert){
+double Polytrope::Schwarzschild_A(std::size_t X, double GamPert){
 	if(GamPert==0.0) return Y[X][z]/Y[X][y]/Rn* (n -(n+1.)/Gamma);
 	else        	 return Y[X][z]/Y[X][y]/Rn* (n -(n+1.)/GamPert);
 }
 
-double Polytrope::getAstar(int X, double GamPert){
+double Polytrope::getAstar(std::size_t X, double GamPert){
 	if(GamPert==0.0) return Y[X][x]*Y[X][z]/Y[X][y]* ((n+1.)/Gamma   - n);
 	else        	 return Y[X][x]*Y[X][z]/Y[X][y]* ((n+1.)/GamPert - n);
 }
 
-double Polytrope::getU(int X){
+double Polytrope::getU(std::size_t X){
 	if(X==0) return 3.0;
 	return - Y[X][x]*base[X]*Y[X][y]/Y[X][z];
 }
 
-double Polytrope::getVg(int X, double GamPert){
+double Polytrope::getVg(std::size_t X, double GamPert){
 	if(GamPert==0.0) return -Y[X][x]*Y[X][z]/Y[X][y]* (n+1.)/Gamma;
 	else			 return -Y[X][x]*Y[X][z]/Y[X][y]* (n+1.)/GamPert;
 }
 
-double Polytrope::getC(int X){
+double Polytrope::getC(std::size_t X){
 	if(X==0) return -3.*Y[len-1][z]/Y[len-1][x];
 	return (Y[len-1][z]/Y[X][z]) * (Y[X][x]/Y[len-1][x]);
 }
 
-double Polytrope::Gamma1(int X){
+double Polytrope::Gamma1(std::size_t X){
 	return Gamma;
 }
 
-double Polytrope::sound_speed2(int X, double GamPert){
+double Polytrope::sound_speed2(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return Gamma  *P0*Y[X][y]/rho0;
 	else               return GamPert*P0*Y[X][y]/rho0;
 }

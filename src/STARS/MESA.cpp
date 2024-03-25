@@ -166,21 +166,21 @@ double MESA::Mass()  {return Mstar;} //total mass   in appropriate units
 double MESA::Gee()   {return G_CGS;} //Newton's constant in appropriate units
 
 //Here we define functions to access radius, pressure, etc.
-double MESA::rad(int X){
+double MESA::rad(std::size_t X){
 	if(X>=0 & X<len) return Rtot*radi[X];
 	else {
 		printf("\nradius out of range\n");	
 		return nan("");
 	}
 }
-double MESA::rho(int X){
+double MESA::rho(std::size_t X){
 	if(X>=0 & X<len) return Dscale*dens->interp(radi[X]);
 	else {
 		printf("\nrho out of range\n");	
 		return nan("");
 	}
 }
-double MESA::drhodr(int X){
+double MESA::drhodr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Dscale/Rtot*dens->deriv(radi[X]);
 	else {
@@ -188,14 +188,14 @@ double MESA::drhodr(int X){
 		return nan("");
 	}
 }
-double MESA::P(int X){
+double MESA::P(std::size_t X){
 	if(X>=0 & X<len) return Pscale*pres->interp(radi[X]);
 	else {
 		printf("\nP out of range\n");	
 		return nan("");
 	}
 }
-double MESA::dPdr(int X){
+double MESA::dPdr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Pscale/Rtot*pres->deriv(radi[X]);
 	else {
@@ -204,17 +204,17 @@ double MESA::dPdr(int X){
 	}
 }
 /** NEEDS TO BE IMPLEMENTED **/
-double MESA::Phi(int X){
+double MESA::Phi(std::size_t X){
 	return 0.0;
 }
-double MESA::dPhidr(int X){
+double MESA::dPhidr(std::size_t X){
 	if(X>=0 & X<len) return Gscale*grav->interp(radi[X]);
 	else {
 		printf("\ng out of range\n");	
 		return nan("");
 	}
 }
-double MESA::mr(int X){
+double MESA::mr(std::size_t X){
 	if(X>=0 && X<len) return Mtot*mass->interp(radi[X]);
 	else {
 		printf("\nm out of range\n");	
@@ -222,40 +222,40 @@ double MESA::mr(int X){
 	}
 }
 
-double MESA::Schwarzschild_A(int X, double GamPert){
+double MESA::Schwarzschild_A(std::size_t X, double GamPert){
 	/*NOTE:  A* = -r*A, but rad is not dimensionless -- so must divide by R here*/
 	if(GamPert==0.0) return -aSpline->interp(radi[X])/radi[X]/Rtot;
 	else             return dens->deriv(radi[X])/dens->interp(radi[X])/Rtot
 						  - pres->deriv(radi[X])/pres->interp(radi[X])/Rtot/GamPert;
 }
 
-double MESA::getAstar(int X, double GamPert){
+double MESA::getAstar(std::size_t X, double GamPert){
 	if(GamPert==0.0) return aSpline->interp(radi[X]);
 	else             return radi[X]*pres->deriv(radi[X])/pres->interp(radi[X])/GamPert
 						  - radi[X]*dens->deriv(radi[X])/dens->interp(radi[X]);
 }
 
-double MESA::getU(int X){
+double MESA::getU(std::size_t X){
 	//U = 4pi rho r/g
 	if(X==0) return 3.0;
 	return uSpline->interp(radi[X]);
 }
 
-double MESA::getVg(int X, double GamPert){
+double MESA::getVg(std::size_t X, double GamPert){
 	//Vg = gr rho/(Gamma1*P)
 	if(GamPert==0.0) return vSpline->interp(radi[X])/Gam1->interp(radi[X]);
 	else			 return vSpline->interp(radi[X])/GamPert;
 }
 
-double MESA::getC(int X){
+double MESA::getC(std::size_t X){
 	if(X==0) return 3./dens->interp(0.0);
 	return cSpline->interp(radi[X]);
 }
 
 
-double MESA::Gamma1(int X){return Gam1->interp(radi[X]);}
+double MESA::Gamma1(std::size_t X){return Gam1->interp(radi[X]);}
 
-double MESA::sound_speed2(int X, double GamPert){
+double MESA::sound_speed2(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return Pscale/Dscale*pres->interp(radi[X])/dens->interp(radi[X])*Gam1->interp(radi[X]);
 	else               return Pscale/Dscale*pres->interp(radi[X])/dens->interp(radi[X])*GamPert;
 }

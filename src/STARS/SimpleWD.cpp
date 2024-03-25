@@ -72,7 +72,7 @@ double SimpleWD::opacity(const StellarVar& ly, const Abundance& X){
 SimpleWD::SimpleWD(
 	double M,   //mass, in solar masses
 	double Teff,//effective temperature, in kelvin
-	int Len
+	std::size_t Len
 )	: Msolar(M), Teff(Teff), Ntot(Len) 
 {
 	//begin by assigning values to EOS and chemical abundance based on file
@@ -82,12 +82,12 @@ SimpleWD::SimpleWD(
 	
 	//
 	if(Ntot%2==0) Ntot = Ntot+1;
-	int Ntrue = Ntot;
+	std::size_t Ntrue = Ntot;
 	Ntot  = (Ntrue+1)/2;
 	
 	//set indices for different regions
 	//the boundary of the core
-	Ncore = (int) (0.8*double(Ntot));
+	Ncore = (std::size_t) (0.8*double(Ntot));
 	Natm = Ntot - Ncore;
 	if( Ncore%2==0) {Ncore = Ncore+1; Natm = Natm-1;}
 	
@@ -101,7 +101,7 @@ SimpleWD::SimpleWD(
 	//initialize chemical gradient arrays
 	Xelem = new Abundance[Ntot];
 	dXelem= new Abundance[Ntot];
-	for(int n=0; n<Ntot; n++) Xelem[n] = findAbundance(logQ[n], 0.0, dXelem[n]);
+	for(std::size_t n=0; n<Ntot; n++) Xelem[n] = findAbundance(logQ[n], 0.0, dXelem[n]);
 	Xtot  = massFraction();
 	Xmass = Xtot;
 	
@@ -220,7 +220,7 @@ SimpleWD::SimpleWD(
 	expandGrid(Ntrue);
 
 	populateBruntVaisala();
-	Ncore = int(0.8*double(Ntot));
+	Ncore = std::size_t(0.8*double(Ntot));
 	if(Ncore%2==1) Ncore = Ncore - 1;
 	indexFit = (Ncore)/2;
 	
@@ -312,10 +312,10 @@ void SimpleWD::setup(){
 void SimpleWD::initFromChandrasekhar(){
 	printf("Preparing starting values from Chandrasekhar model\n");
 	Mstar = Msolar*MSOLAR;
-	int Ntest = 500;
+	std::size_t Ntest = 500;
 	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
 	double Mtry = 0.0, Mmin = 0.0, Mmax = 2.02;
-	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
+	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
 	Mtry = testStar->Mass()/MSOLAR-Msolar;
 	Mmin = Mmin - Msolar;
 	Mmax = Mmax - Msolar;
@@ -331,7 +331,7 @@ void SimpleWD::initFromChandrasekhar(){
 		}
 		y0 = 0.5*(ymin+ymax);
 		delete testStar;
-		testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
+		testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.)
 		Mtry = testStar->Mass()/MSOLAR-Msolar;
 	}
 	
@@ -367,9 +367,9 @@ void SimpleWD::initFromChandrasekhar(){
 //    both the atmosphere uses a log-constant step size in 1-m
 //        resulting in gradually tapering step size in m towars surface
 //**************************************************************************************/
-void SimpleWD::setupGrid(double Qcore, int Ncenter){	
-	int n=0;
-	double q = 4.94066e-324; //the center
+void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){	
+	std::size_t n=0;
+	double q = 5.0e-324; //the center
 	logQ[0] = log(q);
 	
 	//core
@@ -395,45 +395,45 @@ void SimpleWD::setupGrid(double Qcore, int Ncenter){
 	indexFit = Ncenter;
 }
 
-void SimpleWD::expandGrid(int Ntrue){
+void SimpleWD::expandGrid(std::size_t Ntrue){
 	//The RK4 method for finding eigenmodes requires stellar variables specified on a half-grid
 	// the below will expand the WD grid to include the half-grid points, and populate them
 
 	//first, replace each variable array with a longer one
 	//	replace logQ
 	double* tlogq = new double[Ntot];
-	for(int x=0; x<Ntot; x++) tlogq[x] = logQ[x];
+	for(std::size_t x=0; x<Ntot; x++) tlogq[x] = logQ[x];
 	delete[] logQ;
 	logQ = new double[Ntrue];
-	for(int x=0; x<Ntot; x++) logQ[2*x] = tlogq[x];
+	for(std::size_t x=0; x<Ntot; x++) logQ[2*x] = tlogq[x];
 	delete[] tlogq;
 	// replace logY
 	StellarVar* tlogy = new StellarVar[Ntot];
-	for(int x=0; x<Ntot; x++) tlogy[x] = logY[x];
+	for(std::size_t x=0; x<Ntot; x++) tlogy[x] = logY[x];
 	delete[] logY;
 	logY = new StellarVar[Ntrue];
-	for(int x=0; x<Ntot; x++) logY[2*x] = tlogy[x];
+	for(std::size_t x=0; x<Ntot; x++) logY[2*x] = tlogy[x];
 	delete[] tlogy;
 	// replace dlogy
 	StellarVar* tdlogy = new StellarVar[Ntot];
-	for(int x=0; x<Ntot; x++) tdlogy[x] = dlogY[x];
+	for(std::size_t x=0; x<Ntot; x++) tdlogy[x] = dlogY[x];
 	delete[] dlogY;
 	dlogY = new StellarVar[Ntrue];
-	for(int x=0; x<Ntot; x++) dlogY[2*x] = tdlogy[x];
+	for(std::size_t x=0; x<Ntot; x++) dlogY[2*x] = tdlogy[x];
 	delete[] tdlogy;
 	// replace Xelem
 	Abundance* tx = new Abundance[Ntot];
-	for(int x=0; x<Ntot; x++) tx[x] = Xelem[x];
+	for(std::size_t x=0; x<Ntot; x++) tx[x] = Xelem[x];
 	delete[] Xelem;
 	Xelem = new Abundance[Ntrue];
-	for(int x=0; x<Ntot; x++) Xelem[2*x] = tx[x];
+	for(std::size_t x=0; x<Ntot; x++) Xelem[2*x] = tx[x];
 	delete[] tx;
 	// replace dXelem
 	Abundance* tdx = new Abundance[Ntot];
-	for(int x=0; x<Ntot; x++) tdx[x] = dXelem[x];
+	for(std::size_t x=0; x<Ntot; x++) tdx[x] = dXelem[x];
 	delete[] dXelem;
 	dXelem = new Abundance[Ntrue];
-	for(int x=0; x<Ntot; x++) dXelem[2*x] = tdx[x];
+	for(std::size_t x=0; x<Ntot; x++) dXelem[2*x] = tdx[x];
 	delete[] tdx;
 	
 	//now fill in the logQ, logY, dlogY arrays at the half-points
@@ -454,7 +454,7 @@ void SimpleWD::expandGrid(int Ntrue){
 	//setting the initial step size
 	dr = 0.5*exp(logY[2][radi]);//
 	//now begin integrations
-	for(int x = 0; x<1; x++){
+	for(std::size_t x = 0; x<1; x++){
 		YC = Y[x];
 		chemC = findAbundance(logY[x+2][mass], logY[x+2][radi], dXelem[x+1]);
 		for(int a = 0; a<4; a++){
@@ -480,7 +480,7 @@ void SimpleWD::expandGrid(int Ntrue){
 		dlogY[x+1] = dlogYdlogR(logY[x+1], nabla);
 		dlogY[x+1][dens] = (logY[x+2][dens]-logY[x][dens])/(logY[x+2][radi]-logY[x][radi]);
 	}
-	for(int x=3; x<Ntrue-3; x+=2){
+	for(std::size_t x=3; x<Ntrue-3; x+=2){
 		r = exp(logY[x-1][radi]);
 		dr = (exp(logY[x+1][radi])-exp(logY[x-1][radi]));		//linear midpoint
 		//integrate forward from x-1
@@ -503,7 +503,7 @@ void SimpleWD::expandGrid(int Ntrue){
 		dlogY[x] = dlogYdlogR(logY[x],nabla);
 		dlogY[x][dens] = (logY[x+1][dens]-logY[x-1][dens])/(logY[x+1][radi]-logY[x-1][radi]);
 	}
-	int x=Ntrue-2;
+	std::size_t x=Ntrue-2;
 	logY[x] = (logY[x+1]+logY[x-1])*0.5;
 	logQ[x] = (logQ[x+1]+logQ[x-1])*0.5;
 	Xelem[x] = findAbundance(logY[x][mass], logY[x][radi], dXelem[x]);
@@ -514,7 +514,7 @@ void SimpleWD::expandGrid(int Ntrue){
 
 void SimpleWD::rescaleR(){
 	double logr1 = logY[Ntot-1][radi];
-	for(int x=0; x<Ntot; x++){
+	for(std::size_t x=0; x<Ntot; x++){
 		logY[x][radi] = logY[x][radi] - logr1;
 		logY[x][dens] = logY[x][dens] + 3.*logr1;
 		logY[x][pres] = logY[x][pres] + 4.*logr1;
@@ -539,7 +539,7 @@ void SimpleWD::rescaleR(){
 //    the EOS will assume completely degenerate electron gas at zero temperature
 //    temperature in core is finite, allowed to vary through conduction to surface
 //**************************************************************************************/
-double SimpleWD::calculateCore(const double x[numv], int Nmax){
+double SimpleWD::calculateCore(const double x[numv], std::size_t Nmax){
 	//prepare variables for RK4
 	double dlogQ;
 	StellarVar logYC;
@@ -588,7 +588,7 @@ double SimpleWD::calculateCore(const double x[numv], int Nmax){
 //    this must be done using non-log variables, beause log variables are singular
 //    this step must be integrated in radius, because all equations in mass are singular
 //**************************************************************************************/
-int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
+std::size_t SimpleWD::firstCoreStep(const double x[numv], double& rholast, std::size_t Nmax){
 	//prepare variables
 	double P0 = (x[0]), T0 = (x[1]);
 
@@ -613,7 +613,7 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	Ystart0[dens] = rholast;
 	
 	//begin RK4 at center
-	constexpr int start = 1;	//number of points to compute in this way
+	constexpr std::size_t start = 1;	//number of points to compute in this way
 	StellarVar Y[start+1];		//the array of points computed this way
 	//begin at the center
 	Y[0]     = Ycenter;			//the central values
@@ -622,7 +622,7 @@ int SimpleWD::firstCoreStep(const double x[numv], double& rholast, int Nmax){
 	//setting the initial step size
 	dQ = exp((log(3.) + logQ[1] - logY[0][dens])/3.);//
 	//now begin integrations
-	for(int X = 0; X<start; X++){
+	for(std::size_t X = 0; X<start; X++){
 		YC = Y[X];
 		chemC = findAbundance(logQ[1], logY[1][radi], dXelem[X+1]);
 		for(int a = 0; a<4; a++){
@@ -704,7 +704,7 @@ void SimpleWD::calculateAtmosphere(const double x[numv]){
 //    this method performs the first step in the integration from the surface
 //    this must be done using non-log variables, beause log variables are singular
 //**************************************************************************************/
-int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
+std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	rholast = 0.0;
 	//prepare variables
 	double rs = (1.0 + x[2]);
@@ -811,7 +811,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 		
 	Ysurf = StellarVar(Yfirst[dens],Rstar*rs,Yfirst[pres],Mstar*ms,Ysurf[temp],Lstar*LS);
 	
-	const int npoints = 2, start = Ntot-npoints+1, first = Ntot-1;
+	const std::size_t npoints = 2, start = Ntot-npoints+1, first = Ntot-1;
  	StellarVar Y[npoints];
 	Y[0] = Ysurf;
 	Y[1] = Yfirst;
@@ -838,7 +838,7 @@ int SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast){
 	StellarVar K[4];
 	//Butcher tableau for RK4
 	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
-	for(int X = first; X > start; X--){
+	for(std::size_t X = first; X > start; X--){
 		YC = Y[Ntot-1-X];
 		chemC = Xelem[X];
 		dQ = exp(logQ[X-1]) - exp(logQ[X]);
@@ -1081,7 +1081,7 @@ Abundance SimpleWD::massFraction(){
 	//first integrate the core
 	massTot = massTot + (Xint1+Xint2)*(exp(logQ[1]))*0.5;
 	Xint2 = Xelem[1]*exp(logQ[1]);
-	for(int x=1; x<Ntot-1; x++){
+	for(std::size_t x=1; x<Ntot-1; x++){
 		if(exp(logQ[x+1]) >1.0) break;
 		Xint1 = Xint2;
 		Xint2 = Xelem[x+1]*exp(logQ[x+1]);
@@ -1095,69 +1095,69 @@ Abundance SimpleWD::massFraction(){
 //  ACCESSORS
 //    Here we define functions to access radius, pressure, etc.
 //**************************************************************************************/
-double SimpleWD::rad(int X){
+double SimpleWD::rad(std::size_t X){
 	return Rstar*exp(logY[X][radi]);
 }
-double SimpleWD::rho(int X){
+double SimpleWD::rho(std::size_t X){
 	return Dscale*exp(logY[X][dens]);
 }
-double SimpleWD::drhodr(int X){
+double SimpleWD::drhodr(std::size_t X){
 	 // dlogD/dlogr = dD/dr*r/D --> dD/dr = D/r * dlogD/dlogr
 	return Dscale/Rstar*exp(logY[X][dens]-logY[X][radi])*dlogY[X][dens];
 }
-double SimpleWD::P(int X){
+double SimpleWD::P(std::size_t X){
 	return Pscale*exp(logY[X][pres]);
 }
-double SimpleWD::dPdr(int X){
+double SimpleWD::dPdr(std::size_t X){
 	return Pscale/Rstar*exp(logY[X][pres]-logY[X][radi])*dlogY[X][pres];
 }
-double SimpleWD::Phi(int X){
+double SimpleWD::Phi(std::size_t X){
 	//zeroed to join exterior solution at surface, where Phi->0 at infty
 	return 0.0;
 }
-double SimpleWD::dPhidr(int X){
+double SimpleWD::dPhidr(std::size_t X){
 	return G_CGS*Mstar*pow(Rstar,-2)*exp(logY[X][mass] - 2.*logY[X][radi]);
 }
-double SimpleWD::mr(int X){
+double SimpleWD::mr(std::size_t X){
 	return Mstar*exp(logY[X][mass]);
 }
 
-double SimpleWD::Schwarzschild_A(int X, double GamPert){
+double SimpleWD::Schwarzschild_A(std::size_t X, double GamPert){
 	if(GamPert==0.0) return -brunt_vaisala[X]*exp(2.*logY[X][radi]-logY[X][mass])/Rstar;
 	else        	 return (dlogY[X][dens] - dlogY[X][pres]/GamPert)*exp(-logY[X][radi])/Rstar;
 }
 
-double SimpleWD::getAstar(int X, double GamPert){
+double SimpleWD::getAstar(std::size_t X, double GamPert){
 	if(GamPert==0.0) return brunt_vaisala[X]*exp(3.*logY[X][radi]-logY[X][mass]);
 	else        	 return (dlogY[X][pres]/GamPert - dlogY[X][dens]);
 }
 
 //the Ledoux part of the Schwarzschild discriminant
-double SimpleWD::Ledoux(int X, double GamPert){
+double SimpleWD::Ledoux(std::size_t X, double GamPert){
 	if(GamPert==0.0) return ledoux[X];
 	else             return 0.0;
 }
 
-double SimpleWD::getU(int X){
+double SimpleWD::getU(std::size_t X){
 	if(X==0) return 3.0;
 	else     return dlogY[X][mass];	//this is already dlog(m)/dlog(r)
 }
 
-double SimpleWD::getVg(int X, double GamPert){
+double SimpleWD::getVg(std::size_t X, double GamPert){
 	if(GamPert==0.0) return -dlogY[X][pres]/Gamma1(X);//we already have dlog(P)/dlog(r)
 	else			 return -dlogY[X][pres]/GamPert;
 }
 
-double SimpleWD::getC(int X){
+double SimpleWD::getC(std::size_t X){
 	if(X==0) return 3.*exp(-logY[0][dens]);
 	else     return exp(3.*logY[X][radi] - logY[X][mass]);
 }
 
-double SimpleWD::Gamma1(int X){
+double SimpleWD::Gamma1(std::size_t X){
 	return adiabatic_1[X];
 }
 
-double SimpleWD::sound_speed2(int X, double GamPert){
+double SimpleWD::sound_speed2(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return Gamma1(X) * exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
 	else               return GamPert   * exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
 }
@@ -1177,7 +1177,7 @@ void SimpleWD::populateBruntVaisala(){
 	double kappa_rad, kappa_cond, kappa0, D_coeff;
 	EOS* myEOS;
 	D_coeff = 3./(16.*m_pi*radiation_a*C_CGS*G_CGS);
-	for(int X=0; X<Ntot;X++){
+	for(std::size_t X=0; X<Ntot;X++){
 		ly = logY[X] + logYscale;
 		YY = exp(ly);
 			
@@ -1202,8 +1202,6 @@ void SimpleWD::populateBruntVaisala(){
 double SimpleWD::Radius(){return Rstar;}	//total radius
 double SimpleWD::Mass(){  return Mstar;}	//total mass
 double SimpleWD::Gee(){   return G_CGS;}
-//in Newtonian, light speed is infinity...
-double SimpleWD::light_speed2(){return C_CGS*C_CGS;}
 
 // **************************  CENTRAL BOUNDARY **************************************
 // the following provide coefficients for central expansions of A*, Vg, U, c1 in trms of x=r/R
@@ -1502,8 +1500,8 @@ void SimpleWD::printChem(const char *const c){
 	double H,He;
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
-	for(int X=Ntot-1; X >= 0; X--){
-		fprintf(fp, "%d", X);									//col 1
+	for(std::size_t X=Ntot-1; X >= 0; X--){
+		fprintf(fp, "%lu", X);									//col 1
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3
 		fprintf(fp, "\t%0.16le", exp(logY[X][mass]));			//col 4
@@ -1516,7 +1514,7 @@ void SimpleWD::printChem(const char *const c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
@@ -1557,7 +1555,7 @@ void SimpleWD::printBV(const char *const c, const double g){
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0, f0 = G_CGS*Mstar*pow(Rstar,-3);
 	fprintf(fp, "1-m\tN2\tL1\n");
-	for(int X=0; X< Ntot; X++){
+	for(std::size_t X=0; X< Ntot; X++){
 		N2 = brunt_vaisala[X]*f0;
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
 			(1.-exp(logY[X][mass])),
@@ -1596,7 +1594,7 @@ void SimpleWD::printOpacity(const char *const c){
 	double logT=logY[0][temp];
 	double GC = 0.0;
 	fprintf(fp, "1-m\tT/T1\tdel\tdel_ad\tkappa\tH\tHe\tGamma1\n");
-	for(int x=0; x < Ntot; x++){
+	for(std::size_t x=0; x < Ntot; x++){
 		X  = Xelem[x];
 		ly = logY[x];
 		fprintf(fp, "%0.24le\t%0.16le", (1.-exp(ly[mass])), exp(ly[temp]-logT));	//col1, col2
@@ -1615,7 +1613,7 @@ void SimpleWD::printOpacity(const char *const c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'opacity, temperature for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log(1-m/M)'\n");
@@ -1672,13 +1670,13 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fclose(fp);
 	
 	//print fits to those coefficients at center and surface
-	int NC=15, NS=15;
+	std::size_t NC=15, NS=15;
 	txtname = filename + "/centerfit.txt";
 	fp = fopen(txtname.c_str(), "w");
 	double x2 = exp(2.*logY[0][radi]);
 	gam1 = adiabatic_1[0];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
-	for(int X=0; X<NC; X++){
+	for(std::size_t X=0; X<NC; X++){
 		x2 = exp(2.*logY[X][radi]);
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
 			exp(logY[X][radi]),
@@ -1704,7 +1702,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	double t = 1.-exp(logY[0][radi]);
 	gam1 = adiabatic_1[Ntot-1];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
-	for(int X=Ntot-1; X>=Ntot-NS-1; X--){
+	for(std::size_t X=Ntot-1; X>=Ntot-NS-1; X--){
 		t = 1. - exp(logY[X][radi]);
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
 			exp(logY[X][radi]),
@@ -1731,7 +1729,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	outname = filename + "/coefficients.png";
 	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
-	for(int X=0; X<Ntot; X++){
+	for(std::size_t X=0; X<Ntot; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
 			exp(logQ[X]),
 			-exp(logY[X][radi])*Schwarzschild_A(X, 0.)*Rstar,
@@ -1745,7 +1743,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -1858,8 +1856,8 @@ void SimpleWD::printBigASCII(const char *const c){
 	fprintf(fp, "chi_C        \t");
 	fprintf(fp, "chi_O        \n");
 	double log10e = log10(exp(1.0));
-	for(int X=0; X<Ntot; X++){
-		fprintf(fp, "%6d\t", X+1);
+	for(std::size_t X=0; X<Ntot; X++){
+		fprintf(fp, "%6lu\t", X+1);
 		//the independent variables
 		fprintf(fp, "%+13le\t%+13le\t%+13le\t%+13le\t", 
 			log10(1.-exp(logY[X][mass])), 
@@ -1956,8 +1954,8 @@ void SimpleWD::writeStar(const char *const c){
 	double logM = logY[Ntot-1][mass];
 	double logR = logY[Ntot-1][radi];
 	fprintf(fp, "num\tq\trho\tradius\tP\tm\tT\tL\tm\n");
-	for(int X=0; X< Ntot; X++){
-		fprintf(fp, "%6d\t", X);
+	for(std::size_t X=0; X< Ntot; X++){
+		fprintf(fp, "%6lu\t", X);
 		fprintf(fp, "%22.16le\t", (1.-exp(logQ[X])));	//col 2
 		fprintf(fp, "%22.16le\t", exp(logY[X][dens]));	//col 3
 		fprintf(fp, "%22.16le\t", exp(logY[X][radi]));	//col 4
@@ -1972,7 +1970,7 @@ void SimpleWD::writeStar(const char *const c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
@@ -2002,14 +2000,14 @@ void SimpleWD::writeStar(const char *const c){
 double SimpleWD::SSR(){	
 	double checkEuler;
 	double checkPoiss;
-	int len = Ntot;
+	std::size_t len = Ntot;
 			
 	//sum up errors in equations
 	checkEuler = 0.0;
 	checkPoiss = 0.0;
 	double d2Phi = 0.0;
 	double e1, e2, n1, n2;
-	for(int X=4; X<len-4; X++){
+	for(std::size_t X=4; X<len-4; X++){
 		//Euler equation
 		e1 = fabs(dPdr(X) + rho(X)*dPhidr(X) );
 		n1 = fabs(dPdr(X)) + fabs(rho(X)*dPhidr(X));
