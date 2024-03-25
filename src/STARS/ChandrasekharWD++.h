@@ -20,36 +20,34 @@
 class ChandrasekharWD : public Star {
 public:
 
-	std::string graph_title(){
+	std::string graph_title() override {
 		return strmakef("Chandrasekhar WD with y_0=%1.2f", Y0);
 	}
 	
 	//the constructors
-	ChandrasekharWD(double, int,               double MU0, double K, double AC, double AS);
-	ChandrasekharWD(double, int, const double, double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t,               double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t, const double, double MU0, double K, double AC, double AS);
 	virtual ~ChandrasekharWD();   //destructor
-	int length(){return len;}
+	std::size_t length() override {return len;}
 	//these three functions specify units
-	double Radius();	//total radius
-	double Mass();//total mass
-	double Gee(); //{return G_CGS;};
-	//in Newtonian, light speed is infinity...
-	double light_speed2();//{return C_CGS*C_CGS;};
+	double Radius() override;	//total radius
+	double Mass() override;//total mass
+	double Gee() override; //{return G_CGS;};
 	
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double Gamma1(int);
-	double sound_speed2(int, double GamPert=0.0);
-	double Ledoux(int, double GamPert=0.0);
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
 	double Y0;		// central value of y, y^2=1+x^2
@@ -57,7 +55,7 @@ private:
 	//double A0;		//pressure scale
 	//double B0;		//density scale
 	double Rn;		//radius scale
-	int len;
+	std::size_t len;
 	double dx;
 	//lane-emden solution functions
 	double *xi;	//normalized radius
@@ -76,8 +74,8 @@ private:
 	double* mue;   //mean atomic mass per electron
 	double* dmue;  //derivative of above
 	//integrate using basic RK4
-	double RK4integrate(const int, double);
-	int RK4integrate(const int, double, int);
+	double RK4integrate(const std::size_t, double);
+	std::size_t RK4integrate(const std::size_t, double, int);
 	
 	//the T=0 Fermi function
 	//double factor_f(double x);
@@ -88,17 +86,17 @@ private:
 	void setupSurface();	//prepare values near surface
 public:
 	//methods to find central, surfae power series expansions of key variables in pulsation
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter(double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double *, int&, double g=0);
-	void getUSurface(double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter(double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double *, int&, double g=0) override;
+	void getUSurface(double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
 
 	//a particular output generation for this model of white dwarf
-	void writeStar(char *c=NULL);
+	void writeStar(char const *const c=NULL) override;
 };
 
 #endif

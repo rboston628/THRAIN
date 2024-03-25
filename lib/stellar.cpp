@@ -3,21 +3,21 @@
 
 #include "stellar.h"
 
-double chemical::partial_mean_A(elem i, Abundance X){
+double chemical::partial_mean_A(elem i, Abundance const& X){
 	return -pow(X.mean_A(),2)*
 			(1./chemical::A[i] - 1./chemical::A[X.e]);
 }
 
-double chemical::partial_mean_Z(elem i, Abundance X){
+double chemical::partial_mean_Z(elem i, Abundance const& X){
 	return chemical::Z[i] - chemical::Z[X.e];
 }
 
-double chemical::partial_mu_e(elem i, Abundance X){
+double chemical::partial_mu_e(elem i, Abundance const& X){
 	return -pow(X.mu_e(),2)*
 			(chemical::Z[i]/chemical::A[i] - chemical::Z[X.e]/chemical::A[X.e]);
 }
 
-double chemical::partial_mean_coul(elem i , Abundance X){
+double chemical::partial_mean_coul(elem i , Abundance const& X){
 	return pow(chemical::Z[i],2)*pow(chemical::A[i],-1./3.) 
 			- pow(chemical::Z[X.e],2)*pow(chemical::A[X.e],-1./3.);
 }
@@ -34,14 +34,14 @@ StellarVar log(const StellarVar &x){
 	return val;
 }
 
-
 int EOS::rando(39);
-double EOS::U(double rho, double T, Abundance chem){
+
+double EOS::U(double rho, double T, Abundance const& chem){
 	double U = 0.0;
 	for(PartialPressure p : pressure) U += p.U(rho,T,chem);
 	return U;
 }
-double EOS::Gamma1(double rho, double T, Abundance chem){
+double EOS::Gamma1(double rho, double T, Abundance const& chem){
 	double P=0.0, U=0.0, dPdT = 0.0, dUdT = 0.0, dPdr = 0.0, dUdr = 0.0;
 	for(PartialPressure p : pressure){
 		P += p(rho,T,chem);
@@ -53,16 +53,16 @@ double EOS::Gamma1(double rho, double T, Abundance chem){
 	}
 	return rho/P*dPdr + U/P*dPdT/dUdT*(1. + P/U - rho/U*dUdr);
 }
-double EOS::Gamma3(double rho, double T, Abundance chem){
+double EOS::Gamma3(double rho, double T, Abundance const& chem){
 	double dPdT = 0.0, dUdT = 0.0;
 	for(PartialPressure p : pressure) dPdT += p.partialT(rho,T,chem);
 	for(PartialPressure p : pressure) dUdT += p.UpartialT(rho,T,chem);
 	return dPdT/dUdT + 1.;
 }
-double EOS::nabla_ad(double rho, double T, Abundance chem){
+double EOS::nabla_ad(double rho, double T, Abundance const& chem){
 	return (Gamma3(rho,T,chem)-1.)/Gamma1(rho,T,chem);
 }
-double EOS::chiRho(double rho, double T, Abundance chem){
+double EOS::chiRho(double rho, double T, Abundance const& chem){
 	double P=0.0, dPdr = 0.0;
 	for(PartialPressure p : pressure) {
 		P += p(rho,T,chem);
@@ -70,7 +70,7 @@ double EOS::chiRho(double rho, double T, Abundance chem){
 	}
 	return rho/P*dPdr;
 }
-double EOS::chiT(double rho, double T, Abundance chem){
+double EOS::chiT(double rho, double T, Abundance const& chem){
 	double P=0.0, dPdT = 0.0;
 	for(PartialPressure p : pressure) {
 		P += p(rho,T,chem);
@@ -78,7 +78,7 @@ double EOS::chiT(double rho, double T, Abundance chem){
 	}
 	return T/P*dPdT;
 }
-double EOS::chiY(chemical::elem i, double rho, double T, Abundance chem){
+double EOS::chiY(chemical::elem i, double rho, double T, Abundance const& chem){
 	double P=0.0, dPdY = 0.0;
 	for(PartialPressure p : pressure) {
 		P += p(rho,T,chem);
@@ -89,7 +89,7 @@ double EOS::chiY(chemical::elem i, double rho, double T, Abundance chem){
 //calculate the Ledoux term -- see Brassard etc 1991, eqn (13, 14)
 // expanding out the logarithmic derivatives
 // B = -1/chiT*Sum[ (delP/delX)_rho,T * dX/dP ]
-double EOS::Ledoux(double rho, double T, Abundance chem, Abundance dchem){
+double EOS::Ledoux(double rho, double T, Abundance const& chem, Abundance const& dchem){
 	double P=0.0, dPdr = 0.0, dPdT = 0.0, dPdY = 0.0, U=0.0, dUdr = 0.0, dUdT = 0.0;
 	double chiT, chiRho, chiY;
 	for(PartialPressure p : pressure){
@@ -104,13 +104,13 @@ double EOS::Ledoux(double rho, double T, Abundance chem, Abundance dchem){
 	return -dPdY/chiT;
 }
 
-double EOS::partialRho(double rho, double T, Abundance chem){
+double EOS::partialRho(double rho, double T, Abundance const& chem){
 	double dPdr = 0.0;
 	for(PartialPressure p : pressure) dPdr += p.partialRho(rho,T,chem);
 	return dPdr;
 }
 	
-double EOS::partialT(double rho, double T, Abundance chem){
+double EOS::partialT(double rho, double T, Abundance const& chem){
 	double dPdT = 0.0;
 	for(PartialPressure p : pressure) dPdT += p.partialT(rho,T,chem);
 	return dPdT;
@@ -126,7 +126,7 @@ PartialPressure EOS::operator[](int n){
 
 // Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
 // uses a combination of Newton method and bisection search
-double EOS::invert(double rho_last, double P, double T, Abundance chem){
+double EOS::invert(double rho_last, double P, double T, Abundance const& chem){
 	double x1=rho_last, x2 = rho_last, x, x3, dx;
 	double y1 = P - (*this)(x1,T,chem), y2 = y1, y, y3;
 	y2=y1;
@@ -206,7 +206,7 @@ double EOS::invert(double rho_last, double P, double T, Abundance chem){
 
 // Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
 // uses nothing but Newton's method
-double EOS::invertNewton(double rho_last, double P, double T, Abundance chem){
+double EOS::invertNewton(double rho_last, double P, double T, Abundance const& chem){
 	double x1=rho_last, x2 = rho_last, x, x3, dx;
 	double y1 = P - (*this)(x1,T,chem), y2 = y1, y, y3;
 	int term = 0;
@@ -251,28 +251,28 @@ PartialPressure ideal = {
 	pressure_ideal, partialRho_ideal, partialT_ideal, partialX_ideal,
 	energy_ideal, UpartialRho_ideal, UpartialT_ideal, UpartialX_ideal};
 //pressure of an ideal gas
-double pressure_ideal(double rho, double T, Abundance X){
+double pressure_ideal(double rho, double T, Abundance const& X){
 	return N_Avogadro*boltzmann_k/X.mean_A()*rho*T;
 }
-double partialRho_ideal(double rho, double T, Abundance X){
+double partialRho_ideal(double rho, double T, Abundance const& X){
 	return N_Avogadro*boltzmann_k/X.mean_A()*T;
 }
-double partialT_ideal(double rho, double T, Abundance X){
+double partialT_ideal(double rho, double T, Abundance const& X){
 	return N_Avogadro*boltzmann_k/X.mean_A()*rho;
 }
-double partialX_ideal(chemical::elem i, double rho, double T, Abundance X){
+double partialX_ideal(chemical::elem i, double rho, double T, Abundance const& X){
 	return -N_Avogadro*boltzmann_k/pow(X.mean_A(),2)*rho*T*chemical::partial_mean_A(i,X);
 }
-double energy_ideal(double rho, double T, Abundance X){
+double energy_ideal(double rho, double T, Abundance const& X){
 	return 1.5*pressure_ideal(rho,T,X);
 }
-double UpartialRho_ideal(double rho, double T, Abundance X){
+double UpartialRho_ideal(double rho, double T, Abundance const& X){
 	return 1.5*partialRho_ideal(rho,T,X);
 }
-double UpartialT_ideal(double rho, double T, Abundance X){
+double UpartialT_ideal(double rho, double T, Abundance const& X){
 	return 1.5*partialT_ideal(rho,T,X);
 }
-double UpartialX_ideal(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_ideal(chemical::elem i, double rho, double T, Abundance const& X){
 	return 1.5*partialX_ideal(i, rho,T,X);
 }
 
@@ -281,28 +281,28 @@ double UpartialX_ideal(chemical::elem i, double rho, double T, Abundance X){
 PartialPressure rad_gas = {
 	pressure_rad, partialRho_rad, partialT_rad, partialX_rad,
 	energy_rad, UpartialRho_rad, UpartialT_rad, UpartialX_rad};
-double pressure_rad(double rho, double T, Abundance X){
+double pressure_rad(double rho, double T, Abundance const& X){
 	return radiation_a/3.*pow(T,4);
 }
-double partialRho_rad(double rho, double T, Abundance X){
+double partialRho_rad(double rho, double T, Abundance const& X){
 	return 0.0;
 }
-double partialT_rad(double rho, double T, Abundance X){
+double partialT_rad(double rho, double T, Abundance const& X){
 	return 4./3.*radiation_a*pow(T,3);
 }
-double partialX_rad(chemical::elem i, double rho, double T, Abundance X){
+double partialX_rad(chemical::elem i, double rho, double T, Abundance const& X){
 	return 0.0;
 }
-double energy_rad(double rho, double T, Abundance X){
+double energy_rad(double rho, double T, Abundance const& X){
 	return radiation_a*pow(T,4);
 }
-double UpartialRho_rad(double rho, double T, Abundance X){
+double UpartialRho_rad(double rho, double T, Abundance const& X){
 	return 0.0;
 }
-double UpartialT_rad(double rho, double T, Abundance X){
+double UpartialT_rad(double rho, double T, Abundance const& X){
 	return 4.*radiation_a*pow(T,3);
 }
-double UpartialX_rad(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_rad(chemical::elem i, double rho, double T, Abundance const& X){
 	return 0.0;
 }
 
@@ -316,13 +316,13 @@ double UpartialX_rad(chemical::elem i, double rho, double T, Abundance X){
 PartialPressure coul = {
 	pressure_coul, partialRho_coul, partialT_coul, partialX_coul,
 	energy_coul, UpartialRho_coul, UpartialT_coul, UpartialX_coul};
-double pressure_coul(double rho, double T, Abundance X){
+double pressure_coul(double rho, double T, Abundance const& X){
 	double GC = 2.275e5*(X.mean_coulomb())*pow(rho,1./3.)/T;
 	if(T<=0.0) GC = 0.0;
 	double coul = -0.3*pow(GC,1.5)/(pow(GC,0.5)+1.03921);
 	return coul*pressure_ideal(rho,T,X);
 }
-double partialRho_coul(double rho, double T, Abundance X){
+double partialRho_coul(double rho, double T, Abundance const& X){
 	double GC = 2.275e5*(X.mean_coulomb())*pow(rho,1./3.)/T;
 	if(T<=0.0) GC = 0.0;
 	double denom = (pow(GC,0.5)+1.03921);
@@ -331,7 +331,7 @@ double partialRho_coul(double rho, double T, Abundance X){
 	return coul*partialRho_ideal(rho,T,X)
 			 + pressure_ideal(rho,T,X)*( -0.45*pow(GC,0.5)/denom + 0.15*GC/denom/denom )*dGCdr;
 }
-double partialT_coul(double rho, double T, Abundance X){
+double partialT_coul(double rho, double T, Abundance const& X){
 	double GC = 2.275e5*(X.mean_coulomb())*pow(rho,1./3.)/T;
 	if(T<=0.0) GC = 0.0;
 	double denom = (pow(GC,0.5)+1.03921);
@@ -340,7 +340,7 @@ double partialT_coul(double rho, double T, Abundance X){
 	return coul*partialT_ideal(rho,T,X)
 			 + pressure_ideal(rho,T,X)*( -0.45*pow(GC,0.5)/denom + 0.15*GC/denom/denom  )*dGCdt;
 }
-double partialX_coul(chemical::elem i, double rho, double T, Abundance X){
+double partialX_coul(chemical::elem i, double rho, double T, Abundance const& X){
 	double GC = 2.275e5*(X.mean_coulomb())*pow(rho,1./3.)/T;
 	if(T<=0.0) GC = 0.0;
 	double denom = (pow(GC,1./2.)+1.03921);
@@ -349,16 +349,16 @@ double partialX_coul(chemical::elem i, double rho, double T, Abundance X){
 	return coul*partialX_ideal(i, rho,T,X)
 			 + pressure_ideal(rho,T,X)*( -0.45*pow(GC,0.5)/denom + 0.15*GC/denom/denom  )*dGCdX;
 }
-double energy_coul(double rho, double T, Abundance X){
+double energy_coul(double rho, double T, Abundance const& X){
 	return 3.*pressure_coul(rho,T,X);
 }
-double UpartialRho_coul(double rho, double T, Abundance X){
+double UpartialRho_coul(double rho, double T, Abundance const& X){
 	return 3.*partialRho_coul(rho,T,X);
 }
-double UpartialT_coul(double rho, double T, Abundance X){
+double UpartialT_coul(double rho, double T, Abundance const& X){
 	return 3.*partialT_coul(rho,T,X);
 }
-double UpartialX_coul(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_coul(chemical::elem i, double rho, double T, Abundance const& X){
 	return 3.*partialX_coul(i, rho,T,X);
 }
 
@@ -369,39 +369,39 @@ double UpartialX_coul(chemical::elem i, double rho, double T, Abundance X){
 PartialPressure deg_zero = {
 	pressure_deg_zero, partialRho_deg_zero, partialT_deg_zero, partialX_deg_zero,
 	energy_deg_zero, UpartialRho_deg_zero, UpartialT_deg_zero, UpartialX_deg_zero};
-double pressure_deg_zero(double rho, double T, Abundance X){
+double pressure_deg_zero(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*factor_f(X0);
 }
-double partialRho_deg_zero(double rho, double T, Abundance X){
+double partialRho_deg_zero(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*8.*pow(X0,4)/sqrt(1.+X0*X0) * (1./(3.*B0*X.mu_e()*X0*X0));
 }
-double partialT_deg_zero(double rho, double T, Abundance X){
+double partialT_deg_zero(double rho, double T, Abundance const& X){
 	return 0.0;
 }
-double partialX_deg_zero(chemical::elem i, double rho, double T, Abundance X){
+double partialX_deg_zero(chemical::elem i, double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*8.*pow(X0,4)/sqrt(1.+X0*X0) 
 		* pow(rho/B0,1./3.)*(-1./3.*pow(X.mu_e(),-4./3.))*chemical::partial_mu_e(i,X);
 }
-double energy_deg_zero(double rho, double T, Abundance X){
+double energy_deg_zero(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*factor_g(X0);
 }
-double UpartialRho_deg_zero(double rho, double T, Abundance X){
+double UpartialRho_deg_zero(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*24.*X0*X0*(sqrt(1.+X0*X0)-1.) * (1./(3.*B0*X.mu_e()*X0*X0));
 }
-double UpartialT_deg_zero(double rho, double T, Abundance X){
+double UpartialT_deg_zero(double rho, double T, Abundance const& X){
 	return 0.0;
 }
-double UpartialX_deg_zero(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_deg_zero(chemical::elem i, double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	double X0 = pow(rho/B0/X.mu_e(), 1./3.);
 	return A0*24.*X0*X0*(sqrt(1.+X0*X0)-1.)
@@ -435,7 +435,7 @@ double findEta(double rho, double beta, double mue){
 //pressure of electron gas under partial degeneracy (T finite)
 //	following Chandrasekhar 1939, Cox & Giuli 1980 (especially pg 851)
 //  the Fermi-Dirac functions calculated with 24-point quadrature due to Sagar 1991a&b
-double pressure_deg_finite(double rho, double T, Abundance X){
+double pressure_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -459,7 +459,7 @@ double pressure_deg_finite(double rho, double T, Abundance X){
 		FermiDirac3Half(eta2,beta) + 0.5*beta*FermiDirac5Half(eta2,beta));
 	return P;
 }
-double partialRho_deg_finite(double rho, double T, Abundance X){
+double partialRho_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -471,7 +471,7 @@ double partialRho_deg_finite(double rho, double T, Abundance X){
 		FermiDirac1HalfdelEta(eta,beta) +     beta*FermiDirac3HalfdelEta(eta,beta));
 	return dPdrho;
 }
-double partialT_deg_finite(double rho, double T, Abundance X){
+double partialT_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -485,7 +485,7 @@ double partialT_deg_finite(double rho, double T, Abundance X){
 	);
 	return dPdT;
 }
-double partialX_deg_finite(chemical::elem i, double rho, double T, Abundance X){
+double partialX_deg_finite(chemical::elem i, double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -499,7 +499,7 @@ double partialX_deg_finite(chemical::elem i, double rho, double T, Abundance X){
 		*chemical::partial_mu_e(i,X)/mue;
 	return dPdX;
 }
-double energy_deg_finite(double rho, double T, Abundance X){
+double energy_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -510,7 +510,7 @@ double energy_deg_finite(double rho, double T, Abundance X){
 		FermiDirac3Half(eta,beta) + beta*FermiDirac5Half(eta,beta));
 	return U;
 }
-double UpartialRho_deg_finite(double rho, double T, Abundance X){
+double UpartialRho_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -522,7 +522,7 @@ double UpartialRho_deg_finite(double rho, double T, Abundance X){
 		FermiDirac1HalfdelEta(eta,beta) + beta*FermiDirac3HalfdelEta(eta,beta));
 	return dUdrho;
 }
-double UpartialT_deg_finite(double rho, double T, Abundance X){
+double UpartialT_deg_finite(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -536,7 +536,7 @@ double UpartialT_deg_finite(double rho, double T, Abundance X){
 	);
 	return dUdT;
 }
-double UpartialX_deg_finite(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_deg_finite(chemical::elem i, double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -637,7 +637,7 @@ double findEta_trap(double rho, double beta, double mue){
 //pressure of electron gas under partial degeneracy (T finite)
 //	following Chandrasekhar 1939, Cox & Giuli 1980 (especially pg 851)
 //  the Fermi-Dirac functions calculated with trapezoidal integration
-double pressure_deg_trap(double rho, double T, Abundance X){
+double pressure_deg_trap(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -649,7 +649,7 @@ double pressure_deg_trap(double rho, double T, Abundance X){
 		FermiDirac::FermiDirac(1.5,eta,beta) + 0.5*beta*FermiDirac::FermiDirac(2.5,eta,beta));
 	return P;
 }
-double energy_deg_trap(double rho, double T, Abundance X){
+double energy_deg_trap(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;	
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -669,7 +669,7 @@ double energy_deg_trap(double rho, double T, Abundance X){
 PartialPressure deg_partial = {
 	pressure_deg_partial, partialRho_deg_partial, partialT_deg_partial, partialX_deg_partial,
 	energy_deg_partial, UpartialRho_deg_partial, UpartialT_deg_partial, UpartialX_deg_partial};
-double pressure_deg_partial(double rho, double T, Abundance X){
+double pressure_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -680,7 +680,7 @@ double pressure_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return ne*boltzmann_k*T;
 	else return 0.0;
 }
-double partialRho_deg_partial(double rho, double T, Abundance X){
+double partialRho_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -691,7 +691,7 @@ double partialRho_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return boltzmann_k*T/proton.mass_CGS/X.mu_e();
 	else return 0.0;
 }
-double partialT_deg_partial(double rho, double T, Abundance X){
+double partialT_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -702,7 +702,7 @@ double partialT_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return ne*boltzmann_k;
 	else return 0.0;
 }
-double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance X){
+double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -713,7 +713,7 @@ double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance X)
 	else if (w <  0.1) return rho*boltzmann_k*T*pow(X.mu_e(),-2)*chemical::partial_mu_e(i,X);
 	else return 0.0;
 }
-double energy_deg_partial(double rho, double T, Abundance X){
+double energy_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -724,7 +724,7 @@ double energy_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return 1.5*ne*boltzmann_k*T;
 	else return 0.0;
 }
-double UpartialRho_deg_partial(double rho, double T, Abundance X){
+double UpartialRho_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -735,7 +735,7 @@ double UpartialRho_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return 1.5*boltzmann_k*T/proton.mass_CGS/X.mu_e();
 	else return 0.0;
 }
-double UpartialT_deg_partial(double rho, double T, Abundance X){
+double UpartialT_deg_partial(double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -746,7 +746,7 @@ double UpartialT_deg_partial(double rho, double T, Abundance X){
 	else if (w <  0.1) return 1.5*ne*boltzmann_k;
 	else return 0.0;
 }
-double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance X){
+double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance const& X){
 	static const double 
 		w_coeff = 0.5*pow(planck_h_CGS,3)/pow(2.*m_pi*electron.mass_CGS*boltzmann_k,1.5);
 	double ne = rho/proton.mass_CGS/X.mu_e();
@@ -766,7 +766,7 @@ double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance X
 // can also be seen in Cox & Giuli, sec 24.2
 // *  this partial pressure is less stable, due to high inaccuracies for very high eta
 // *  does not smoothly limit to complete degeneracy case
-double pressure_deg_large(double rho, double T, Abundance X){
+double pressure_deg_large(double rho, double T, Abundance const& X){
 	using namespace Chandrasekhar;
 	using namespace FermiDirac;
 	double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
@@ -796,7 +796,7 @@ double pressure_deg_large(double rho, double T, Abundance X){
 //pressure of electon gas with small degeneracy...
 //  approximated as Pdeg if larger than Pideal, ignored otherwise
 //  not a great method, really, but combined with deg_zero does lead to decent models
-double pressure_deg_switch(double rho, double T, Abundance X){
+double pressure_deg_switch(double rho, double T, Abundance const& X){
 	double eta, X0;
 	double Pdeg = pressure_deg_zero(rho,T,X);
 	double Pideal = pressure_ideal(rho,T,X);
