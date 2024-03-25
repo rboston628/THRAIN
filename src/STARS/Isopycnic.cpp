@@ -60,7 +60,8 @@ Isopycnic::~Isopycnic(){
 	delete[] mass;
 }
 
-int Isopycnic::populateValues(const std::size_t Len, double dx){
+
+std::size_t Isopycnic::populateValues(const std::size_t Len, double dx){
 	//set our initial conditions
 	x[0] = 0.0; y[0] = 1.0; z[0] = 0.0;
 	for(std::size_t X = 0; X<Len; X++){
@@ -104,7 +105,6 @@ double Isopycnic::Schwarzschild_A(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return -0.6*z[X]/(y[X]*Rn);
 	else               return -z[X]/(y[X]*Rn)/GamPert;
 }
-
 
 double Isopycnic::getAstar(std::size_t X, double GamPert){
 	if(GamPert == 0.0) return 0.6*x[X]*z[X]/(y[X]);

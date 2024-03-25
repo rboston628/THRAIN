@@ -35,7 +35,7 @@ public:
 	double Radius() override;	//total radius
 	double Mass() override;		//total mass
 	double Gee() override {return GG;};
-
+	
 	//these return value of indicated variable -- used in testing
 	double getX(std::size_t X){     return Y[X][x];}
 	double getY(std::size_t X){     return Y[X][y];}
@@ -82,7 +82,7 @@ private:
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
 	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
 	double RK4integrate(const std::size_t, double, SurfaceBehavior);
-	
+
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface
 	void setupCenter();		//prepare values of ac[]

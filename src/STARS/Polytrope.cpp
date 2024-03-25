@@ -227,7 +227,7 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 	static const double d[4] = {6.0,3.0,3.0,6.0};
 	std::complex<double> YCN(0.0,0.0);
 	
-	for(int a = 0; a<4; a++){
+	for(std::size_t a = 0; a<4; a++){
 		//use complex y^n to avoid NaNs when y<0
 		YCN = YC[y];
 		YCN = pow(YCN,n);
@@ -239,7 +239,7 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 		if(YC[x]==0) K[z][a] = -dx/3.0; //at very center, need analytic expression for dz/dx
 		//calculate "corrected" positions using previous shift vectors
 		YC[x] = yin[x] + B[a]*dx;
-		for(int b=1; b<numvar; b++)
+		for(std::size_t b=1; b<numvar; b++)
 			YC[b] = yin[b] + B[a]*K[b][a];
 	}		
 	yout[x] = yin[x] + dx;

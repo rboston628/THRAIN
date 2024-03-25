@@ -18,6 +18,7 @@
 #include "../src/ThrainMain.h"
 
 
+
 void ChandrasekharWD::basic_setup(){
 	//exclude unphysical values of Y0
 	if(Y0 < 1.) Y0 = 1.;
@@ -82,6 +83,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 
 	//now set physical properties of the white dwarf
+
 	init_arrays();
 	indexFit = len/2;
 	for(std::size_t X=1; X<len-1; X++){
@@ -107,6 +109,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 
 	//now set physical properties of the white dwarf
 	init_arrays();
+
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
 	printf("  indexFit  = %lu\n", indexFit);
@@ -434,6 +437,7 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 	//if more  terms than this requested, cap number of terms
 	if(maxPow  > 4) maxPow = 4;
 }
+
 
 void ChandrasekharWD::writeStar(char const *const c){
 	//create names for files to be opened

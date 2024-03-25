@@ -34,10 +34,10 @@ void Mode<numvar>::basic_setup(){
 	
 	//determine the index where fit for inward and outward integrations will occur
 	//some experimentation suggests this should be closer to surface for large l
-	int imax = len;
+	std::size_t imax = len;
 	R = star->rad(len_star-1);
 	double R80 = 0.8*R;	//at 80% of stellar radius
-	for(int i=0;i<len-1;i++) if(star->rad(2*i) > R80) {imax=i;break;}
+	for(std::size_t i=0;i<len-1;i++) if(star->rad(2*i) > R80) {imax=i;break;}
 	double b = double(l)/double(l+1);
 	//based on l, set the fit infex at an intermediary point between stellar index and R80
 	xfit = star->indexFit;
@@ -46,7 +46,7 @@ void Mode<numvar>::basic_setup(){
 	y = new double*[numvar];
 	for(int i=0;i<numvar;i++) y[i] = new double[len];
 	//define values of radius for the mode
-	for(int X=0; X<len; X++){
+	for(std::size_t X=0; X<len; X++){
 		rad[X] = driver->rad(X);
 	}
 	//define the conversion factor from frequency in rad/s to dimensionless; w=f*sig2omeg
@@ -370,7 +370,7 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 
 //integrates outward from interior to xmax
 template <std::size_t numvar> 
-void Mode<numvar>::RK4out(int xmax, double w2, double y0[numvar]){
+void Mode<numvar>::RK4out(std::size_t xmax, double w2, double y0[numvar]){
 	//intermediate values used in equations
 	double XC=0.0, YC[num_var]={0.0};
 	//contain shifts dy1 = dx*y1', dy2 = dx*y2', etc.
@@ -386,10 +386,10 @@ void Mode<numvar>::RK4out(int xmax, double w2, double y0[numvar]){
 	double coeff[num_var][num_var];
 
 	//set initial values
-	int start = driver->CentralBC(y, y0, w2, l);
+	std::size_t start = driver->CentralBC(y, y0, w2, l);
 	
 	//now begin RK4
-	for(int x = start; x<xmax; x++){
+	for(std::size_t x = start; x<xmax; x++){
 		//begin using grid values for first correction
 		XC = rad[x];
 		for(int i=0;i<num_var;i++) YC[i] = y[i][x];
@@ -415,7 +415,7 @@ void Mode<numvar>::RK4out(int xmax, double w2, double y0[numvar]){
 
 //integrates inward from surface toward xmin
 template <std::size_t numvar> 
-void Mode<numvar>::RK4in( int xmin, double w2, double ys[numvar]){
+void Mode<numvar>::RK4in( std::size_t xmin, double w2, double ys[numvar]){
 	//the XC, Y1C-Y4C are intermediate values used in equations
 	double YC[numvar], XC;
 	//contain shifts dy1 = dx*y1', dy2 = dx*y2', etc.
@@ -432,9 +432,9 @@ void Mode<numvar>::RK4in( int xmin, double w2, double ys[numvar]){
 	double coeff[numvar][numvar];
 
 	//set initial values
-	int start = driver->SurfaceBC(y, ys, w2, l);
+	std::size_t start = driver->SurfaceBC(y, ys, w2, l);
 	//now begin RK4
-	for(int x = start; x>xmin; x--){
+	for(std::size_t x = start; x>xmin; x--){
 		//begin using grid values for first correction
 		XC = rad[x];
 		for(int i=0;i<num_var;i++) YC[i] = y[i][x];
@@ -485,7 +485,7 @@ template <std::size_t numvar>
 int Mode<numvar>::verifyMode(){
 	//trace through solution in (xi, chi) plane, parameterized by index
 	int quad=0, quadP, N=0;
-	for(int x=1; x<len-2; x++){
+	for(std::size_t x=1; x<len-2; x++){
 		quadP = quad;
 		//determine quadrant of (xi, chi)
 		quad = (y[0][x]>=0 ? (y[1][x]>0? 1 : 2 ) : (y[1][x]>=0? 4 : 3));
@@ -523,7 +523,7 @@ void Mode<numvar>::writeMode(const char *const c){
 	}
 	double R = rad[len-1];
 	double M = star->Mass();
-	for(int x=0; x<len; x++){
+	for(std::size_t x=0; x<len; x++){
 		fprintf(fp, "%0.16le", rad[x]/R);
 		for(int a=0; a<num_var; a++) fprintf(fp, "\t%0.16le", y[a][x]);
 		fprintf(fp, "\n");

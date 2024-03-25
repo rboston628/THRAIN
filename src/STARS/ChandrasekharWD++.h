@@ -35,6 +35,7 @@ public:
 	ChandrasekharWD(double, std::size_t,               ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, const double, ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, double const A0, double const B0);
+
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
@@ -88,6 +89,7 @@ private:
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
 	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
 	double RK4integrate(double, SurfaceBehavior);
+
 	
 	//the T=0 Fermi function
 	//double factor_f(double x);

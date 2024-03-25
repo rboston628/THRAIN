@@ -56,7 +56,7 @@ private:
 	double GG;
 	
 	//integrate Lane-Emden using basic RK4
-	int populateValues(const std::size_t, double);
+	std::size_t populateValues(const std::size_t, double);
 	
 	//methods for handling the BCs
 	void setupCenter();		//for conformity
