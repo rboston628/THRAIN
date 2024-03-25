@@ -37,7 +37,6 @@ int main(int argc, char* argv[]){
 	io::echo_input(calcdataIn);
 	//prepare the output, based on the input
 	io::setup_output(calcdataIn, calcdataOut);
-
 	//make the background stellar model
 	create_star(calcdataOut);
 	//write output on the bakground stellar model
