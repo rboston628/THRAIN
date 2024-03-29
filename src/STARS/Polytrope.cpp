@@ -303,7 +303,7 @@ Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	}
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
-	printf("  indexFit  = %d\n", indexFit);
+	printf("  indexFit  = %lu\n", indexFit);
 	printf("r[indexFit] = %0.32le\t", rad(indexFit));
 	printf("y[indexFit] = %0.32le\n", Y[indexFit][y]);
 	setupCenter();
@@ -492,6 +492,7 @@ double Polytrope::getAstar(std::size_t X, double GamPert){
 
 double Polytrope::getU(std::size_t X){
 	if(X==0) return 3.0;
+	if(n==0.0) return 3.0;
 	return - Y[X][x]*base[X]*Y[X][y]/Y[X][z];
 }
 
@@ -554,8 +555,8 @@ void Polytrope::getVgCenter(double *Vc, int& maxPow, double g){
 void Polytrope::getUCenter(double *Uc, int& maxPow){
 	double x1 = Y[len-1][x];
 	if(maxPow>=0) Uc[0] = 3.0;
-	if(maxPow>=2) Uc[1] = -n/5.*pow(x1,2);
-	if(maxPow>=4) Uc[2] = 54.*n*(7.*n/8100. - 1./1296. + (5.-8.*n)/15120.)*pow(x1,4);
+ 	if(maxPow>=2) Uc[1] = -0.2 * n * pow(x1,2);
+ 	if(maxPow>=4) Uc[2] = n*(19.*n-25.)/1050. *pow(x1,4);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }

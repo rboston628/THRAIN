@@ -143,7 +143,6 @@ ChandrasekharWD::ChandrasekharWD(double Y0, std::size_t L, double mu0, double k,
 	printf("%0.8lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
 }
 
-
 //initalize white dwarf from central value of y and length, with specific step size
 //this should only be used for testing scaling issues
 ChandrasekharWD::ChandrasekharWD(double Y0, std::size_t L, const double dx, double mu0, double k, double acore, double aswap)
@@ -187,13 +186,12 @@ ChandrasekharWD::ChandrasekharWD(double Y0, std::size_t L, const double dx, doub
 	}
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
-	printf("  indexFit  = %d\n", indexFit);
+	printf("  indexFit  = %lu\n", indexFit);
 	printf("r[indexFit] = %0.32le\n", rad(indexFit));
 	setupCenter();
 	setupSurface();
 	printf("%0.2lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
 }
-
 
 ChandrasekharWD::~ChandrasekharWD(){
 	delete[] xi;
@@ -362,7 +360,6 @@ double ChandrasekharWD::sound_speed2(std::size_t X, double GamPert){
 	else               return GamPert  *A0/B0*f[X]/pow(x[X],3)/mue[X];
 }
 
-
 double ChandrasekharWD::Radius(){return Rn*xi[len-1];}	//total radius
 double ChandrasekharWD::Mass(){return mr(len-1);}//total mass
 double ChandrasekharWD::Gee(){return G_CGS;}
@@ -505,7 +502,6 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 	if(maxPow  > 4) maxPow = 4;
 }
 
-
 void ChandrasekharWD::writeStar(char const *const c){
 	//create names for files to be opened
 	std::string filename, rootname, txtname, outname;
@@ -540,7 +536,7 @@ void ChandrasekharWD::writeStar(char const *const c){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	std::string title = graph_title();
 	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
@@ -572,7 +568,7 @@ void ChandrasekharWD::writeStar(char const *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
@@ -606,7 +602,7 @@ void ChandrasekharWD::writeStar(char const *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");
@@ -642,7 +638,7 @@ void ChandrasekharWD::writeStar(char const *const c){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %d\n", length());
+	fprintf(gnuplot, "set samples %lu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x 10\n");

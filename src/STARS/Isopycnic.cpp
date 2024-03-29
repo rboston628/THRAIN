@@ -144,6 +144,7 @@ void Isopycnic::setupCenter(){}
 
 void Isopycnic::getAstarCenter(double *Ac, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+	// if(maxPow>=0) Ac[0] = 0.0;
 	for(int k=0; k<=maxPow/2; k++){
 		Ac[k] = -2./Gam1;
 	}
@@ -151,6 +152,7 @@ void Isopycnic::getAstarCenter(double *Ac, int& maxPow, double g){
 
 void Isopycnic::getVgCenter(double *Vc, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+	// if(maxPow>=0) Vc[0] = 0.0;
 	for(int k=0; k<=maxPow/2; k++){
 		Vc[k] = 2./Gam1;
 	}
