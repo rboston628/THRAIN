@@ -27,6 +27,7 @@ public:
 	//the constructors
 	ChandrasekharWD(double, std::size_t,               double MU0, double K, double AC, double AS);
 	ChandrasekharWD(double, std::size_t, const double, double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t, const double A0, const double B0);
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
@@ -50,18 +51,19 @@ public:
 	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
+	void basic_setup();
+ 	void init_arrays();
 	double Y0;		// central value of y, y^2=1+x^2
 	double X0, X02, Y02;
-	//double A0;		//pressure scale
-	//double B0;		//density scale
-	double Rn;		//radius scale
+	double Rn;		// radius scale
+	double A0, B0;  // pressure and density scales
 	std::size_t len;
 	double dx;
 	//lane-emden solution functions
 	double *xi;	//normalized radius
 	double *x;  //the relativity factor x = pF/mc
 	double *y;	//Chandrasekhar's y, y^2=1+x^2
-	double *z;	//derivative (dy/dxi)  note: dx/dxi = (dy/dxi)/x
+	double *z;	//derivative (dy/dxi)  note: dx/dxi = (dy/dxi) * y/x
 	double *mass;
 	double *f;
 		
@@ -97,6 +99,8 @@ public:
 
 	//a particular output generation for this model of white dwarf
 	void writeStar(char const *const c=NULL) override;
+	void printDeg(char const *const c);
+ 	void printChem(char const *const c);
 };
 
 #endif

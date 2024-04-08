@@ -217,7 +217,7 @@ double MESA::dPhidr(std::size_t X){
 double MESA::mr(std::size_t X){
 	if(X>=0 && X<len) return Mtot*mass->interp(radi[X]);
 	else {
-		printf("\nm out of range\n");	
+		fprintf(stderr, "\nm out of range\n");	
 		return nan("");
 	}
 }

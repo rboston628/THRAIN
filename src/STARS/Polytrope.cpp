@@ -515,10 +515,8 @@ double Polytrope::sound_speed2(std::size_t X, double GamPert){
 	else               return GamPert*P0*Y[X][y]/rho0;
 }
 
-
 double Polytrope::Radius(){return rad(len-1);}	//total radius
 double Polytrope::Mass(){return mr(len-1);}//total mass
-
 
 // **************************  CENTRAL BOUNDARY **************************************
 // the following provide coefficients for central expansions of A*, Vg, U, c1 in trms of x=r/R
@@ -527,27 +525,29 @@ double Polytrope::Mass(){return mr(len-1);}//total mass
 //	The expansion coefficients must be in powers of x=r/R, not in powers of xi = r/Rn
 void Polytrope::setupCenter(){
 	//these are coefficients y(x) = 1 + th[1]xi^2 + th[2]xi^4 + th[3] xi^6 + ...
-	ac[0] = 1.0; ac[1] = -1.0/6.0; ac[2] = n/120.; ac[3] = n*(5.-8.*n)/15120.;
+	ac[0] = 1.0;
+	ac[1] = -1.0/6.0;
+	ac[2] = n/120.;
+	ac[3] = n*(5.-8.*n)/15120.;
 }
 
 void Polytrope::getAstarCenter(double *AC, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
-	double x1 = Y[len-1][x];
-	double AV = (n*Gam1)/(n+1.) - 1.;
-	//depending on power requested, return appropriate number of terms
-	if(maxPow>=0) AC[0] = 0.0;
-	if(maxPow>=2) AC[1] = AV*(n+1.)/(3.*Gam1)*pow(x1,2);
-	if(maxPow>=4) AC[2] = AV*2.*(n+1.)*(1./36.-n/60.)/Gam1*pow(x1,4);
-	//if more  terms than this requested, cap number of terms
-	if(maxPow> 4) maxPow = 4;
+	// for polytrope, A* = (const) * Vg
+ 	double AV = (n*Gam1)/(n+1.) - 1.;
+ 	this->getVgCenter(AC, maxPow, Gam1);
+ 	for(int i=0; i<=maxPow/2; i++){
+ 		AC[i] *= AV;
+ 	}
 }
 
 void Polytrope::getVgCenter(double *Vc, int& maxPow, double g){
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	double x1 = Y[len-1][x];
+	//depending on power requested, return appropriate number of terms
 	if(maxPow>=0) Vc[0] = 0.0;
 	if(maxPow>=2) Vc[1] = (n+1.)/(3.*Gam1)*pow(x1,2);
-	if(maxPow>=4) Vc[2] = 2.*(n+1.)*(1./36.-n/60.)/Gam1*pow(x1,4);
+	if(maxPow>=4) Vc[2] = (n+1.)/(90.*Gam1)*(5.-3.*n)*pow(x1,4);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4; 
 }
@@ -564,13 +564,13 @@ void Polytrope::getUCenter(double *Uc, int& maxPow){
 void Polytrope::getC1Center(double *cc, int& maxPow){
 	double x1 = Y[len-1][x];
 	double z1 = Y[len-1][z];
-	if(maxPow>=0) cc[0] = -3.*z1/x1;
-	if(maxPow>=2) cc[1] = 3.*n*z1/(10.*x1)*pow(x1,2);
-	if(maxPow>=4) cc[2] = n*(2.*n+25.)*z1/(1400.0*x1)*pow(x1,4);
+	//depending on power requested, return appropriate number of terms
+ 	if(maxPow>=0) cc[0] = -3.0*z1/x1;
+ 	if(maxPow>=2) cc[1] = -0.3*n*z1*x1;
+ 	if(maxPow>=4) cc[2] = -n*(2.*n+25.)*z1/(1400.0)*pow(x1,3);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }
-
 
 // **************************  SURFACE BOUNDARY  ***************************************
 // the following provide coefficients for surface expansions of A*, Vg, U, c1 in terms of t=1-r/R
@@ -589,7 +589,7 @@ void Polytrope::setupSurface(){
 	as[0] = 0.0;
 	for(int i=1; i<6;i++) as[i] = a1;
 	if(n==0){
-		as[1] = a1 = 2.0;
+		as[1] = 2.0;
 		as[2] = -1.0;
 		as[3] = as[4] = as[5] = 0.0;
 	}
@@ -619,7 +619,7 @@ void Polytrope::getAstarSurface(double *As, int& maxPow, double g){
 }
 
 void Polytrope::getVgSurface(double *Vs, int& maxPow, double g){
-// coefficients of Vg must extend up to maxPow-1
+	// coefficients of Vg must extend up to maxPow-1
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	double x1 = Y[len-1][x];
 	double a1 =-Y[len-1][z]*x1;
