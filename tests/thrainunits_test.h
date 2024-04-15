@@ -62,6 +62,7 @@ public:
         fakeData1.star = nullptr;
         fakeData1.driver = nullptr;
         fakeData1.i_err = 0;
+        fakeData1.units = units::Units(-85);
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
         // assert units safely zeroed out
         TS_ASSERT(fakeData1.unitset.G == 0.0);
@@ -81,6 +82,7 @@ public:
         fakeData2.driver = nullptr;
         fakeData2.i_err = 0;
         fakeData2.params = 0;
+        fakeData1.units = units::Units::astro;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData2));
         // assert all safely zeroed out
         TS_ASSERT(fakeData2.mass == 0.0);
