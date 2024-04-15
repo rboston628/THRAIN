@@ -389,7 +389,12 @@ int echo_input(Calculation::InputData &calcdata){
 			fprintf(output_file, "cowling\t");
 			break;	
 	}
-	fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the adiabatic index
+	double a = calcdata.adiabatic_index*3.0;
+	if(fabs(a-5.0)<1e-10) fprintf(output_file, "5/3\n");
+	else if (fabs(a-4.0)<1e-10) fprintf(output_file, "4/3\n");
+	else fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the requested mode numbers
 	int checkcount=0;
 	for(int L : calcdata.l){
 		for(int K : calcdata.kl.at(L)){
@@ -401,9 +406,6 @@ int echo_input(Calculation::InputData &calcdata){
 		printf("non-matching numbers of modes");
 		return 1;
 	}
-	// for(int j=0; j<calcdata.mode_num; j++){
-	// 	fprintf(output_file, "%d,%d\n", calcdata.l[j], calcdata.k[j]);
-	// }
 	
 	printf("done\n");
 	fflush(output_file);
@@ -510,7 +512,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
@@ -600,7 +602,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	if(calcdata.teff!=0.0)
 	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ.c_str(), calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
 	else
-	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
+	fprintf(output_file,"%s      Teff    %s= N/A \n",    dwarf[d++], unitZ.c_str());	
 	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG.c_str(), calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ.c_str(), calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);
