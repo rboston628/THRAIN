@@ -44,9 +44,7 @@ const std::unordered_map<Units, UnitSet> unitSets = {
 	{Units::geo, {1.0, 1.0, 1.0/C_CGS, 1.0, C_CGS/G_CGS}},
 	// standard international units
 	{Units::SI, {G_CGS*1.0e-3, C_CGS*1.0e-2, 100, 1.0, 1000.0}},
-	{Units::CGS, {G_CGS, C_CGS, 1.0, 1.0, 1.0}},
-	// the default, erroneous case
-	{Units(-85), {0.0, 0.0, 0.0, 0.0, 0.0}}
+	{Units::CGS, {G_CGS, C_CGS, 1.0, 1.0, 1.0}}
 };
 
 //format units in the chosen unit system

@@ -63,13 +63,9 @@ public:
         fakeData1.driver = nullptr;
         fakeData1.i_err = 0;
         fakeData1.units = units::Units::astro;
+        fprintf(stderr, "BEFORE\n");
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
-        // assert units safely zeroed out
-        // TS_ASSERT(fakeData1.unitset.G == 0.0);
-        // TS_ASSERT(fakeData1.unitset.C == 0.0);
-        // TS_ASSERT(fakeData1.unitset.base_length == 0.0);
-        // TS_ASSERT(fakeData1.unitset.base_time == 0.0);
-        // TS_ASSERT(fakeData1.unitset.base_mass == 0.0);
+        fprintf(stderr, "AFTER\n");
         // assert all safely zeroed out
         TS_ASSERT(fakeData1.mass == 0.0);
         TS_ASSERT(fakeData1.radius == 0.0);
