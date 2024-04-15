@@ -389,7 +389,12 @@ int echo_input(Calculation::InputData &calcdata){
 			fprintf(output_file, "cowling\t");
 			break;	
 	}
-	fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the adiabatic index
+	double a = calcdata.adiabatic_index*3.0;
+	if(fabs(a-5.0)<1e-10) fprintf(output_file, "5/3\n");
+	else if (fabs(a-4.0)<1e-10) fprintf(output_file, "4/3\n");
+	else fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the requested mode numbers
 	int checkcount=0;
 	for(int L : calcdata.l){
 		for(int K : calcdata.kl.at(L)){
@@ -401,9 +406,6 @@ int echo_input(Calculation::InputData &calcdata){
 		printf("non-matching numbers of modes");
 		return 1;
 	}
-	// for(int j=0; j<calcdata.mode_num; j++){
-	// 	fprintf(output_file, "%d,%d\n", calcdata.l[j], calcdata.k[j]);
-	// }
 	
 	printf("done\n");
 	fflush(output_file);
