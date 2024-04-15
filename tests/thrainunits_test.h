@@ -63,6 +63,12 @@ public:
         fakeData1.driver = nullptr;
         fakeData1.i_err = 0;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
+        // assert units safely zeroed out
+        TS_ASSERT(fakeData1.unitset.G == 0.0);
+        TS_ASSERT(fakeData1.unitset.C == 0.0);
+        TS_ASSERT(fakeData1.unitset.base_length == 0.0);
+        TS_ASSERT(fakeData1.unitset.base_time == 0.0);
+        TS_ASSERT(fakeData1.unitset.base_mass == 0.0);
         // assert all safely zeroed out
         TS_ASSERT(fakeData1.mass == 0.0);
         TS_ASSERT(fakeData1.radius == 0.0);
@@ -100,6 +106,13 @@ public:
         TS_ASSERT_DELTA(fakeData.zsurf, zsurf, 1e-4);
         TS_ASSERT(fakeData.logg == logg);
         TS_ASSERT(fakeData.freq0 == sqrt(G_CGS*mcgs*pow(rcgs,-3)));
+    }
+
+    void test_setAllUnits_noparams(){
+        do_test_setUnits_noparams(units::Units::astro);
+        do_test_setUnits_noparams(units::Units::geo);
+        do_test_setUnits_noparams(units::Units::SI);
+        do_test_setUnits_noparams(units::Units::CGS);
     }
 
     void test_setAllUnits(){

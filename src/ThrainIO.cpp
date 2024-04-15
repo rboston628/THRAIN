@@ -602,7 +602,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	if(calcdata.teff!=0.0)
 	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ.c_str(), calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
 	else
-	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
+	fprintf(output_file,"%s      Teff    %s= N/A \n",    dwarf[d++], unitZ.c_str());	
 	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG.c_str(), calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ.c_str(), calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);
