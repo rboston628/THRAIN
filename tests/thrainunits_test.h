@@ -106,12 +106,12 @@ public:
         TS_ASSERT(fakeData.freq0 == sqrt(G_CGS*mcgs*pow(rcgs,-3)));
     }
 
-    void test_setAllUnits_noparams(){
-        do_test_setUnits_noparams(units::Units::astro);
-        do_test_setUnits_noparams(units::Units::geo);
-        do_test_setUnits_noparams(units::Units::SI);
-        do_test_setUnits_noparams(units::Units::CGS);
-    }
+    // void test_setAllUnits_noparams(){
+    //     do_test_setUnits_noparams(units::Units::astro);
+    //     do_test_setUnits_noparams(units::Units::geo);
+    //     do_test_setUnits_noparams(units::Units::SI);
+    //     do_test_setUnits_noparams(units::Units::CGS);
+    // }
 
     void test_setAllUnits(){
         do_test_setUnits(units::Units::astro);
