@@ -13,13 +13,13 @@ public:
         delete suite; 
     }
 
-    // void setUp() {
-    //     freopen("tests/artifacts/logio.txt", "a", stdout);
-    // }
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
 
-    // void tearDown() {
-    //     freopen("/dev/tty", "w", stdout);
-    // }
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
 
     Calculation::OutputData setupFakeCalcData(units::Units unitType){
         Calculation::OutputData fakeData;
@@ -62,13 +62,13 @@ public:
         fakeData1.star = nullptr;
         fakeData1.driver = nullptr;
         fakeData1.i_err = 0;
-        fakeData1.units = units::Units::astro;
+        fakeData1.units = unitType;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
         // assert all safely zeroed out
-        TS_ASSERT(fakeData1.mass == 0.0);
-        TS_ASSERT(fakeData1.radius == 0.0);
-        TS_ASSERT(fakeData1.zsurf == 0.0);
-        TS_ASSERT(fakeData1.logg == 0.0);
+        TS_ASSERT_EQUALS(fakeData1.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.logg, 0.0);
 
         // test with a zero-set params
         Calculation::OutputData fakeData2;
@@ -76,13 +76,13 @@ public:
         fakeData2.driver = nullptr;
         fakeData2.i_err = 0;
         fakeData2.params = 0;
-        fakeData2.units = units::Units::astro;
+        fakeData2.units = unitType;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData2));
         // assert all safely zeroed out
-        TS_ASSERT(fakeData2.mass == 0.0);
-        TS_ASSERT(fakeData2.radius == 0.0);
-        TS_ASSERT(fakeData2.zsurf == 0.0);
-        TS_ASSERT(fakeData2.logg == 0.0);
+        TS_ASSERT_EQUALS(fakeData2.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.logg, 0.0);
     }    
 
     void do_test_setUnits(units::Units unitType){
