@@ -15,6 +15,8 @@
 #include <random>
 #include <stdio.h>
 
+#define ASSERT_REL_DIFFERENCE(x, y, err) { TS_ASSERT_LESS_THAN(relative_difference(x,y), err) }
+
 double center_expand(double const x, double const *const ac, int const maxPow){
     double value = ac[0];
     for(int i=1; i<=maxPow/2; i++){
@@ -41,7 +43,8 @@ double surface_expand_inverse(double const t, double const *const ac, int const 
 }
 
 double relative_difference(double x, double y){
-    return 2.0 * std::abs(x-y) / std::abs(x+y);
+    double denom = (x*y==0.0 ? 1.0 : std::abs(x+y));
+    return 2.0 * std::abs(x-y) / denom;
 }
 
 class StarTest : public CxxTest::TestSuite {
@@ -53,6 +56,7 @@ static StarTest *createSuite (){
     return new StarTest();
 }
 static void destroySuite(StarTest *suite) { 
+    printf("\n##########");
     delete suite; 
 }
 
@@ -67,7 +71,6 @@ void tearDown() {
 /***** basic tests of the SSR function *****/
 
 void test_bad_SSR(){
-    printf("\nSTAR TESTS");
     /* Tests that low number of grid points
     *  will produce a bad SSR*/
     std::size_t const LEN = 10;
@@ -114,7 +117,7 @@ void test_uniform_star(){
     ** Because it happens that g scales linearly with radius, it 
     ** happens to work out that the numerical derivatives in the 
     ** SSR are exactly correct*/
-    printf("\n\tSTAR TESTS - ISOPYCNIC");
+
     const std::size_t LEN = 100;
     Star *testStar = new Isopycnic(LEN);
 
@@ -261,8 +264,8 @@ void do_test_surface(Star *const testStar, double const tol){
         TS_ASSERT_DELTA( surface_expand_zero(t, cs, maxPow), testStar->getC(i), tol );
         // while c1, U stay on the order 1, these two functions blow up near the surface
         // requiring the relative difference for comparison
-        TS_ASSERT_LESS_THAN( relative_difference(surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1)), tol );
-        TS_ASSERT_LESS_THAN( relative_difference(surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1)), tol );
+        ASSERT_REL_DIFFERENCE( surface_expand_inverse(t, Vs, maxPow), testStar->getVg(i,GAM1), tol );
+        ASSERT_REL_DIFFERENCE( surface_expand_inverse(t, As, maxPow), testStar->getAstar(i,GAM1), tol );
     }
 }
 
@@ -299,7 +302,8 @@ void test_polytrope_n0(){
     ** solution of an isopycnic (aka uniform-density) star.  The polytrope solution 
     ** should arrive at the isopycnic solution, but through numerical 
     ** integration as opposed to direct setting by an equation.*/
-    printf("\n\tSTAR TESTS - POLYTROPE n=0.0");
+    fprintf(stderr, "\n##########");
+    fprintf(stderr, "\nSTAR TESTS - POLYTROPE n=0.0");
     double const INDEX (0.0);
     std::size_t const LEN (1001);
     Star *uniform = new Isopycnic(LEN);
@@ -344,8 +348,7 @@ void test_polytrope_n0(){
 }
 
 void test_polytrope_n1(){
-    fprintf(stderr, "\n##########\nSTAR TESTS - POLYTROPE n=1.0\n");
-    printf("\n\tSTAR TESTS - POLYTROPE n=1.0");
+    fprintf(stderr, "\nSTAR TESTS - POLYTROPE n=1.0");
     double const INDEX (1.0);
     std::size_t const LEN (1001);
     Polytrope *testStar = new Polytrope(INDEX,LEN);
@@ -385,7 +388,7 @@ void test_polytrope_n5(){
     // it is useful only because it has an exact solution
     // the radius and mass cannot be tested, as they do not exist
 
-    printf("\n\tSTAR TESTS - POLYTROPE n=5.0");
+    fprintf(stderr, "\nSTAR TESTS - POLYTROPE n=5.0");
     const double INDEX = 5.0;
     const std::size_t LEN = 1001;
     Polytrope *testStar = new Polytrope(INDEX,LEN);
@@ -414,7 +417,7 @@ void test_polytrope_n5(){
 }
 
 void test_several_polytropes(){
-    printf("\n\tSTAR TESTS - SSR FOR SEVERAL POLYTROPES");
+    fprintf(stderr, "\nSTAR TESTS - SSR FOR SEVERAL POLYTROPES");
     double const INDEX[] = {2.0, 2.5, 3.0, 3.5, 4.0};
     std::size_t const LEN = 1001;
     Star *testStar;
@@ -435,7 +438,7 @@ void test_several_polytropes(){
 }
 
 void test_polytrope_MR_constructor(){
-    printf("\n\tSTAR TESTS - POLYTROPE M,R CONSTRUCTOR");
+    fprintf(stderr, "\nSTAR TESTS - POLYTROPE M,R CONSTRUCTOR");
     const double BigM[] = {0.2, 0.6, 1.0, 2.0, 10.0};
     const double BigR[] = {0.1, 1.1, 1.2, 20.0};
     const double index[] = {1.0, 1.5, 3.0};
@@ -496,7 +499,7 @@ void test_make_exact_error_graph(){
 /***** TESTS OF CHANDRASEKHAR WD *****/
 
 void test_CHWD_against_chandrasekhar(){
-    printf("\n\tSTAR TEST - CHANDRASEKHAR TABLE");
+    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR TABLE");
     // Chandrasekhar 1939 table 27 has properties of several WDs
     // to compare must use values of A0, B0 that were in use in 1939
 
@@ -526,8 +529,8 @@ void test_CHWD_against_chandrasekhar(){
         // assert reasonable numerical error
         TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
         // assert agreement with tabular values in Chandrasekhar 1939
-        TS_ASSERT_DELTA( M, M1939[n], 1.e-1);
-        TS_ASSERT_DELTA( R, R1939[n], 1.e8); // note units in cm
+        ASSERT_REL_DIFFERENCE( M, M1939[n], 1.e-2);
+        ASSERT_REL_DIFFERENCE( R, R1939[n], 1.e-2);
         // write out values to table
         fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
         
@@ -540,103 +543,106 @@ void test_CHWD_against_chandrasekhar(){
     fclose(fp);
 }
 
-// void test_CHWD_grad_constructor(){
-//     printf("\n\tSTAR TEST - CHANDRASEKHAR CONSTRUCTORS");
-//     // test the constructor that accepts a gradiant in mu
-//     // try both a constant gradient, and a sigmoidal gradient
-//     std::size_t const LEN(1001);
-//     ChandrasekharWD *testStar;
-//     const double Y0[] = {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0};
-//     double F0;
+void test_CHWD_grad_constructor(){
+    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS");
+    // test the constructor that accepts a gradiant in mu
+    // try both a constant gradient, and a sigmoidal gradient
+    std::size_t const LEN(1001);
+    ChandrasekharWD *testStar;
+    const double Y0[] = {1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0};
+    double F0;
 
-//     for(double y0 : Y0){
-//         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
-//         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-//         do_test_center(testStar, 1.e-4);
-//         do_test_surface(testStar, 1.0);
-//         delete testStar;
-//         F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-//         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
-//         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-//         do_test_center(testStar, 1.e-4);
-//         do_test_surface(testStar, 1.0);
-//         delete testStar;
-//     }
-// }
+    for(double y0 : Y0){
+        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
+        testStar = new ChandrasekharWD(y0, LEN, 2.0, 0.0, 1.0, 0.0);
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        // TODO make surface test work
+        // do_test_surface(testStar, 1.e-2);
+        delete testStar;
+        // TODO the below should work with new-type CHWD constructors
+        // F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        // testStar = new ChandrasekharWD(y0, LEN, 2.0, 2.0, 0.3, 0.4);
+        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        // do_test_center(testStar, 1.e-4);
+        // // do_test_surface(testStar, 1.0);
+        // delete testStar;
+    }
+}
 
 // TODO read in star outputs, compare
 
 /***** TESTS OF MESA WRAPPER ******/
 
-// void test_MESA_fit(){
-//     // create a simple star model from a polytrope
-//     // save its data to a file, formatted like MESA data
-//     // load the file into a MESA wrapper
-//     // check that the knots correspond
-//     // calculate the SSR of the simple model
-//     // ensure the SSR of the wrapper is similar
-//     printf("\n\tSTAR TEST - MESA FIT");
-//     double index = 2.2;
-//     double M = MSOLAR, R = 1.35*REARTH;
-//     std::size_t LEN(1000);
-//     Polytrope *refStar = new Polytrope(M, R, index, LEN);
-//     double Gamma = 5./3.;
-//     // print using MESA v1.01 format
-//     std::string testfile ("tests/inputs/test_polytrope_n=2.2_v101.dat");
-//     FILE *fp = fopen(testfile.c_str(), "w");
-//     // first line formatted N Mstar Rstar Lstar vx100
-//     fprintf(fp, "%lu %le %le 0.0 101\n", LEN, M, R);
-//     for(std::size_t i=0; i<LEN; i++){
-//         // column 1 = index, from 1 to LEN (i+1)
-//         // column 2 = radius
-//         // column 3 = mass
-//         // column 4 = luminosity = 0
-//         fprintf(fp, "%lu %0.16le %0.16le 0.0 ", i+1, refStar->rad(i), refStar->mr(i));
-//         // column 5 = pressure
-//         // column 6 = temperature = 0 except last two
-//         // column 7 = density
-//         // column 8 = del = 0
-//         double t = (i<LEN-2 ? 0.0 : 1.2e4);
-//         fprintf(fp, "%0.16le %0.16le %0.16le 0.0 ", refStar->P(i), t, refStar->rho(i));
-//         // column 9 = Brunt-Vaisala
-//         // column 10 = Gamma1
-//         // column 11 onward = stuff we don't care about
-//         fprintf(fp, "%0.16le %0.16le 0.0\n", -refStar->Schwarzschild_A(i,Gamma)*refStar->dPhidr(i), Gamma);
-//     }
-//     fclose(fp);
-//     MESA *testStar = new MESA(testfile.c_str(), LEN);
-//     double DSCALE = M * pow(R,-3);
-//     double PSCALE = G_CGS * M * pow(R,-2);
-//     for(std::size_t i=2; i<LEN-2; i++){
-//         TS_ASSERT_DELTA(refStar->rad(i), testStar->rad(i), 1.e-15 * R);
-//         // TS_ASSERT_DELTA(refStar->mr(i), testStar->mr(i), 1.e0);
-//         // TS_ASSERT_DELTA(refStar->P(i), testStar->P(i), 1.e-15 * PSCALE);
-//         // TS_ASSERT_DELTA(refStar->rho(i), testStar->rho(i), 1.0);
-//         // TS_ASSERT_DELTA(refStar->dPhidr(i), testStar->dPhidr(i), 1.e-2);
-//         // //
-//         // TS_ASSERT_DELTA(refStar->getU(i), testStar->getU(i), 1.e-2);
-//         // TS_ASSERT_DELTA(refStar->getC(i), testStar->getC(i), 1.e-2);
-//         // TS_ASSERT_DELTA(refStar->getVg(i), testStar->getVg(i), 1.e-2);
-//         // TS_ASSERT_DELTA(refStar->getAstar(i), testStar->getAstar(i), 1.e-2);
-//     }
-//     printf("REF SSR = %le\n", refStar->SSR());
-//     printf("TEST SSR = %le\n", testStar->SSR());
-//     printf("TEST STAR LEN = %lu\n", testStar->length());
-// }
+void test_MESA_fit(){
+    /* create a simple star model from a polytrope
+    *  save its data to a file, formatted like MESA data
+    *  load the file into a MESA wrapper
+    *  check that the knots correspond */
+    fprintf(stderr, "\nSTAR TESTS - MESA FIT");
+    double index = 2.2;
+    double M = MSOLAR, R = 1.35*REARTH;
+    std::size_t LEN(1001);
+    Polytrope *refStar = new Polytrope(M, R, index, LEN);
+    // print using MESA v1.01 format
+    std::string testfile ("tests/inputs/test_polytrope_n=2.2_v101.dat");
+    FILE *fp = fopen(testfile.c_str(), "w");
+    // first line formatted N Mstar Rstar Lstar vx100
+    fprintf(fp, "%lu %le %le 0.0 101\n", LEN, M, R);
+    for(std::size_t i=0; i<LEN; i++){
+        // column 1 = index, from 1 to LEN (i+1)
+        // column 2 = radius
+        // column 3 = mass
+        // column 4 = luminosity = 0
+        fprintf(fp, "%lu %0.16le %0.16le 0.0 ", i+1, refStar->rad(i), refStar->mr(i));
+        // column 5 = pressure
+        // column 6 = temperature = 0 except last two
+        // column 7 = density
+        // column 8 = del = 0
+        double t = (i<LEN-2 ? 0.0 : 1.2e4);
+        fprintf(fp, "%0.16le %0.16le %0.16le 0.0 ", refStar->P(i), t, refStar->rho(i));
+        // column 9 = Brunt-Vaisala
+        // column 10 = Gamma1
+        // column 11 onward = stuff we don't care about
+        fprintf(fp, "%0.16le %0.16le 0.0\n", -refStar->Schwarzschild_A(i)*refStar->dPhidr(i), refStar->Gamma1(i));
+    }
+    fclose(fp);
+    // create a MESA model from that file
+    MESA *testStar = new MESA(testfile.c_str(), LEN);
+    // some routine verifications
+    TS_ASSERT_EQUALS(testStar->length(), 2*(LEN-1) + 1);
+    TS_ASSERT_LESS_THAN(testStar->SSR(), 1.0/LEN)
+    // assert both models are equal at the knots to within relative precision
+    double const MACHINE_PRECISION = 1.e-15;
+    for(std::size_t i=0; i<LEN-2; i++){
+        ASSERT_REL_DIFFERENCE(refStar->rad(i),      testStar->rad(2*i),      MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->mr(i),       testStar->mr(2*i),       MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->P(i),        testStar->P(2*i),        MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->rho(i),      testStar->rho(2*i),      MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->dPhidr(i),   testStar->dPhidr(2*i),   MACHINE_PRECISION);
+        // these ae calculare values, but should still be within precision
+        ASSERT_REL_DIFFERENCE(refStar->getU(i),     testStar->getU(2*i),     MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->getC(i),     testStar->getC(2*i),     MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->getVg(i),    testStar->getVg(2*i),    MACHINE_PRECISION);
+        ASSERT_REL_DIFFERENCE(refStar->getAstar(i), testStar->getAstar(2*i), MACHINE_PRECISION);
+    }
+}
 
-// void test_MESA_constructor(){
-//     // should first calculate SSR using only the knots
-//     // then check the SSR isn't very much worse
+void test_MESA_constructor(){
+    // should first calculate SSR using only the knots
+    // then check the SSR isn't very much worse
 
-//     printf("\n\tSTAR TEST - MESA CONSTRUCTOR");
-//     std::size_t const LEN(5000);
-//     std::string mesa_file = "mesa_co_wd_cold.dat";
-//     MESA *testStar = new MESA(mesa_file.c_str(), LEN);
-//     TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-4);
-//     do_test_center(testStar, 1.e-4);
-//     do_test_surface(testStar, 1.e-6);
-//     delete testStar;
-// }
+    fprintf(stderr, "\nSTAR TESTS - MESA BOUNDARIES");
+    std::size_t const LEN(101);
+    std::string mesa_file = "mesa_co_wd_cold.dat";
+    MESA *testStar = new MESA(mesa_file.c_str(), LEN);
+    TS_ASSERT_LESS_THAN( testStar->SSR(), 1.0e-2 );
+    do_test_center(testStar, 1.e-4);
+    // TODO make surface work
+    // do_test_surface(testStar, 1.e-6);
+    delete testStar;
+}
 
 // TODO make reduced data file
 

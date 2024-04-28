@@ -535,10 +535,10 @@ void ChandrasekharWD::getAstarSurface(double *As, int& maxPow, double g){
 	double a1 =-x1*z[len-1];
 	int O=1;
 	//depending on power requested, return appropriate number of terms
-	if(maxPow>=-1) As[O-1] = 0.0;
+	if(maxPow>=-1) As[O-1] = 1.5;
 	if(maxPow>= 0) As[O  ] = 0.75*a1;
 	if(maxPow>= 1) As[O+1] = 0.75*a1 - (8./Gam1 + 0.375)*a1*a1;
-	if(maxPow>= 2) As[O+2] = 0.0;
+	if(maxPow>= 2) As[O+2] = 0.75*a1 - (16./Gam1 + 0.75)*a1*a1 + (0.8/Gam1 + 3./16.)*a1*a1*a1;
 	if(maxPow>= 3) As[O+3] = 0.0;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
@@ -550,17 +550,17 @@ void ChandrasekharWD::getVgSurface(double *Vs, int& maxPow, double g){
 	double a1 =-x1*z[len-1];
 	int O=1;
 	//depending on power requested, return appropriate number of terms
-	if(maxPow>=-1) Vs[O-1] = 1.5;
-	if(maxPow>= 0) Vs[O  ] = 0.75*a1;
-	if(maxPow>= 1) Vs[O+1] = 0.75*a1 + (8./Gam1 - 0.375)*a1*a1;
-	if(maxPow>= 2) Vs[O+2] = a1*3./16.*pow(a1-2.,2)+4./3.*a1*a1*(12.+5.*a1)/Gam1;
-	if(maxPow>= 3) Vs[O+3] = -3.*a1*pow(a1-2,3)/32.+(724.*a1*a1/45. + 20.*a1 + 24.)*a1*a1/Gam1;
+	if(maxPow>=-1) Vs[O-1] = 1.5;     // NOTE this is an incorrect value
+	if(maxPow>= 0) Vs[O  ] = 0.75*a1; // NOTE this is an incorrect value
+	if(maxPow>= 1) Vs[O+1] = 8./Gam1*a1*a1;
+	if(maxPow>= 2) Vs[O+2] = (16./Gam1 - 0.8/Gam1*a1)*a1*a1;
+	if(maxPow>= 3) Vs[O+3] = ((24. - 256./35.*x1*x1) - 12./5.*a1 -132./7.*a1*a1)*a1*a1/Gam1;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
 }
 
 void ChandrasekharWD::getUSurface(double *Us, int& maxPow){
-	//these happen to all be zero at surface
+	// near the surface 
 	for(int j=0; j<=maxPow; j++){
 		Us[j] = 0.0;
 	}

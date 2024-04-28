@@ -31,9 +31,9 @@ public:
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
-	double Radius() override;	//total radius
-	double Mass() override;//total mass
-	double Gee() override; //{return G_CGS;};
+	double Radius() override;	// total radius
+	double Mass() override;     // total mass
+	double Gee() override;      // G in units
 	
 	double rad(std::size_t) override;
 	double rho(std::size_t) override, drhodr(std::size_t) override;
@@ -78,16 +78,13 @@ private:
 	//integrate using basic RK4
 	double RK4integrate(const std::size_t, double);
 	std::size_t RK4integrate(const std::size_t, double, int);
-	
-	//the T=0 Fermi function
-	//double factor_f(double x);
-	
+		
 	//methods for handling the BCs
 	double yc[4], xc[3], fc[2];	//series coefficients of y,x,f near center
 	void setupCenter();		//prepare values near center
 	void setupSurface();	//prepare values near surface
 public:
-	//methods to find central, surfae power series expansions of key variables in pulsation
+	//methods to find central, surface power series expansions of key variables in pulsation
 	void getAstarCenter(double *, int&, double g=0) override;
 	void getUCenter(double*, int&) override;
 	void getVgCenter(double*, int&, double g=0) override;
