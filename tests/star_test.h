@@ -11,7 +11,6 @@
 #include "../src/STARS/Polytrope.h"
 #include "../src/STARS/ChandrasekharWD++.h"
 #include "../src/STARS/MESA.h"
-#include <cxxtest/TestListener.h>
 #include <cxxtest/TestSuite.h>
 #include <random>
 #include <stdio.h>

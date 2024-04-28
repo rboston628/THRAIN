@@ -120,7 +120,6 @@ jobs:
         if: startsWith(matrix.config.os, 'macos')
         # the last line will replace gcc with clang inside makefile
         run: |
-          brew update
           brew install cxxtest 
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
     
