@@ -20,7 +20,7 @@
 #ifndef SIMPLEWDCLASS
 #define SIMPLEWDCLASS
 
-// #include <cstring>
+#include <cstring>
 #include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
