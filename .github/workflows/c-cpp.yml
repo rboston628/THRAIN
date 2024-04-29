@@ -146,10 +146,10 @@ jobs:
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
     
       - name: Install dependencies on windows
-          if: startsWith(matrix.config.os, 'windows')
-          # this will replace gcc with indicated compiler inside makefile
-          run: |
-            sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+        if: startsWith(matrix.config.os, 'windows')
+        # this will replace gcc with indicated compiler inside makefile
+        run: |
+          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
 
       - name: Build library
         shell: bash
