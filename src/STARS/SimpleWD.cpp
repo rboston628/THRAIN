@@ -20,7 +20,8 @@
 #ifndef SIMPLEWDCLASS
 #define SIMPLEWDCLASS
 
-#include <cstring>
+// #include <cstring>
+#include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
 
@@ -262,19 +263,19 @@ void SimpleWD::setup(){
 		return;
 	}
 	std::size_t buffer_size = 256;
-	ssize_t line_size;
+	// ssize_t line_size;
 	char *input_buffer = NULL, *pressure;
 	std::string instring;
 	EOS *pres = NULL;
-	line_size = getline(&input_buffer, &buffer_size, input_file);
+	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
-	while(line_size > 0){
-		line_size = getline(&input_buffer, &buffer_size, input_file);
-		if(line_size >1) printf("%s", input_buffer);
+	while(c != nullptr){
+		c = std::fgets(input_buffer, buffer_size, input_file);
+		if(c != nullptr) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
 		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
 		if(pres!=NULL){
-			getline(&input_buffer, &buffer_size, input_file);
+			std::fgets(input_buffer, buffer_size, input_file);
 			pressure = strtok(input_buffer, " \t\n");
 			while(pressure != NULL){
 				printf("\t%s", pressure);
