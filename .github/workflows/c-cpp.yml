@@ -161,11 +161,11 @@ jobs:
 
       # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
       - name: Build THRAIN tests
-        if: !startsWith(matrix.config.os, 'windows')
+        if: ! startsWith(matrix.config.os, 'windows')
         shell: bash
         run: make tests
 
       - name: Run tests
-        if: !startsWith(matrix.config.os, 'windows')
+        if: ! startsWith(matrix.config.os, 'windows')
         shell: bash
         run: ./tests/tests.out
