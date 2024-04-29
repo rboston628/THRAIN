@@ -264,7 +264,7 @@ void SimpleWD::setup(){
 	}
 	std::size_t buffer_size = 256;
 	// ssize_t line_size;
-	char *input_buffer = NULL, *pressure;
+	char input_buffer[buffer_size], *pressure;
 	std::string instring;
 	EOS *pres = NULL;
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
