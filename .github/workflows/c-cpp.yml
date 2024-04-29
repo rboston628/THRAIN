@@ -125,12 +125,6 @@ jobs:
           brew install cxxtest 
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
     
-      - name: Install dependencies on windows
-         if: startsWith(matrix.config.os, 'windows')
-         # this will replace gcc with indicated compiler inside makefile
-         run: |
-           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
-
       - name: Build library
         shell: bash
         run: make library
@@ -141,11 +135,9 @@ jobs:
 
       # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
       - name: Build THRAIN tests
-        if: ! startsWith(matrix.config.os, 'windows')
         shell: bash
         run: make tests
 
       - name: Run tests
-        if: ! startsWith(matrix.config.os, 'windows')
         shell: bash
         run: ./tests/tests.out
