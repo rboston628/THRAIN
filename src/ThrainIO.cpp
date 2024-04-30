@@ -97,7 +97,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	
 	//SIMPLE WD INPUT
 	else if(calcdata.model==model::SWD){
-		calcdata.input_params.reserve(10);
+		calcdata.input_params.resize(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
 		printf("Ngrid=%lu\n", calcdata.Ngrid);
@@ -107,13 +107,14 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		fscanf(input_file, "EOS:\n");
 		fprintf(swd, "# equation of state\n");
 		//read the EOS specification
-		fscanf(input_file, "\tcore\t%[^\n]", input_buffer);
+		fscanf(input_file, "\tcore\t%[^\n]\n", input_buffer);
 		fprintf(swd, "core:\n\t%s\n", input_buffer);
 		calcdata.str_input_param = std::string(input_buffer);
 		calcdata.str_input_param += std::string("\n");
-		fscanf(input_file, "\tatm\t%[^\n]", input_buffer);
+		fscanf(input_file, "\tatm\t%[^\n]\n", input_buffer);
 		fprintf(swd, "atm:\n\t%s\n\n", input_buffer);
 		calcdata.str_input_param += std::string(input_buffer);
+		printf("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
 		
 		//on a new line, specify chemical paramters
 		fscanf(input_file, "chemical parameters:\n");  //skip a line of formatting
@@ -126,7 +127,6 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		fprintf(swd, "\to \t%lf\t%lf\t%lf\n", calcdata.input_params[7], calcdata.input_params[8], calcdata.input_params[9]);
 		fprintf(swd, "\n");
 		fclose(swd);
-		printf("%s\n", calcdata.str_input_param.c_str());
 		fscanf(input_file, "\n");
 	
 		//now read in desired physical properties of star
@@ -134,7 +134,6 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		double temp;
 		//read in first physical parameter -- name as string, value as double
 		fscanf(input_file, "Params: %s %lf ", input_buffer, &temp);
-		printf("%s %lf\n", input_buffer, temp);
 		instring=std::string(input_buffer);
 		//save value in appropriate slot use bit-masking to keep track of variables
 		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
@@ -434,7 +433,9 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.teff = data_in.teff;
 	data_out.params = data_in.params;
 	//formatting units may need to be re-performed after calculation, depending on star
+	printf("MASS = %le\n", data_out.mass);
 	units::format_units(data_out);
+	printf("MASS = %le\n", data_out.mass);
 	
 	//now prepare the modes
 	data_out.mode_num = data_in.mode_num;
