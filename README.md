@@ -27,6 +27,3 @@ If you adapt parts of this code, do not remove the attributions in the source.
 If you borrow parts of this code, in addition to citing the above in publication, include attribution `borrowed from THRAIN, Reece Boston 2022` in your source code.
 
 ![image](https://github.com/rboston628/THRAIN/blob/main/documentation/thrain.png)
-
-## Operating Systems
-THRAIN will only build on macos and linux, explicitly on ubuntu.  It cannot be built on windows, due to reliance on posix-only i/o functions.  Science uses unix.  Consider taking the plunge.
