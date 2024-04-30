@@ -23,7 +23,7 @@ jobs:
     name: cpp-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install cppcheck
         run: |
            sudo apt-get install -y cppcheck
@@ -83,6 +83,17 @@ jobs:
             archiver: "7za a",
             generators: "Ninja"
           }
+        - {
+            name: "windows gcc",
+            os: windows-latest,
+            artifact: "windows_mingw.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+
         # TODO setup windows runners
 
     steps:
@@ -131,11 +142,14 @@ jobs:
         shell: bash
         run: make
 
-      # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
       - name: Build THRAIN tests
+        # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
         shell: bash
         run: make tests
 
       - name: Run tests
+        # there is no cxxtest support in windows, so can only run tests on macos or ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
         shell: bash
         run: ./tests/tests.out
