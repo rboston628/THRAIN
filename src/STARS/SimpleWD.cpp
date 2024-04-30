@@ -992,7 +992,7 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 	Prad = radiation_a/3.*pow(y[temp],4);
 	if(Prad > y[pres]) {
 		printf("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
-		printf("X %lu:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
+		printf("X %d:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
 		//do something to try to recover
 		y[pres] += Prad;
 		logY[X][pres] = std::log(y[pres]);
@@ -1501,7 +1501,7 @@ void SimpleWD::printChem(const char *const c){
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
 	for(int X=Ntot-1; X >= 0; X--){
-		fprintf(fp, "%lu", X);									//col 1
+		fprintf(fp, "%d", X);									//col 1
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3
 		fprintf(fp, "\t%0.16le", exp(logY[X][mass]));			//col 4
