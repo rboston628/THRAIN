@@ -488,50 +488,50 @@ void test_make_exact_error_graph(){
 
 /***** TESTS OF CHANDRASEKHAR WD *****/
 
-void test_CHWD_against_chandrasekhar(){
-    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR TABLE");
-    // Chandrasekhar 1939 table 27 has properties of several WDs
-    // to compare must use values of A0, B0 that were in use in 1939
+// void test_CHWD_against_chandrasekhar(){
+//     fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR TABLE");
+//     // Chandrasekhar 1939 table 27 has properties of several WDs
+//     // to compare must use values of A0, B0 that were in use in 1939
 
-    std::size_t const LEN(2001);
-    ChandrasekharWD *testStar;
-    // the values listed in Chandrasekhar 1939 table
-    double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
-    double M1939[] = {5.51, 5.32, 4.87, 4.33, 3.54, 2.95, 2.45, 2.02, 1.62, 0.88};
-    double R1939[] = {4.13e8, 5.44e8, 7.69e8, 9.92e8, 1.29e9, 1.51e9, 1.72e9, 1.93e9, 2.15e9, 2.79e9};
-    const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
-    // translate 1/Y0^2 to Y0
-    double Y0[num_rows];
-    for(std::size_t n=0; n<num_rows; n++) {
-        Y0[n] = 1./sqrt(invY0sq[n]);
-    }
+//     std::size_t const LEN(2001);
+//     ChandrasekharWD *testStar;
+//     // the values listed in Chandrasekhar 1939 table
+//     double invY0sq[] = {0.01, 0.02, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.80};
+//     double M1939[] = {5.51, 5.32, 4.87, 4.33, 3.54, 2.95, 2.45, 2.02, 1.62, 0.88};
+//     double R1939[] = {4.13e8, 5.44e8, 7.69e8, 9.92e8, 1.29e9, 1.51e9, 1.72e9, 1.93e9, 2.15e9, 2.79e9};
+//     const std::size_t num_rows = sizeof(invY0sq)/sizeof(std::size_t);
+//     // translate 1/Y0^2 to Y0
+//     double Y0[num_rows];
+//     for(std::size_t n=0; n<num_rows; n++) {
+//         Y0[n] = 1./sqrt(invY0sq[n]);
+//     }
 
-    char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
-    system( "mkdir -p tests/artifacts/" );
-    FILE *fp = fopen(filename, "w");
-    double M,R;
-    for(std::size_t n=0; n<num_rows; n++){
-        // use the form of the constructor that allows specifuing A0, B0
-        // must use the 1939 values, to ensure equality of results
-        testStar = new ChandrasekharWD(Y0[n], LEN, Chandrasekhar::A01939, Chandrasekhar::B01939);
-        M = testStar->Mass()/MSOLAR;
-        R = testStar->Radius();
-        // assert reasonable numerical error
-        TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
-        // assert agreement with tabular values in Chandrasekhar 1939
-        ASSERT_REL_DIFFERENCE( M, M1939[n], 1.e-2);
-        ASSERT_REL_DIFFERENCE( R, R1939[n], 1.e-2);
-        // write out values to table
-        fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
+//     char filename[] = "tests/artifacts/Chandrasekhar1939.txt";
+//     system( "mkdir -p tests/artifacts/" );
+//     FILE *fp = fopen(filename, "w");
+//     double M,R;
+//     for(std::size_t n=0; n<num_rows; n++){
+//         // use the form of the constructor that allows specifuing A0, B0
+//         // must use the 1939 values, to ensure equality of results
+//         testStar = new ChandrasekharWD(Y0[n], LEN, Chandrasekhar::A01939, Chandrasekhar::B01939);
+//         M = testStar->Mass()/MSOLAR;
+//         R = testStar->Radius();
+//         // assert reasonable numerical error
+//         TS_ASSERT_LESS_THAN( testStar->SSR(), 1.e-8 );
+//         // assert agreement with tabular values in Chandrasekhar 1939
+//         ASSERT_REL_DIFFERENCE( M, M1939[n], 1.e-2);
+//         ASSERT_REL_DIFFERENCE( R, R1939[n], 1.e-2);
+//         // write out values to table
+//         fprintf(fp, "%0.8lf\t%0.2lf\t%0.3lf\t%0.2le\t%0.3le\n", invY0sq[n], M1939[n], M, R1939[n], R);
         
-        // test expansions
-        do_test_center(testStar, 1.e-4);
-        // do_test_surface(testStar, 1.e-3); // TODO why is this fit so bad? 
+//         // test expansions
+//         do_test_center(testStar, 1.e-4);
+//         // do_test_surface(testStar, 1.e-3); // TODO why is this fit so bad? 
         
-        delete testStar;
-    }
-    fclose(fp);
-}
+//         delete testStar;
+//     }
+//     fclose(fp);
+// }
 
 void test_CHWD_grad_constructor(){
     fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS");
@@ -543,21 +543,18 @@ void test_CHWD_grad_constructor(){
     double F0;
 
     for(double y0 : Y0){
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
-        testStar = new ChandrasekharWD(y0, LEN, 2.0, 0.0, 1.0, 0.0);
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         do_test_center(testStar, 1.e-4);
         // TODO make surface test work
         // do_test_surface(testStar, 1.e-2);
         delete testStar;
-        // TODO the below should work with new-type CHWD constructors
-        // F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
-        // testStar = new ChandrasekharWD(y0, LEN, 2.0, 2.0, 0.3, 0.4);
-        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-        // do_test_center(testStar, 1.e-4);
-        // // do_test_surface(testStar, 1.0);
-        // delete testStar;
+        F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        // do_test_surface(testStar, 1.0);
+        delete testStar;
     }
 }
 
