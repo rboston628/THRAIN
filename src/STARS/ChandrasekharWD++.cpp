@@ -17,7 +17,6 @@
 #include "../lib/rootfind.h"
 #include "../src/ThrainMain.h"
 
-
 void ChandrasekharWD::basic_setup(){
 	//exclude unphysical values of Y0
 	if(Y0 < 1.) Y0 = 1.;
@@ -106,10 +105,10 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 	basic_setup();
 	//we know dx, so no need for bisection search
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-	
-	//set initial density, pressure
+
+	//now set physical properties of the white dwarf
 	init_arrays();
-	
+
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
 	printf("  indexFit  = %lu\n", indexFit);

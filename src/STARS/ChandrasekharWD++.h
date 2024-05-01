@@ -35,6 +35,7 @@ public:
 	ChandrasekharWD(double, std::size_t,               ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, const double, ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, double const A0, double const B0);
+
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
