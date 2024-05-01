@@ -5,15 +5,20 @@
 #include "../src/constants.h"
 
 namespace Chandrasekhar {
-	const double A0 = 6.0406e22;
-	const double B0 = 9.8848e5;
+	double const A0 = 6.0406e22;
+	double const B0 = 9.8848e5;
+
+	//these values taken from Chandrasekhar 1932, pg 416 in Dover reprint
+	double const A01939 = 6.01e22;
+	double const B01939 = 9.82e5;
 
 	double factor_f(double x);
 	double factor_g(double x);
-//	double factor_h(double x);
+	double factor_h(double x, double, double);
 }
 
 namespace FermiDirac {
+	const double m_pi = 3.141592653589793;
 	//Abscissae (x) and weights (w) for 24-point Gauss quadrature method due to Sagar 1991
 	static const double xFermiDirac1Half[] = {
 		1.065765457622244303e-01, 4.230728669515992804e-01, 9.419850084605768359e-01, 

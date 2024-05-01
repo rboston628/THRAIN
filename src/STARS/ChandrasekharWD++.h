@@ -27,12 +27,13 @@ public:
 	//the constructors
 	ChandrasekharWD(double, std::size_t,               double MU0, double K, double AC, double AS);
 	ChandrasekharWD(double, std::size_t, const double, double MU0, double K, double AC, double AS);
+	ChandrasekharWD(double, std::size_t, const double A0, const double B0);
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override {return len;}
 	//these three functions specify units
-	double Radius() override;	//total radius
-	double Mass() override;//total mass
-	double Gee() override; //{return G_CGS;};
+	double Radius() override;	// total radius
+	double Mass() override;     // total mass
+	double Gee() override;      // G in units
 	
 	double rad(std::size_t) override;
 	double rho(std::size_t) override, drhodr(std::size_t) override;
@@ -50,18 +51,19 @@ public:
 	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
+	void basic_setup();
+ 	void init_arrays();
 	double Y0;		// central value of y, y^2=1+x^2
 	double X0, X02, Y02;
-	//double A0;		//pressure scale
-	//double B0;		//density scale
-	double Rn;		//radius scale
+	double Rn;		// radius scale
+	double A0, B0;  // pressure and density scales
 	std::size_t len;
 	double dx;
 	//lane-emden solution functions
 	double *xi;	//normalized radius
 	double *x;  //the relativity factor x = pF/mc
 	double *y;	//Chandrasekhar's y, y^2=1+x^2
-	double *z;	//derivative (dy/dxi)  note: dx/dxi = (dy/dxi)/x
+	double *z;	//derivative (dy/dxi)  note: dx/dxi = (dy/dxi) * y/x
 	double *mass;
 	double *f;
 		
@@ -76,16 +78,13 @@ private:
 	//integrate using basic RK4
 	double RK4integrate(const std::size_t, double);
 	std::size_t RK4integrate(const std::size_t, double, int);
-	
-	//the T=0 Fermi function
-	//double factor_f(double x);
-	
+		
 	//methods for handling the BCs
 	double yc[4], xc[3], fc[2];	//series coefficients of y,x,f near center
 	void setupCenter();		//prepare values near center
 	void setupSurface();	//prepare values near surface
 public:
-	//methods to find central, surfae power series expansions of key variables in pulsation
+	//methods to find central, surface power series expansions of key variables in pulsation
 	void getAstarCenter(double *, int&, double g=0) override;
 	void getUCenter(double*, int&) override;
 	void getVgCenter(double*, int&, double g=0) override;
@@ -97,6 +96,8 @@ public:
 
 	//a particular output generation for this model of white dwarf
 	void writeStar(char const *const c=NULL) override;
+	void printDeg(char const *const c);
+ 	void printChem(char const *const c);
 };
 
 #endif
