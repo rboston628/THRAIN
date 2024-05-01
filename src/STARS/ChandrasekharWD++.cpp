@@ -89,6 +89,8 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 		if(Y[X-1][x]>0.5 & Y[X+1][x]<=0.5) indexFit = X;
 	}
 	indexFit /= 2;
+
+	// prepare boundary expansions
 	setupCenter();
 	setupSurface();
 }
@@ -104,13 +106,15 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 	basic_setup();
 	//we know dx, so no need for bisection search
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-
-	//now set physical properties of the white dwarf
+	
+	//set initial density, pressure
 	init_arrays();
+	
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
 	printf("  indexFit  = %lu\n", indexFit);
 	printf("r[indexFit] = %0.32le\n", rad(indexFit));
+	
 	setupCenter();
 	setupSurface();
 	printf("%0.2lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
@@ -147,6 +151,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, dou
 	indexFit /= 2;
 	setupCenter();
 	setupSurface();
+	printf("%0.8lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
 }
 
 ChandrasekharWD::~ChandrasekharWD(){
@@ -319,12 +324,12 @@ void ChandrasekharWD::setupCenter(){
 	yc[2]=  X02*X02*Y0/40.*pow(x1,4)*mu2*mu2;
 	yc[3]=  X0*(-14.*X02*X02-19.*X02*X02*X02)/5040.*pow(x1,6)*pow(mu2,3);
 	//
-	xc[0]=  X0;
-	xc[1]= -X02*Y0/6.*pow(x1,2)*mu2;
+	xc[0]=	X0;
+	xc[1]=	-X02*Y0/6.*pow(x1,2)*mu2;
 	xc[2]=  X02*X0*(4.+9.*X02)/360.*pow(x1,4);
 	//
-	fc[0]=  Chandrasekhar::factor_f(X0);
-	fc[1]= -X02*X0*(2. - 3.*X0 + 3.*X02)/3.*pow(x1,2);
+	fc[0]=	Chandrasekhar::factor_f(X0);
+	fc[1]=	xc[1]*X0*(2. - 3.*X0 + 3.*X02)/Y0 * pow(x1,2);
 }
 
 void ChandrasekharWD::getAstarCenter(double *Ac, int& maxPow, double g){
@@ -357,9 +362,8 @@ void ChandrasekharWD::getUCenter(double *Uc, int& maxPow){
 	double x1 = Y[len-1][xi];
 	double mu2 = mue[0]*mue[0];
 	if(maxPow>=0) Uc[0] = 3.0;
-	if(maxPow>=2) Uc[1] =-0.6*mu2*x1*x1*X0*Y0;
-	if(maxPow>=4) Uc[2] = 
-		9.*xc[2]/X0 - pow(x1*x1*mu2,2)*X02*(0.08+0.134*X02);
+	if(maxPow>=2) Uc[1] = -0.6*mu2*x1*x1*X0*Y0;
+	if(maxPow>=4) Uc[2] = 9.*xc[2]/X0 - pow(x1*x1*mu2,2)*X02*(0.08+0.134*X02);
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 4) maxPow = 4;
 }
@@ -397,29 +401,29 @@ void ChandrasekharWD::getAstarSurface(double *As, int& maxPow, double g){
 	if(maxPow>=-1) As[O-1] = 0.0;
 	if(maxPow>= 0) As[O  ] = 0.75*a1;
 	if(maxPow>= 1) As[O+1] = 0.75*a1 - (8./Gam1 + 0.375)*a1*a1;
-	if(maxPow>= 2) As[O+2] = 0.0;
+	if(maxPow>= 2) As[O+2] = 0.75*a1 - (16./Gam1 + 0.75)*a1*a1 + (0.8/Gam1 + 3./16.)*a1*a1*a1;
 	if(maxPow>= 3) As[O+3] = 0.0;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
 }
 
 void ChandrasekharWD::getVgSurface(double *Vs, int& maxPow, double g){
-	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+	double Gam1 = (g==0.0 ? Gamma1(len-2) : g);
 	double x1 = Y[len-1][xi];
 	double a1 =-Y[len-1][z]*x1;
 	int O=1;
 	//depending on power requested, return appropriate number of terms
-	if(maxPow>=-1) Vs[O-1] = 1.5;
-	if(maxPow>= 0) Vs[O  ] = 0.75*a1;
-	if(maxPow>= 1) Vs[O+1] = 0.75*a1 + 8.*a1*a1/Gam1 - 3.*a1*a1/8.;
-	if(maxPow>= 2) Vs[O+2] = a1*3./16.*pow(a1-2.,2)+4./3.*a1*a1*(12.+5.*a1)/Gam1;
-	if(maxPow>= 3) Vs[O+3] = -3.*a1*pow(a1-2,3)/32.+(724.*a1*a1/45. + 20.*a1 + 24.)*a1*a1/Gam1;
+	if(maxPow>=-1) Vs[O-1] = 1.5;     // NOTE this is an incorrect value
+	if(maxPow>= 0) Vs[O  ] = 0.75*a1; // NOTE this is an incorrect value
+	if(maxPow>= 1) Vs[O+1] = 8./Gam1*a1*a1;
+	if(maxPow>= 2) Vs[O+2] = (16./Gam1 - 0.8/Gam1*a1)*a1*a1;
+	if(maxPow>= 3) Vs[O+3] = ((24. - 256./35.*x1*x1) - 12./5.*a1 -132./7.*a1*a1)*a1*a1/Gam1;
 	//if more  terms than this requested, cap number of terms
 	if(maxPow> 3) maxPow = O+3;
 }
 
 void ChandrasekharWD::getUSurface(double *Us, int& maxPow){
-	//these happen to all be zero at surface
+	// near the surface 
 	for(int j=0; j<=maxPow; j++){
 		Us[j] = 0.0;
 	}

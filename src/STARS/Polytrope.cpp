@@ -187,7 +187,7 @@ Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	mass[0] = 0.0;
 	indexFit = std::size_t(len/2);
 	for(std::size_t X=1; X<len; X++){
-		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
+		base[X] = pow(Y[X][y], n-1.);
 		if(Y[X][y]<0.0){
 			std::complex<double> YN = Y[X][y];
 			YN = pow(YN,n-1);
@@ -227,7 +227,7 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 	static const double d[4] = {6.0,3.0,3.0,6.0};
 	std::complex<double> YCN(0.0,0.0);
 	
-	for(int a = 0; a<4; a++){
+	for(std::size_t a = 0; a<4; a++){
 		//use complex y^n to avoid NaNs when y<0
 		YCN = YC[y];
 		YCN = pow(YCN,n);
@@ -239,13 +239,13 @@ void Polytrope::RK4step(double dx, double yin[numvar], double yout[numvar]){
 		if(YC[x]==0) K[z][a] = -dx/3.0; //at very center, need analytic expression for dz/dx
 		//calculate "corrected" positions using previous shift vectors
 		YC[x] = yin[x] + B[a]*dx;
-		for(int b=1; b<numvar; b++)
+		for(std::size_t b=1; b<numvar; b++)
 			YC[b] = yin[b] + B[a]*K[b][a];
 	}		
 	yout[x] = yin[x] + dx;
-	for(int b=1; b<numvar; b++){
+	for(std::size_t b=1; b<numvar; b++){
 		yout[b] = yin[b];
-		for(int a=0; a<4; a++) yout[b] += K[b][a]/d[a];
+		for(std::size_t a=0; a<4; a++) yout[b] += K[b][a]/d[a];
 	}
 }
 
@@ -308,8 +308,7 @@ double Polytrope::getAstar(std::size_t X, double GamPert){
 
 double Polytrope::getU(std::size_t X){
 	if(X==0) return 3.0;
-	if(n==0) return 3.0;
-	// fprintf(stderr, "U[%lu] \t= %0.16le: xi=%0.16le y=%0.16le z=%0.16le\n", X, -Y[X][x]*base[X]*Y[X][y]/Y[X][z], Y[X][x], Y[X][y], Y[X][z]);
+	if(n==0.0) return 3.0;
 	return - Y[X][x]*base[X]*Y[X][y]/Y[X][z];
 }
 
@@ -391,7 +390,6 @@ void Polytrope::getC1Center(double *cc, int& maxPow){
 	if(maxPow> 4) maxPow = 4;
 }
 
-
 // **************************  SURFACE BOUNDARY  ***************************************
 // the following provide coefficients for surface expansions of A*, Vg, U, c1 in terms of t=1-r/R
 //	Note that A*, Vg require a power -1
@@ -409,7 +407,7 @@ void Polytrope::setupSurface(){
 	as[0] = 0.0;
 	for(int i=1; i<6;i++) as[i] = a1;
 	if(n==0){
-		as[1] = a1 = 2.0;
+		as[1] = 2.0;
 		as[2] = -1.0;
 		as[3] = as[4] = as[5] = 0.0;
 	}
@@ -439,7 +437,7 @@ void Polytrope::getAstarSurface(double *As, int& maxPow, double g){
 }
 
 void Polytrope::getVgSurface(double *Vs, int& maxPow, double g){
-// coefficients of Vg must extend up to maxPow-1
+	// coefficients of Vg must extend up to maxPow-1
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	double x1 = Y[len-1][x];
 	double a1 =-Y[len-1][z]*x1;

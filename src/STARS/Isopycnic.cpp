@@ -60,7 +60,7 @@ Isopycnic::~Isopycnic(){
 	delete[] mass;
 }
 
-int Isopycnic::populateValues(const std::size_t Len, double dx){
+std::size_t Isopycnic::populateValues(const std::size_t Len, double dx){
 	//set our initial conditions
 	x[0] = 0.0; y[0] = 1.0; z[0] = 0.0;
 	for(std::size_t X = 0; X<Len; X++){
@@ -105,18 +105,17 @@ double Isopycnic::Schwarzschild_A(std::size_t X, double GamPert){
 	else               return -z[X]/(y[X]*Rn)/GamPert;
 }
 
-
 double Isopycnic::getAstar(std::size_t X, double GamPert){
-	if(GamPert == 0.0) return 0.6*x[X]*z[X]/(y[X]);
-	else               return x[X]*z[X]/(y[X])/GamPert;
+	return -getVg(X, GamPert);
 }
 
 double Isopycnic::getU(std::size_t X){
 	return 3.0;
 }
 double Isopycnic::getVg(std::size_t X, double GamPert){
-	if(GamPert == 0.0) return -0.6*x[X]*z[X]/(y[X]);
-	else               return -x[X]*z[X]/(y[X])/GamPert;
+	double gam1 = (GamPert == 0.0 ? Gamma1(0) : GamPert);
+	double x2 = x[X]*x[X]/6.0;
+	return 2.0 * x2/(1.-x2)/gam1;
 }
 double Isopycnic::getC(std::size_t X){
 	return 1.0;
@@ -184,29 +183,29 @@ void Isopycnic::getC1Center(double *cc, int& maxPow){
 void Isopycnic::setupSurface(){}
 
 void Isopycnic::getAstarSurface(double *As, int& maxPow, double g){
-	//we make use of the fact  that A* and Vg are simply related in polytropes
+	//we make use of the fact that A* and Vg are simply related in polytropes
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	int O=1;
 	if(maxPow>= -1) As[O-1] = -1./Gam1;
 	if(maxPow>=  0) As[O  ] = 1.5/Gam1;
 	for(int k=1; k<= maxPow; k++){
-		As[O+k] = -pow(2,-k-1)/Gam1;
+		As[O+k] = -pow(2, -k-1)/Gam1;
 	}
 }
 
 void Isopycnic::getVgSurface(double *Vs, int& maxPow, double g){
-// coefficients of Vg must extend up to maxPow-1
+	// coefficients of Vg must extend up to maxPow-1
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	int O=1;
 	if(maxPow>= -1) Vs[O-1] = 1./Gam1;
 	if(maxPow>=  0) Vs[O  ] = -1.5/Gam1;
 	for(int k=1; k<= maxPow; k++){
-		Vs[O+k] = pow(2,-k-1)/Gam1;
+		Vs[O+k] = pow(2, -k-1)/Gam1;
 	}
 }
 
 void Isopycnic::getUSurface(double *Us, int& maxPow){
-// coefficients of U must extend up to order maxPow
+	// coefficients of U must extend up to order maxPow
 	if(maxPow>=0) Us[0]  = 3.0;
 	for(int k=1; k<= maxPow; k++){
 		Us[k] = 0.0;
@@ -214,7 +213,7 @@ void Isopycnic::getUSurface(double *Us, int& maxPow){
 }
 
 void Isopycnic::getC1Surface(double *cs, int& maxPow){
-// coefficients of c1 are only needed up to order maxPow-1
+	// coefficients of c1 are only needed up to order maxPow-1
 	if(maxPow>=0) cs[0]  = 1.0;
 	for(int k=1; k<= maxPow; k++){
 		cs[k] = 0.0;

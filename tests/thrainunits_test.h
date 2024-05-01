@@ -62,12 +62,13 @@ public:
         fakeData1.star = nullptr;
         fakeData1.driver = nullptr;
         fakeData1.i_err = 0;
+        fakeData1.units = unitType;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
         // assert all safely zeroed out
-        TS_ASSERT(fakeData1.mass == 0.0);
-        TS_ASSERT(fakeData1.radius == 0.0);
-        TS_ASSERT(fakeData1.zsurf == 0.0);
-        TS_ASSERT(fakeData1.logg == 0.0);
+        TS_ASSERT_EQUALS(fakeData1.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.logg, 0.0);
 
         // test with a zero-set params
         Calculation::OutputData fakeData2;
@@ -75,12 +76,13 @@ public:
         fakeData2.driver = nullptr;
         fakeData2.i_err = 0;
         fakeData2.params = 0;
+        fakeData2.units = unitType;
         TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData2));
         // assert all safely zeroed out
-        TS_ASSERT(fakeData2.mass == 0.0);
-        TS_ASSERT(fakeData2.radius == 0.0);
-        TS_ASSERT(fakeData2.zsurf == 0.0);
-        TS_ASSERT(fakeData2.logg == 0.0);
+        TS_ASSERT_EQUALS(fakeData2.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.logg, 0.0);
     }    
 
     void do_test_setUnits(units::Units unitType){
@@ -100,6 +102,13 @@ public:
         TS_ASSERT_DELTA(fakeData.zsurf, zsurf, 1e-4);
         TS_ASSERT(fakeData.logg == logg);
         TS_ASSERT(fakeData.freq0 == sqrt(G_CGS*mcgs*pow(rcgs,-3)));
+    }
+
+    void test_setAllUnits_noparams(){
+        do_test_setUnits_noparams(units::Units::astro);
+        do_test_setUnits_noparams(units::Units::geo);
+        do_test_setUnits_noparams(units::Units::SI);
+        do_test_setUnits_noparams(units::Units::CGS);
     }
 
     void test_setAllUnits(){

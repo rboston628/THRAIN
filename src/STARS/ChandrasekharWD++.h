@@ -88,16 +88,13 @@ private:
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
 	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
 	double RK4integrate(double, SurfaceBehavior);
-	
-	//the T=0 Fermi function
-	//double factor_f(double x);
-	
+		
 	//methods for handling the BCs
 	double yc[4], xc[3], fc[2];	//series coefficients of y,x,f near center
 	void setupCenter();		//prepare values near center
 	void setupSurface();	//prepare values near surface
 public:
-	//methods to find central, surfae power series expansions of key variables in pulsation
+	//methods to find central, surface power series expansions of key variables in pulsation
 	void getAstarCenter(double *, int&, double g=0) override;
 	void getUCenter(double*, int&) override;
 	void getVgCenter(double*, int&, double g=0) override;

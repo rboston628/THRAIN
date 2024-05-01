@@ -72,6 +72,9 @@ int format_units(Calculation::OutputData& data){
 			data.radius = 0.0;
 			throw std::runtime_error("Unimplemented paramsets zsurf and logg, try another\n");
 			break;
+		case (ParamType::pmass|ParamType::pteff):
+			data.radius = data.zsurf = data.logg = 0.0;
+			break;
 		case 0:
 		default:
 			data.mass = data.radius = data.zsurf = data.logg = 0.0;

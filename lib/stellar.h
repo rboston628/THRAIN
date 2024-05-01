@@ -11,10 +11,10 @@ namespace chemical {
 	const double Z[] = {1., 2.,  6.,  8.};
 	const double A[] = {1., 4., 12., 16.};
 	
-	double partial_mean_A(elem i, Abundance const &X);
-	double partial_mean_Z(elem i, Abundance const &X);
-	double partial_mu_e(  elem i, Abundance const &X);
-	double partial_mean_coul(elem i, Abundance const &X);
+	double partial_mean_A(elem i, Abundance const& X);
+	double partial_mean_Z(elem i, Abundance const& X);
+	double partial_mu_e(  elem i, Abundance const& X);
+	double partial_mean_coul(elem i, Abundance const& X);
 }
 
 struct Abundance {
@@ -168,9 +168,8 @@ StellarVar exp(const StellarVar &x);
 StellarVar log(const StellarVar &x);
 
 //some opacities
-//double radiative_opacity(StellarVar ly, Abundance X);
-//double conductive_opacity(StellarVar ly, Abundance X);
-
+//double radiative_opacity(StellarVar ly, Abundance const& X);
+//double conductive_opacity(StellarVar ly, Abundance const& X);
 
 struct PartialPressure {
 	typedef double (*funcptr)(double,double,Abundance const&);
@@ -178,7 +177,7 @@ struct PartialPressure {
 	double (*partialX)(chemical::elem, double,double,Abundance const&);
 	funcptr U, UpartialRho, UpartialT;
 	double (*UpartialX)(chemical::elem, double,double,Abundance const&);	
-	double operator()(double rho, double T, Abundance  const& chem) {return P(rho,T,chem);};
+	double operator()(double rho, double T, Abundance const& chem) {return P(rho,T,chem);};
 };
 
 
@@ -218,7 +217,7 @@ private:
 
 //************************************************************************************
 //	PARTIAL PRESSURE FUNCTIONS for EQUATION OF STATE
-//		Each must take arguments double rho, double T, Abundance X
+//		Each must take arguments double rho, double T, Abundance const& X
 //		Output must be a double, the pressure 
 //		For references, see:
 //		*	Chandrasekhar 1939

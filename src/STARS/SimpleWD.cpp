@@ -21,6 +21,7 @@
 #define SIMPLEWDCLASS
 
 #include <cstring>
+#include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
 
@@ -261,20 +262,19 @@ void SimpleWD::setup(){
 		zo = 2.0;  bo = 2.0; mo=0.6;
 		return;
 	}
-	std::size_t buffer_size = 256;
-	ssize_t line_size;
-	char *input_buffer = NULL, *pressure;
+	constexpr std::size_t buffer_size (256);
+	char input_buffer[buffer_size], *pressure;
 	std::string instring;
 	EOS *pres = NULL;
-	line_size = getline(&input_buffer, &buffer_size, input_file);
+	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
-	while(line_size > 0){
-		line_size = getline(&input_buffer, &buffer_size, input_file);
-		if(line_size >1) printf("%s", input_buffer);
+	while(c != nullptr){
+		c = std::fgets(input_buffer, buffer_size, input_file);
+		if(c != nullptr) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
 		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
 		if(pres!=NULL){
-			getline(&input_buffer, &buffer_size, input_file);
+			std::fgets(input_buffer, buffer_size, input_file);
 			pressure = strtok(input_buffer, " \t\n");
 			while(pressure != NULL){
 				printf("\t%s", pressure);
@@ -369,7 +369,7 @@ void SimpleWD::initFromChandrasekhar(){
 //**************************************************************************************/
 void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){	
 	std::size_t n=0;
-	double q = 5.0e-324; //the center
+	double q = 4.94066e-324; //the center
 	logQ[0] = log(q);
 	
 	//core

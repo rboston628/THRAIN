@@ -183,12 +183,12 @@ class FakeModeDriver : public ModeDriver {
 public:
     static const unsigned int num_var=0U;
     FakeModeDriver(Star* s, double x) : ModeDriver(num_var, s) {}
-    int length() { return 0; }
+    std::size_t length() { return 0; }
     double Gamma1() { return 0; }
-    double rad(int x) { return 0; }
-    int CentralBC(double **y, double *yo, double s2, int l, int m=0) {return 0;}
-    int SurfaceBC(double **y, double *ys, double s2, int l, int m=0) {return 0;}
-    void getCoeff(double *CC, const int, const int, const double, const int) {}
+    double rad(std::size_t x) { return 0; }
+    std::size_t CentralBC(double **y, double *yo, double s2, int l, int m=0) {return 0;}
+    std::size_t SurfaceBC(double **y, double *ys, double s2, int l, int m=0) {return 0;}
+    void getCoeff(double *CC, const std::size_t, const int, const double, const int) {}
     void setupBoundaries(){}
     double SSR(double x, int y, ModeBase* ) {return 0.0;}
     double tidal_overlap(ModeBase*) {return 0.0;}
@@ -202,9 +202,9 @@ public:
     static const unsigned int num_var=0U;
     void printMode(const char *const c){}
     void writeMode(const char *const c){}
-    double getRad(int x){return 0.0;}
-    double getY(int i, int x){return 0.0;}
-    double getYtilde(int i, int x){return 0.0;}
+    double getRad(std::size_t x){return 0.0;}
+    double getY(int i, std::size_t x){return 0.0;}
+    double getYtilde(int i, std::size_t x){return 0.0;}
     void modeNumbers(int& x, int& y, int& z){}
     double SSR(){return 0.0;}
     double tidal_overlap(){return 0.0;}
