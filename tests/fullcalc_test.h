@@ -4,6 +4,11 @@
 #include "../src/ThrainIO.h"
 #include <cxxtest/TestSuite.h>
 
+/* INTEGRATION TESTS
+* run entire parts of the program and ensure correct answers
+* according to known values, low errors, or previous calculation
+*/
+
 class FullCalculationTest : public CxxTest::TestSuite {
 public:
 
@@ -70,29 +75,28 @@ public:
         delete[] read_buffer;
     }
 
-    // /* test uniform density (n=0) polytrope */
-    // void test_full_calculation_uniform() {
-    //     printf("\nTEST CALCULATION UNIFORM STAR");
-    //     system("mkdir -p ./output/../tests/uniform/../tests");
-    //     system("touch ./output/../tests/modefinder/../tests/uniform.txt");
-    //     Calculation::InputData in = make_input_data_pmodes("../tests/uniform");
-    //     Calculation::OutputData out;
-    //     TS_ASSERT_EQUALS(0, io::setup_output(in, out));
-    //     TS_ASSERT_EQUALS(0, create_star(out));
-    //     TS_ASSERT_EQUALS(0, mode::create_modes(out));
+    /* test uniform density (n=0) polytrope */
+    void test_full_calculation_uniform() {
+        printf("\nTEST CALCULATION UNIFORM STAR");
+        system("mkdir -p ./output/../tests/uniform/../tests");
+        system("touch ./output/../tests/uniform/../tests/uniform.txt");
+        Calculation::InputData in = make_input_data_pmodes("../tests/uniform");
+        Calculation::OutputData out;
+        TS_ASSERT_EQUALS(0, io::setup_output(in, out));
+        TS_ASSERT_EQUALS(0, create_star(out));
+        TS_ASSERT_EQUALS(0, mode::create_modes(out));
 
-    //     TS_ASSERT_LESS_THAN(out.star_SSR, 1.e-12);
-    //     for(int i=0; i<out.mode_num; i++){
-    //         printf("%d,%d\t", out.l[i], out.k[i]);
-    //         if(out.k[i]!=0){
-    //             printf("%le %le", out.err[0][i], out.err[1][i]);
-    //             TS_ASSERT_LESS_THAN(out.err[0][i], 1.e-8);
-    //             TS_ASSERT_LESS_THAN(out.err[1][i], 1.e-6);
-    //         }
-    //         printf("\n");
-    //     }
-    // }
-
+        TS_ASSERT_LESS_THAN(out.star_SSR, 1.e-12);
+        for(int i=0; i<out.mode_num; i++){
+            printf("%d,%d\t", out.l[i], out.k[i]);
+            if(out.k[i]!=0){
+                printf("%le %le", out.err[0][i], out.err[1][i]);
+                TS_ASSERT_LESS_THAN(out.err[0][i], 1.e-8);
+                TS_ASSERT_LESS_THAN(out.err[1][i], 1.e-6);
+            }
+            printf("\n");
+        }
+    }
 
 //     /* test n=1 polytrope */
 //     void test_full_calculation_polytrope_15() {
