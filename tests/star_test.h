@@ -534,7 +534,7 @@ void test_CHWD_against_chandrasekhar(){
 }
 
 void test_CHWD_grad_constructor(){
-    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS");
+    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS\n");
     // test the constructor that accepts a gradiant in mu
     // try both a constant gradient, and a sigmoidal gradient
     std::size_t const LEN(1001);
@@ -549,13 +549,14 @@ void test_CHWD_grad_constructor(){
         // TODO make surface test work
         do_test_surface(testStar, 1.0);
         delete testStar;
-        // F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
-        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-        // do_test_center(testStar, 1.e-4);
-        // // TODO make surface test work
-        // do_test_surface(testStar, 1.0);
-        // delete testStar;
+        F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        fprintf(stderr, "\t%le %le %le\n", F0, testStar->Radius(), testStar->Mass());
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        // TODO make surface test work
+        do_test_surface(testStar, 1.0);
+        delete testStar;
     }
 }
 
