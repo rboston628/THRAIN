@@ -61,7 +61,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 	//we need for dx to be such that the integration ends with x[len-1]=0.0
 	//we will find the proper dx with a bisection search
 
-	double dxi = 1./double(len); //2.*sqrt(6.0)/(len-1); //an initial guess from constant volume star
+	double dxi = 0.01/double(len); //an initial guess
 	double dximax=1.0, dximin=0, yS;
 	std::function<double(double)> surface = [this](double step) -> double {
 		return RK4integrate(step, SurfaceBehavior::STOP_AT_ZERO);
@@ -131,13 +131,18 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, dou
 	//we need for dx to be such that the integration ends with x[len-1]=0.0
 	//we will find the proper dx with a bisection search
 
-	double dxi = 1./double(len); //2.*sqrt(6.0)/(len-1); //an initial guess from constant volume star
-	double dximax=1.0, dximin=0, yS;
+	double dxi = 0.01/double(len); //an initial guess
+	double dximax=1.0, dximin=0.0, yS;
 	std::function<double(double)> surface = [this](double step) -> double {
 		return RK4integrate(step, SurfaceBehavior::STOP_AT_ZERO);
 	};
-	rootfind::bisection_find_brackets_newton(surface, dxi, dximin, dximax);
-	yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
+	int status = rootfind::bisection_find_brackets_move(surface, dxi, dximin, dximax);
+	if(!status) yS = rootfind::bisection_search(surface, dxi, dximin, dximax);
+	else {
+		perror("Unable to fit a CHWD with this Y0 -- too close to Chandrasekhar limit\n");
+		mass = mue = dmue = x3 = nullptr; // set to avoid segfault at destruction
+		return;
+	}
 	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 
 	//now set physical properties of the white dwarf
@@ -221,6 +226,9 @@ double ChandrasekharWD::RK4integrate(double dx, SurfaceBehavior sb){
 		//if these occur, it is safe to terminate the integration
 		if(Y[X+1][y]<=1.0 && bool(sb)) break;
 	}
+	// NOTE y --> 1+ at surface
+	// for rootfinding, better to search for 0
+	// the ncan also constrain to positive values
 	if(X<len-1)	ysurface = Y[X+1][y]   - 1.;
 	else        ysurface = Y[len-1][y] - 1.;
 	return ysurface;

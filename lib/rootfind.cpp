@@ -53,8 +53,8 @@ int rootfind::bisection_find_brackets_move(
 	// all sampled points on same side
 
 	// in ideal case, 
-	// either y1 < y < y2
-	// or     y1 > y > y2
+	// either y1 < y < y2 (UP)
+	// or     y1 > y > y2 (DOWN)
 	// in non-ideal cases 
 	// could be y1 = y = y (FLAT)
 	// could be y>y1 and y>y2, (CONCAVE)
@@ -67,7 +67,7 @@ int rootfind::bisection_find_brackets_move(
 	else if( (y1>=y && y>y2) || (y1>y && y>=y2) ) behavior = Slope::DOWN;
 	else if( (y1< y && y2<y) ) behavior = Slope::CONCAVE_DOWN;
 	else if( (y1>y && y2> y) ) behavior = Slope::CONCAVE_UP;
-
+	
 	// above zero
 	if(y>0){
 		switch(behavior){
@@ -138,7 +138,6 @@ int rootfind::bisection_find_brackets_move(
 	if(xmin > xmax){
 		double temp = xmax;
 		xmax = xmin; xmin = temp;
-		return 0;
 	}
 	return 0;
 }
