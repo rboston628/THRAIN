@@ -543,19 +543,19 @@ void test_CHWD_grad_constructor(){
     double F0;
 
     for(double y0 : Y0){
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
-        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-        // do_test_center(testStar, 1.e-4);
-        // // TODO make surface test work
-        // do_test_surface(testStar, 1.0);
-        // delete testStar;
-        F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         do_test_center(testStar, 1.e-4);
         // TODO make surface test work
         do_test_surface(testStar, 1.0);
         delete testStar;
+        // F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        // do_test_center(testStar, 1.e-4);
+        // // TODO make surface test work
+        // do_test_surface(testStar, 1.0);
+        // delete testStar;
     }
 }
 
