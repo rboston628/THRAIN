@@ -552,6 +552,7 @@ void test_CHWD_grad_constructor(){
         F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
         testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
         fprintf(stderr, "\t%le %le %le\n", F0, testStar->Radius(), testStar->Mass());
+        fprintf(stderr, "\t%le\n", testStar->rad(LEN-1));
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         do_test_center(testStar, 1.e-4);
         // TODO make surface test work
