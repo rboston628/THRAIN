@@ -76,6 +76,7 @@ private:
 	double **Y;
 	double *mass;
 	double *x3; // holds x^3, to avoid repeated calls to pow
+	double set_mass(double const y[numvar], double const x);
 		
 	// the chemical profile
 	ChemicalGrad chemical_gradient;

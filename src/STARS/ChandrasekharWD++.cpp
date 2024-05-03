@@ -35,18 +35,28 @@ void ChandrasekharWD::basic_setup(){
 	}
 }
 
+double ChandrasekharWD::set_mass(double const Y[numvar], double const mue){
+	return -4.*m_pi*Y[xi]*Y[xi]*Y[z]/mue;
+}
+
 void ChandrasekharWD::init_arrays(){
 	mass = new double[len];
 	x3   = new double[len];
 	mue  = new double[len];
 	dmue = new double[len];
-	for(int X=0; X<len; X++){
+	for(int X=0; X<len-1; X++){
 		Y[X][x] = sqrt(std::complex<double>(Y[X][y]*Y[X][y]-1.0)).real();
 		Y[X][f] = Chandrasekhar::factor_f(Y[X][x]);
 		chemical_gradient(Y[X][x], Y[X][z], mue[X], dmue[X]);
-		mass[X] = -4.*m_pi*Y[X][xi]*Y[X][xi]*Y[X][z]/mue[X];
+		mass[X] = set_mass(Y[X], mue[X]);
 		x3[X] = pow(Y[X][x],3);
 	}
+	Y[len-1][y] = 1.0;
+	Y[len-1][x] = 0.0;
+	Y[len-1][f] = 0.0;
+	chemical_gradient(Y[len-1][x], Y[len-1][z], mue[len-1], dmue[len-1]);
+	mass[len-1] = set_mass(Y[len-1], mue[len-1]);
+	x3[len-1] = 0.0;
 	fprintf(stderr, "END %le %le %le %le %le\n", Y[len-1][xi], Y[len-1][x], Y[len-1][y], mass[len-1], mue[len-1]);
 }
 
