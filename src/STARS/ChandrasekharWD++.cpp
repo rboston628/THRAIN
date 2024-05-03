@@ -47,6 +47,7 @@ void ChandrasekharWD::init_arrays(){
 		mass[X] = -4.*m_pi*Y[X][xi]*Y[X][xi]*Y[X][z]/mue[X];
 		x3[X] = pow(Y[X][x],3);
 	}
+	fprintf(stderr, "END %le %le %le %le %le\n", Y[len-1][xi], Y[len-1][x], Y[len-1][y], mass[len-1], mue[len-1]);
 }
 
 //initalize white dwarf from central value of y and length
@@ -78,7 +79,8 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 		x3 = new double[1]; // set to avoid segfault at destruction
 		return;
 	}
-	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+	yS = RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+	// RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 
 	//now set physical properties of the white dwarf
 	init_arrays();
@@ -143,7 +145,8 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, dou
 		mass = mue = dmue = x3 = nullptr; // set to avoid segfault at destruction
 		return;
 	}
-	RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+	yS = RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+
 
 	//now set physical properties of the white dwarf
 	init_arrays();
