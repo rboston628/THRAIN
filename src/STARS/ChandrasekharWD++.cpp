@@ -36,6 +36,8 @@ void ChandrasekharWD::basic_setup(){
 }
 
 double ChandrasekharWD::set_mass(double const Y[numvar], double const mue){
+	//there is a related formula for polytropes (see H&K pg 268)
+	//multiply by Rn^3*rho0 when mr(X) is called
 	return -4.*m_pi*Y[xi]*Y[xi]*Y[z]/mue;
 }
 
@@ -57,7 +59,6 @@ void ChandrasekharWD::init_arrays(){
 	chemical_gradient(Y[len-1][x], Y[len-1][z], mue[len-1], dmue[len-1]);
 	mass[len-1] = set_mass(Y[len-1], mue[len-1]);
 	x3[len-1] = 0.0;
-	fprintf(stderr, "END %le %le %le %le %le\n", Y[len-1][xi], Y[len-1][x], Y[len-1][y], mass[len-1], mue[len-1]);
 }
 
 //initalize white dwarf from central value of y and length
@@ -90,7 +91,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, ChemicalGrad chem)
 		return;
 	}
 	yS = RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-	// RK4integrate(dxi, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 
 	//now set physical properties of the white dwarf
 	init_arrays();

@@ -16,73 +16,8 @@
 #include "ThrainMain.h"
 #include "Polytrope.h"
 
-//initalize polytrope from index and length, fit to mass M, radius R
-Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
-	: n(n), len(L), Gamma(1.0+1.0/n)
-{
-	//if index is out of range, fail
-	if( n >= 5.0 || n < 0.0 ){
-		n = nan(""); len = 0;
-		printf("\nInvalid polytropic index.  Polytrope not initialized.\n");
-		exit(EXIT_FAILURE);
-	}
-	//name this polytrope for files
-	name = strmakef("polytrope.%1.1f", n);
-	
-	Y = new double*[len];
-	for(std::size_t i=0;i<len;i++) {
-		Y[i] = new double[numvar];
-	}
 
-	//we find an appropriate grid spacing for array holding star data
-	//we need for dx to be such that the integration ends with y[len-1]=0.0
-	//we will find the proper dx with a bisection search
-	
-	//an initial guess
-	double dx = sqrt(6.0)/(len-1), yS, dxmax=1.0, dxmin=0.0;
-	std::function<double(double)> find_surface = [this](double step)->double {
-		return this->RK4integrate(this->len, step, SurfaceBehavior::STOP_AT_ZERO);
-	};
-	rootfind::bisection_find_brackets_newton( find_surface, dx, dxmin, dxmax);
-	yS = rootfind::bisection_search(find_surface, dx, dxmin, dxmax);
-	dx = 0.5*(dxmin+dxmax);
-	RK4integrate(len, dx, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-			
-	//now set physical properties of the polytrope
-	
-	//set initial density, pressure
-	// the physical units can be included through homology
-	GG = G_CGS;
-	rho0 = BigM/(4.*m_pi)*pow(BigR,-3)*(-Y[len-1][x]/Y[len-1][z]);
-	P0   = G_CGS*pow(BigM,2)*pow(BigR,-4)/(4.*m_pi)*pow(Y[len-1][z],-2)/(n+1.);
-	Rn   = BigR/Y[len-1][x];
-	
-	mass = new double[len];
-	base = new double[len];
-	base[0] = 1.0;
-	mass[0] = 0.0;
-	indexFit = len/2;
-	for(std::size_t X=1; X<len; X++){
-		//as we scan through x,y,z, set matching point as where y[X] = 0.5
-		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
-		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
-		if(Y[X][y]<0.0){
-			std::complex<double> YN = Y[X][y];
-			YN = pow(YN,n-1);
-			base[X] = YN.real();
-		}
-		//there is a formula (see H&K pg 268)
-		//multiply by Rn^3*rho0 when mr(X) is called
-		mass[X] = -4.*m_pi*Y[X][x]*Y[X][x]*Y[X][z];
-	}
-	indexFit /= 2;
-	setupCenter();
-	setupSurface();
-}
-
-Polytrope::Polytrope(double n, std::size_t L)
-	: n(n), len(L), Gamma(1.0+1.0/n)
-{
+void Polytrope::basic_setup(){
 	//if index is out of range, fail
 	if( n > 5.0 || n < 0.0 ){
 		n = nan(""); len = 0;
@@ -91,11 +26,84 @@ Polytrope::Polytrope(double n, std::size_t L)
 	}
 	//name this polytrope for files
 	name = strmakef("polytrope.%1.1f", n);
-
+	
 	Y = new double*[len];
 	for(std::size_t i=0;i<len;i++) {
 		Y[i] = new double[numvar];
 	}
+}
+
+double Polytrope::set_mass(double const Y[numvar]){
+	//there is a formula (see H&K pg 268)
+	//multiply by Rn^3*rho0 when mr(X) is called
+	return -4.*m_pi*Y[x]*Y[x]*Y[z];
+}
+
+void Polytrope::init_arrays(){
+	mass = new double[len];
+	base = new double[len];
+	base[0] = 1.0;
+	mass[0] = 0.0;
+	for(std::size_t X=1; X<len; X++){
+		base[X] = pow(Y[X][y], n-1.0);
+		if(Y[X][y]<0.0){
+			std::complex<double> YN = Y[X][y];
+			YN = pow(YN,n-1);
+			base[X] = YN.real();
+		}
+		mass[X] = set_mass(Y[X]);
+	}
+}
+
+//initalize polytrope from index and length, fit to mass M, radius R
+Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
+	: n(n), len(L), Gamma(1.0+1.0/n)
+{
+	basic_setup();
+
+	//we find an appropriate grid spacing for array holding star data
+	//we need for dx to be such that the integration ends with y[len-1]=0.0
+	//we will find the proper dx with a bisection search
+	
+	//an initial guess
+	double dx = sqrt(6.0)/(len-1);
+
+	//for n=5, there is no edge, so only search for dx if n!=5
+	//the n=5 case is an edge-case and should only come up in testing
+	if (n!=5.0){
+		double dxmax=1.0, dxmin=0.0, yS;
+		std::function<double(double)> find_surface = [this](double step)->double {
+			return this->RK4integrate(this->len, step, SurfaceBehavior::STOP_AT_ZERO);
+		};
+		rootfind::bisection_find_brackets_newton( find_surface, dx, dxmin, dxmax);
+		yS = rootfind::bisection_search(find_surface, dx, dxmin, dxmax);
+		dx = 0.5*(dxmin+dxmax);
+	}
+	RK4integrate(len, dx, SurfaceBehavior::CONTINUE_FULL_LENGTH);
+		
+	//set initial density, pressure
+	// the physical units can be included through homology
+	GG = G_CGS;
+	rho0 = BigM/(4.*m_pi)*pow(BigR,-3)*(-Y[len-1][x]/Y[len-1][z]);
+	P0   = G_CGS*pow(BigM,2)*pow(BigR,-4)/(4.*m_pi)*pow(Y[len-1][z],-2)/(n+1.);
+	Rn   = BigR/Y[len-1][x];
+
+	init_arrays();
+	for(std::size_t X=1; X<len-1; X++){
+		//as we scan through x,y,z, set matching point as where y[X] = 0.5
+		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
+	}
+	indexFit /= 2;
+
+	//prepare boundary expansions
+	setupCenter();
+	setupSurface();
+}
+
+Polytrope::Polytrope(double n, std::size_t L)
+	: n(n), len(L), Gamma(1.0+1.0/n)
+{
+	basic_setup();
 	
 	//we find an appropriate grid spacing for array holding star data
 	//we need for dx to be such that the integration ends with y[len-1]=0.0
@@ -105,7 +113,7 @@ Polytrope::Polytrope(double n, std::size_t L)
 	double dx = sqrt(6.0)/(len-1), yS;
 
 	//for n=5, there is no edge, so only search for dx if n!=5
-	//the n=5 case is an esge-case and should only come up in testing
+	//the n=5 case is an edge-case and should only come up in testing
 	if(n!=5.0){
 		double dxmax=1.0, dxmin=0;
 		std::function<double(double)> find_surface = [this](double step)->double{
@@ -115,36 +123,23 @@ Polytrope::Polytrope(double n, std::size_t L)
 		yS = rootfind::bisection_search(find_surface, dx, dxmin, dxmax);
 	}
 	RK4integrate(len, dx, SurfaceBehavior::CONTINUE_FULL_LENGTH);
-	
-	//now set physical properties of the polytrope
-	
-	//set initial density, pressure
+		
+	// set initial density, pressure
 	// specifying K, rho0 not necessary, just rescales the solutions
 	// the physical units can be included through homology
 	GG = 1.0;
 	rho0 = 1.0;
 	P0 = 1.0;
 	Rn = sqrt( (n+1.)/(4.*m_pi) );
-	
-	mass = new double[len];
-	base = new double[len];
-	base[0] = 1.0;
-	mass[0] = 0.0;
-	indexFit = len/2;
+
+	init_arrays();
 	for(std::size_t X=1; X<len; X++){
 		//as we scan through x,y,z, set matching point as where y[X] = 0.5
 		if(Y[X-1][y]>0.5 & Y[X][y]<=0.5) indexFit = X;
-		base[X] = ( n!=1.0 ? pow(Y[X][y], n-1.0) : 1.0 );
-		if(Y[X][y]<0.0){
-			std::complex<double> YN = Y[X][y];
-			YN = pow(YN,n-1);
-			base[X] = YN.real();
-		}
-		//there is a formula (see H&K pg 268)
-		//multiply by Rn^3*rho0 when mr(X) is called
-		mass[X] = -4.*m_pi*Y[X][x]*Y[X][x]*Y[X][z];
 	}
 	indexFit /= 2;
+
+	// setup boundary expansions
 	setupCenter();
 	setupSurface();
 }
@@ -155,50 +150,20 @@ Polytrope::Polytrope(double n, std::size_t L)
 Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	: n(n), len(L), Gamma(1.0+1.0/n)
 {
-	//if index is out of range, fail
-	if( n > 5.0 || n < 0.0 ){
-		n = nan(""); len = 0;
-		printf("\nInvalid polytropic index.  Polytrope not initialized.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	//name this polytrope for files
-	name = strmakef("polytrope.%1.1f", n);
-	//reserve room for arrays
-	Y = new double*[len];
-	for(std::size_t i=0;i<len;i++) 
-		Y[i] = new double[numvar];
+	//if n=5 is sought for testing, 
+	basic_setup();
 	
 	//we know dx, so no need for bisection search
 	RK4integrate(len, dx, SurfaceBehavior::CONTINUE_FULL_LENGTH);
 	
-	//now set physical properties of the polytrope
-	mass = new double[len];
-	base = new double[len];
 	//set initial density, pressure
 	// specifying K, rho0 not necessary, just rescales the solutions
 	rho0 = 1.0;
 	P0 = 1.0;
 	Rn = sqrt( (n+1.)/(4.*m_pi) );
 	
-	//need to be replaced with a smoother averaging technique
-	//for polytrope, take advantage of having z = dtheta/dx to avoid differencing
-	base[0] = 1.0;
-	mass[0] = 0.0;
-	indexFit = std::size_t(len/2);
-	for(std::size_t X=1; X<len; X++){
-		base[X] = pow(Y[X][y], n-1.);
-		if(Y[X][y]<0.0){
-			std::complex<double> YN = Y[X][y];
-			YN = pow(YN,n-1);
-			base[X] = YN.real();
-		}
-		//there is a formula (see H&K pg 268)
-		//multiply by Rn^3*rho0 when mr(X) is called
-		mass[X] = -4.*m_pi*Y[X][x]*Y[X][x]*Y[X][z];
-	}
-	indexFit = 512*round(double(len)/1024.0);
-	indexFit /= 2;
+	init_arrays();
+	indexFit = 256*round(double(len)/1024.0);
 	printf("  indexFit  = %lu\n", indexFit);
 	printf("r[indexFit] = %0.32le\t", rad(indexFit));
 	printf("y[indexFit] = %0.32le\n", Y[indexFit][y]);

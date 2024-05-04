@@ -59,6 +59,8 @@ public:
 	void writeStar(const char *const c=NULL) override;
 	
 private:
+	void basic_setup();
+	void init_arrays();
 	std::size_t len;
 	double n;		//polytropic index
 	double Gamma;	//polytropic exponent
@@ -76,6 +78,7 @@ private:
 	double *mass;
 	double *base; //= pow(y,n-1), avoids repeated calls to pow(y,n)
 	double GG;
+	double set_mass(double const y[numvar]);
 		
 	//integrate Lane-Emden using basic RK4
 	void centerInit(double ycenter[numvar]);
