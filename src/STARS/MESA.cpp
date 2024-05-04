@@ -210,14 +210,14 @@ double MESA::Phi(std::size_t X){
 double MESA::dPhidr(std::size_t X){
 	if(X>=0 & X<len) return Gscale*grav->interp(radi[X]);
 	else {
-		printf("\ng out of range\n");	
+		perror("\ng out of range\n");	
 		return nan("");
 	}
 }
 double MESA::mr(std::size_t X){
 	if(X>=0 && X<len) return Mtot*mass->interp(radi[X]);
 	else {
-		fprintf(stderr, "\nm out of range\n");	
+		perror("\nm out of range\n");	
 		return nan("");
 	}
 }

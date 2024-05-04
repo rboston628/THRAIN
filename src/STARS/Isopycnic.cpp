@@ -220,4 +220,27 @@ void Isopycnic::getC1Surface(double *cs, int& maxPow){
 	}
 }
 
+// consider dictionary-based approach...
+// std::map<int,double> Isopycnic::getAstarSurface(int& maxPow){
+// 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
+// 	std::map<int,double> as;
+// 	if(maxPow>= -1) as[-1] = -1./Gam1;
+// 	if(maxPow>=  0) as[ 0] = 1.5/Gam1;
+// 	for(int k=1; k<= maxPow; k++){
+// 		as[k] = -pow(2,-k-1)/Gam1;
+// 	}
+// 	return as;
+// }
+
+// std::map<int,double> Isopycnic::getC1Surface(int& maxPow){
+// 	std::map<int,double> cs;
+// 	if(maxPow>=0) cs[0] = 1.0;
+// 	for(int k=1; k<=maxPow; k++){
+// 		cs[k] = 0.0;
+// 	}
+// 	return cs;
+// }
+
+
+
 #endif

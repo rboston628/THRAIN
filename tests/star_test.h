@@ -117,7 +117,6 @@ void test_uniform_star(){
     ** Because it happens that g scales linearly with radius, it 
     ** happens to work out that the numerical derivatives in the 
     ** SSR are exactly correct*/
-
     const std::size_t LEN = 100;
     Star *testStar = new Isopycnic(LEN);
 
@@ -152,7 +151,7 @@ void test_uniform_boundaries(){
     ** in this known case act as good approxmations to the functions*/
 
     constexpr std::size_t LEN = 1000;
-    constexpr double GAM1 = 0.0;
+    constexpr double GAM1 = 5./3.;
     Star *testStar = new Isopycnic(LEN);
 
     /* test center expansions */
@@ -214,27 +213,18 @@ std::size_t do_test_center(Star *const testStar, double const tol){
     testStar->getVgCenter(Vc, maxPow, GAM1);
     testStar->getUCenter(Uc, maxPow);
     testStar->getC1Center(cc, maxPow);
-    // fprintf(stderr, "U coeffs %0.16le %0.16le %0.16le\n", Uc[0], Uc[1], Uc[2]);
 
     std::size_t failures = 0;
     std::size_t LEN = testStar->length();
     double x=0.0, R=testStar->Radius();
     for(std::size_t i=0; i<NC; i++){
-        // fprintf(stderr, "rad=%0.16le, R=%0.16le\n", testStar->rad(i), R);
         x = double(i)/double(LEN-1);
-        // fprintf(stderr, "x[%lu] = %0.16le\tU[%lu] = %0.16le\tc[%lu] = %0.16le\n", i, x, i, testStar->getU(i), i, testStar->getC(i));
         TS_ASSERT_DELTA( center_expand(x, cc, maxPow), testStar->getC(i), tol );
-        // fprintf(stderr, "Cseries\t= %0.16le\n", center_expand(x, cc, maxPow));
-        // fprintf(stderr, "C[%lu] \t= %0.16le\n", i, testStar->getC(i));
         TS_ASSERT_DELTA( center_expand(x, Vc, maxPow), testStar->getVg(i,GAM1), tol );
         TS_ASSERT_DELTA( center_expand(x, Ac, maxPow), testStar->getAstar(i,GAM1), tol );
         /* see mathematica notebook --
         // it can be shown that U's central expansion is simply less accurate than the others*/ 
-        TS_ASSERT_DELTA( center_expand(x, Uc, maxPow), testStar->getU(i), tol );
-        // fprintf(stderr, "Useries\t= %0.16le\n", center_expand(x, Uc, 4));
-        // fprintf(stderr, "U[%lu] \t= %0.16le\n", i, testStar->getU(i));
-        // fprintf(stderr, "STEP %lu DeltaU = %0.16le\n", i, fabs(testStar->getU(i) - center_expand(x, Uc, maxPow)));
-        
+        TS_ASSERT_DELTA( center_expand(x, Uc, maxPow), testStar->getU(i), tol );        
     }
     TS_ASSERT_EQUALS( failures, 0 );
     return failures;
@@ -544,7 +534,7 @@ void test_CHWD_against_chandrasekhar(){
 }
 
 void test_CHWD_grad_constructor(){
-    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS");
+    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS\n");
     // test the constructor that accepts a gradiant in mu
     // try both a constant gradient, and a sigmoidal gradient
     std::size_t const LEN(1001);
@@ -553,21 +543,21 @@ void test_CHWD_grad_constructor(){
     double F0;
 
     for(double y0 : Y0){
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
-        testStar = new ChandrasekharWD(y0, LEN, 2.0, 0.0, 1.0, 0.0);
+        // star with constant mue
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::constant_mu{2.0});
         TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
         do_test_center(testStar, 1.e-4);
         // TODO make surface test work
-        // do_test_surface(testStar, 1.e-2);
+        do_test_surface(testStar, 1.0);
         delete testStar;
-        // TODO the below should work with new-type CHWD constructors
-        // F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
-        // testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
-        // testStar = new ChandrasekharWD(y0, LEN, 2.0, 2.0, 0.3, 0.4);
-        // TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
-        // do_test_center(testStar, 1.e-4);
-        // // do_test_surface(testStar, 1.0);
-        // delete testStar;
+        // star with sigmoidally varying mue (CHWD++)
+        F0 = Chandrasekhar::factor_f(sqrt(y0*y0-1.));
+        testStar = new ChandrasekharWD(y0, LEN, Chandrasekhar::sigmoidal_in_logf{2.,F0,2.,1.});
+        TS_ASSERT_LESS_THAN(testStar->SSR(), 1.e-4);
+        do_test_center(testStar, 1.e-4);
+        // TODO make surface test work
+        do_test_surface(testStar, 1.0);
+        delete testStar;
     }
 }
 
