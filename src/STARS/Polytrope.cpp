@@ -110,12 +110,12 @@ Polytrope::Polytrope(double n, std::size_t L)
 	//we will find the proper dx with a bisection search
 	
 	//an initial guess
-	double dx = sqrt(6.0)/(len-1), yS;
+	double dx = sqrt(6.0)/(len-1);
 
 	//for n=5, there is no edge, so only search for dx if n!=5
 	//the n=5 case is an edge-case and should only come up in testing
 	if(n!=5.0){
-		double dxmax=1.0, dxmin=0;
+		double dxmax=1.0, dxmin=0, yS;
 		std::function<double(double)> find_surface = [this](double step)->double{
 			return this->RK4integrate(len,step, SurfaceBehavior::STOP_AT_ZERO);
 		};
