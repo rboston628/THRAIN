@@ -335,7 +335,6 @@ void Polytrope::getVgCenter(double *Vc, int& maxPow, double g){
 
 void Polytrope::getUCenter(double *Uc, int& maxPow){
 	double x1 = Y[len-1][x];
-	// fprintf(stderr, "xi1 = %0.18le\n", x1);
 	//depending on power requested, return appropriate number of terms
 	if(maxPow>=0) Uc[0] = 3.0;
 	if(maxPow>=2) Uc[1] = -0.2 * n * pow(x1,2);

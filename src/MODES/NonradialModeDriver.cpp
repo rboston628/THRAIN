@@ -82,8 +82,7 @@ void NonradialModeDriver::getCoeff(
 	int b,
 	double omeg2,
 	int L
-)
-{	
+){	
 	double (*CC)[num_var] =(double (*)[num_var]) CCI;
 	//avoid recalculations
 	double Ax, Ux, Cx, Vx;
@@ -298,6 +297,7 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 // *** this method is assuming a uniform grid ***
 // *** we cannot assume a unifirm grid for all stars
 double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
+	if(len < 14UL) return nan("Mode SSR must have at least 14 grid points\n");
 	double checkCont=0.0;
 	double checkNewt=0.0;
 	double checkPois=0.0;

@@ -80,6 +80,7 @@ const double JCD4_0[3][35] = {
 
 // for comparing to known values
 double compare_JCD(double n, int l, int k, double w);
+double calculate_Pekeris(int l, int k, double Gam1);
 double compare_Pekeris(double w, int l, int k, double Gam1);
 
 //this will create the correct mode driver and pass the correct driver type to the mode_finder

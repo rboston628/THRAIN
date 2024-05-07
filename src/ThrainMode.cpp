@@ -93,7 +93,8 @@ double compare_JCD(double n, int l, int k, double w){
 	else return nan("");
 }
 
-double compare_Pekeris(double w, int l, int k, double Gam1){
+double calculate_Pekeris(int l, int k, double Gam1){
+	// return exactly known square frque
 	// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
 	// but note his beta = sigma^2, his n = l, and his k = 2k
 	// also found in Cox 1980 in chapter 17, with change his n = k-1
@@ -104,6 +105,11 @@ double compare_Pekeris(double w, int l, int k, double Gam1){
 	// c.f. Cox (1980) eq 17.80
 	// NOTE the values I get are always wPek2 = l
 	if(k==0) wPek2 = double(2.*l*(l-1))/double(2*l+1);
+	return wPek2;
+}
+
+double compare_Pekeris(double w, int l, int k, double Gam1){
+	double const wPek2 = calculate_Pekeris(l, k, Gam1);
 	return fabs(w*w - wPek2)/wPek2;
 }
 

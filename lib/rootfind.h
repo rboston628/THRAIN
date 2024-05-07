@@ -76,6 +76,8 @@ T newton_search(
 	std::size_t const max_iter=0			//maximum number of iterations in search
 );
 
+/** multi-variable methods **/
+
 template <std::size_t np>
 void newton_search(
 	std::function<void(double f[np],double x[np])>& func,	//f=vector function to zero, x=input array
