@@ -1,0 +1,154 @@
+# This is a basic workflow to help you get started with Actions
+# inspired by gist example: NickNaso / cpp.yml
+# https://gist.github.com/NickNaso/0d478f1481686d5bcc868cac06620a60
+# I also found this article helpful:
+# https://www.incredibuild.com/blog/using-github-actions-with-your-c-project
+# See this issue in the CxxTest github page: https://github.com/CxxTest/cxxtest/issues/158
+name: C/C++ CI
+
+# Controls when the action will run. Triggers the workflow on push
+on: 
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: ["main" ]   
+  release:
+    # tags:
+    # - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # perform static analysis of the code, to ensure no uncaught undefined behavior
+  cppcheck:
+    name: cpp-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install cppcheck
+        run: |
+           sudo apt-get install -y cppcheck
+      - name: cppcheck lib
+        run: |
+          cppcheck lib/ --error-exitcode=1 --std=c++14
+      - name: cppcheck src
+        run: |
+          cppcheck src/ --error-exitcode=1 --std=c++14
+
+  # build and test the code
+  build-and-test:
+    # The type of runner that the job will run on
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config: 
+        - {
+            name: "ubuntu latest",
+            os: ubuntu-latest,
+            artifact: "ubuntu_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+        - {
+            name: "ubuntu gcc9",
+            os: ubuntu-latest,
+            artifact: "ubuntu_gcc9.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+        - {
+            name: "macOS gcc",
+            os: macos-latest,
+            artifact: "macos_gcc.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
+        - {
+            name: "macOS clang",
+            os: macos-latest,
+            artifact: "macos_clang.7z",
+            build_type: "Release",
+            cc: "clang",
+            cxx: "clang++",
+            archiver: "7za a",
+            generators: "Ninja"
+          }
+        - {
+            name: "windows gcc",
+            os: windows-latest,
+            artifact: "windows_mingw.7z",
+            build_type: "Release",
+            cc: "gcc",
+            cxx: "g++",
+            archiver: "7z a",
+            generators: "Ninja"
+          }
+
+        # TODO setup windows runners
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - name: Print env
+        run: |
+          echo github.event.action: ${{ github.event.action }}
+          echo github.event_name: ${{ github.event_name }}
+
+      - name: Install dependencies on ubuntu
+        if: startsWith(matrix.config.name, 'ubuntu latest')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cxxtest
+          sudo apt-get install -y gnuplot
+          gcc --version
+
+      - name: Install dependencies on ubuntu w/ gcc9
+        if: startsWith(matrix.config.name, 'ubuntu gcc9')
+        run: |
+          echo Update gcc-9 =======================================================================
+          echo gcc version before
+          gcc --version
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install cxxtest gcc-9 g++-9
+          sudo apt-get install -y gnuplot
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
+          echo gcc version after
+          gcc --version
+
+      - name: Install dependencies on macos
+        if: startsWith(matrix.config.os, 'macos')
+        # the last line will replace gcc with clang inside makefile
+        run: |
+          brew install cxxtest 
+          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+    
+      - name: Build library
+        shell: bash
+        run: make library
+
+      - name: Build THRAIN
+        shell: bash
+        run: make
+
+      # there is no cxxtest support in windows or macos, so can only run tests on ubuntu
+      - name: Build THRAIN tests
+        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
+        shell: bash
+        run: make tests
+
+      - name: Run tests
+        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
+        shell: bash
+        run: ./tests/tests.out

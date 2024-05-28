@@ -9,13 +9,13 @@
 #include "ThrainMain.h"
 
 //functions to create the different stellar models
-int create_classical_polytrope(CalculationOutputData &);
-int create_classical_CHWD(CalculationOutputData &);
-int create_classical_MESA(CalculationOutputData &);
-int create_classical_SWD(CalculationOutputData &);
+int create_classical_polytrope(Calculation::OutputData &);
+int create_classical_CHWD(Calculation::OutputData &);
+int create_classical_MESA(Calculation::OutputData &);
+int create_classical_SWD(Calculation::OutputData &);
 
 //will select the correct creation fuction from above based on user input
-int create_star(CalculationOutputData &data_out){
+int create_star(Calculation::OutputData &data_out){
 	printf("Creating star...\n");
 	switch(data_out.model) {
 		case model::polytrope:
@@ -35,7 +35,7 @@ int create_star(CalculationOutputData &data_out){
 }
 
 //create a classical polytrope
-int create_classical_polytrope(CalculationOutputData& data){
+int create_classical_polytrope(Calculation::OutputData& data){
 	double mass_CGS = data.mass*data.unitset.base_mass;
 	double radius_CGS = data.radius*data.unitset.base_length;
 	//create star	
@@ -50,23 +50,27 @@ int create_classical_polytrope(CalculationOutputData& data){
 
 
 //create a classical WD following Chandrasekhar
-int create_classical_CHWD(CalculationOutputData& data){
+int create_classical_CHWD(Calculation::OutputData& data){
 	switch((int)data.input_params[1]){
 		case 0:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2.,1.,1.,1.);
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, Chandrasekhar::constant_mu{2.0});
 			break;
-		case 1:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2., 100, 0.6, 0.95);
-			break;
+		case 1: {
+			double Y0 = data.input_params[0];
+			double X0 = sqrt(Y0*Y0-1.);
+			double F0 = Chandrasekhar::factor_f(X0);
+			Chandrasekhar::sigmoidal_in_logf func {2.0, F0, 2.0, 1.0};
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, func);
+		} break;
 		default:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 1.,1.,1.,1.);
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid,  Chandrasekhar::constant_mu{1.0});
 	}
 	
 	//adjust inputs to match the actual values
 	data.mass = data.star->Mass()/data.unitset.base_mass;
 	data.radius = data.star->Radius()/data.unitset.base_length;
-	data.params = units::pmass|units::pradius;
-	format_units(data);
+	data.params = units::ParamType::pmass|units::ParamType::pradius;
+	units::format_units(data);
 
 	//calculate error estimate for this model
 	data.star_SSR = data.star->SSR();
@@ -77,17 +81,16 @@ int create_classical_CHWD(CalculationOutputData& data){
 
 
 //create a classical WD found in MESA
-int create_classical_MESA(CalculationOutputData& data){
-	char inputname[255];
-	sprintf(inputname, "%s.dat", data.str_input_param.c_str());
-	data.star = new MESA(inputname, data.Ngrid);
+int create_classical_MESA(Calculation::OutputData& data){
+	std::string inputname = data.str_input_param + ".dat";
+	data.star = new MESA(inputname.c_str(), data.Ngrid);
 	
 	//adjust the inputs around the fact this is a MESA object
 	data.mass = data.star->Mass()/data.unitset.base_mass;		//the mass is determined by model
 	data.radius = data.star->Radius()/data.unitset.base_length;	//the radius is determined by model
 	data.Ngrid = data.star->length();
-	data.params = units::pmass|units::pradius;
-	format_units(data);
+	data.params = units::ParamType::pmass|units::ParamType::pradius;
+	units::format_units(data);
 	
 	//calculate error estimate for this MESA model
 	data.star_SSR = data.star->SSR();
@@ -97,7 +100,7 @@ int create_classical_MESA(CalculationOutputData& data){
 }
 
 //create a classical SimpleWD
-int create_classical_SWD(CalculationOutputData& data){
+int create_classical_SWD(Calculation::OutputData& data){
 	printf("mass %lf\n", data.mass);
 	printf("teff %lf\n", data.teff);
 	data.star = new SimpleWD(
@@ -110,9 +113,9 @@ int create_classical_SWD(CalculationOutputData& data){
 	data.mass = data.star->Mass()/data.unitset.base_mass;
 	data.radius = data.star->Radius()/data.unitset.base_length;
 	//calculate zsurf, logg
-	data.params = units::pmass|units::pradius;
-	format_units(data);
-	data.params = units::pmass|units::pteff;
+	data.params = units::ParamType::pmass|units::ParamType::pradius;
+	units::format_units(data);
+	data.params = units::ParamType::pmass|units::ParamType::pteff;
 
 	//calculate error estimate for this model
 	data.star_SSR = data.star->SSR();

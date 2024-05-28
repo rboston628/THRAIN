@@ -2,25 +2,28 @@
 #define SPLINORCLASS
 
 #include "Splinor.h"
+#include "matrix.h"
+#include <stdio.h>
+#include <cassert>
 
-Splinor::Splinor(const double *const x, const double *const y, const int L){
-	len = L;
-	xlast = 0;
-	incr = +1;
-	xa = x[0];
-	xb = x[L-1];
-	
-	S = new double[len];
+Splinor::Splinor(
+	double const *const x, 
+	double const *const y, 
+	int const L,
+	bc bc_type, // default natural
+	double const yprime0, // default zero
+	double const yprimeN  // default zero
+) :
+	len(L), xlast(0), xa(x[0]), xb(x[L-1]), bc_type(bc_type), yprimea(yprime0), yprimeb(yprimeN)
+{	
+	//the coefficient and interpolation methods assume that x is strictly increasing
+	//if x is decreasing, then read it in backwards.
 	xarr = new double[len];
 	yarr = new double[len];
-	
-	
-	//the coefficient and interpolatio methods assume that x is strictly increasing
-	//if x is decreasing, then read it in backwards.
 	if(xa<xb){
 		for(int i=0; i<len; i++){
 			xarr[i] = x[i];
-			yarr[i] = y[i];	
+			yarr[i] = y[i];
 		}
 	}
 	else if (xa>xb){
@@ -30,10 +33,11 @@ Splinor::Splinor(const double *const x, const double *const y, const int L){
 		for(int i=0; i<len; i++){
 			xarr[i] = x[len-1-i];
 			yarr[i] = y[len-1-i];
-		}
-	
-	}	
-	getSplineCoefficients(xarr, yarr);
+		}	
+	}
+	// solve for the coefficients
+	S = new double[len];
+	calculateSplineCoefficients(x, y, bc_type);
 }
 
 Splinor::~Splinor(){
@@ -42,139 +46,195 @@ Splinor::~Splinor(){
 	delete[] yarr;
 }
 
-double Splinor::operator()(double xpos){
-	return interp(xpos);
-}
-
-double Splinor::interp(double xpos){
-	int xind = xlast;	//begin at position we last checked
-	if(xarr[xind] > xpos) xind =0;
-	bool wrap = false;	//flag, if we have already wrapped around array
-	if      (xpos == xb) return yarr[len-1];	//if at the end, give the end
-	else if (xpos == xa) return yarr[0];		//if at beginning, give beginning
-	else if (xpos  < xa) xind = 0;
-	else if (xpos  > xb) xind = len-2;
-	//if(xpos > xb || xpos < xa) return 0.0;//outside range, return 0
+std::size_t Splinor::findPosition(double const xpos){
+	std::size_t xind = xlast;	//begin at position we last checked
+	// two happy paths -- position is at beginning or end
+	if      (xpos >= xb) xind = len-2;	//if at the end, give the end
+	else if (xpos <= xa) xind = 0;		//if at beginning, give beginning
+	// two happy paths -- index is the last one, or one past the last one
+	else if (xarr[xlast  ] <= xpos && xpos < xarr[xlast+1]) xind = xlast;
+	else if (xarr[xlast+1] <= xpos && xpos < xarr[xlast+2]) xind = xlast+1; 
+	// otherwise perform a search for it
 	else {
-		while(xarr[xind] <= xpos){	//scan through range until we pass it	
-			xind += incr;
-			if (xind >len-1 | xind < 0) {
-				//if we reach end without finding it,
-				//wrap back around one time
-				if(!wrap) xind = (xind >=0 ? 0 : len-2);
-				//if we've already wrapped, quit with error
-				else if (wrap){
-					//printf("ERROR: could not find that value, you cad!\n");
-					return nan("array wrap");
-				}
-				//set flag to note we've wrapped through array once
-				wrap = true;
+		std::size_t imin = 0, imax = len-2;
+		// need to find xind such that
+		// xarr[xind] <= xpos < xarr[xind+1]
+		while (xpos < xarr[xind] || xpos >= xarr[xind+1]){
+			// the position is greater than this range
+			if (xarr[xind+1] <= xpos) {
+				imin = xind+1;
 			}
+			// the position is smaller than this range
+			else if (xpos < xarr[xind]) {
+				imax = xind;
+			}
+			xind = std::size_t((imax+imin)/2);
 		}
-		//we passed the point we need, so rewind once 
-		xind -= incr;
+		assert(xarr[xind] <= xpos);
+		assert(xpos < xarr[xind+1]);
 	}
 	xlast = xind; //remember position for next time we look - normally fit in order
-	
-	double a, b, c, d, h0, h1;
-	double t, dx;
+	return xind;
+}
+
+std::tuple<double,double,double,double> Splinor::getCoefficients(std::size_t const xind){
+	double a, b, c, d, h1;
 	h1 = xarr[xind+1]-xarr[xind  ];
 	a = (S[xind+1]-S[xind])/(6.*h1);
 	b = S[xind]/2;
 	c = (yarr[xind+1]-yarr[xind])/h1 - h1*(2.*S[xind]+S[xind+1])/6.;
 	d = yarr[xind];
-	t = xpos - xarr[xind];
-	return t*( t*(a*t+b)+c ) + d;
+	return std::make_tuple(a, b, c, d);
 }
 
-double Splinor::deriv(double xpos){
-	int xind = xlast;	//begin at position we last checked
-	if(xarr[xind] > xpos) xind = 0;
-	bool wrap = false;	//flag, if we have already wrapped around array
-	if      (xpos  <= xa) xind = 0;
-	else if (xpos  >= xb) xind = len-2;
-	else {
-		//while(xpos >= xarr[xind]){	//scan through range until we pass it	
-		while(xarr[xind] <= xpos){
-			xind++;
-			if (xind >len-1) {
-				//if we reach end without finding it,
-				//wrap back around one time
-				if(!wrap) xind = 0;
-				//if we've already wrapped, quit with error
-				else if (wrap){
-					//printf("ERROR: could not find that value, you cad!\n");
-					return nan("");
-				}
-				//set flag to note we've wrapped through array once
-				wrap = true;
-			}
-		}
-		//we passed the point we need, so rewind once 
-		xind--;
-	}
-	xlast = xind; //remember position for next time we look - normally fit in order
-		
-	double a, b, c, d, h0, h1;
-	double t, dx;
-	h1 = xarr[xind+1]-xarr[xind  ];
-	a = (S[xind+1]-S[xind])/(6.*h1);
-	b = S[xind]/2;
-	c = (yarr[xind+1]-yarr[xind])/h1 - h1*(2.*S[xind]+S[xind+1])/6.;
-	t = xpos - xarr[xind];
-	return t*(3.*a*t+2.*b)+c;//formula for derivative of splinor
+double Splinor::operator()(double const xpos){
+	return interp(xpos);
 }
 
-void Splinor::getSplineCoefficients(
-	const double *const x,
-	const double *const y
+double Splinor::interp(double const xpos){
+	std::size_t xind = findPosition(xpos);
+	double a, b, c, d;
+	std::tie(a, b, c, d) = getCoefficients(xind);
+	double t = xpos - xarr[xind];
+	return t * ( t * (a * t + b) + c ) + d;
+}
+
+double Splinor::deriv(double const xpos){
+	std::size_t xind = findPosition(xpos);
+	double a, b, c, d;
+	std::tie(a, b, c, d) = getCoefficients(xind);
+	double t = xpos - xarr[xind];
+	return t * ( 3. * a * t + 2. * b ) + c;//formula for derivative of splinor
+}
+
+void Splinor::makeNaturalSpline(
+	double const *const x,
+	double const *const y
 ){
-	int N = len-1;
-	//set up spline equations
-	S[0] = S[N] = 0.0;
-	double *a = new double[len];
-	double *b = new double[len];
-	double *c = new double[len];
-	double *d = new double[len];
-	double *gamma = new double[len];
-	double beta;
-	//top and bottom rows of coefficient arrays are empty
-	a[0] = b[0] = c[0] = d[0] = 0.0;
-	a[N] = b[N] = c[N] = d[N] = 0.0;
-	//fill in coefficient arrays for solution
-	a[1] = 0.0;
-	b[1] = 2.*(x[2]-x[0]);
-	c[1] = x[2]-x[1];
-	d[1] = 6.0*( (y[2]-y[1])/(x[2]-x[1])-(y[1]-y[0])/(x[1]-x[0]) );
-	for(int k=2; k<N; k++){
-		a[k] = x[k]-x[k-1];
-		b[k] = 2.*( x[k+1]-x[k-1] );
-		c[k] = x[k+1]-x[k];
-		d[k] = 6.*( (y[k+1]-y[k])/(x[k+1]-x[k])-(y[k]-y[k-1])/(x[k]-x[k-1]) );
+	// natural splines form an (N-2)X(N-2) system
+	// with y'' = 0 at both ends
+	S[0] = S[len-1] = 0.0;
+	// the tridiagonal matrix has same form at each row
+	std::size_t const N = len-2;
+	// the matrix coefficients
+	double *left = new double[N];
+	double *diag = new double[N];
+	double *rite = new double[N];
+	// now fill in the rest
+	for(std::size_t i=1; i<=N; i++){
+		left[i-1] = x[i] - x[i-1];
+		diag[i-1] = 2. * (x[i+1] - x[i-1]);
+		rite[i-1] = x[i+1] - x[i];
 	}
-	a[N-1] = x[N-1]-x[N-2];
-	b[N-1] = 2.*( x[N]-x[N-2] );
-	c[N-1] = 0.0;
-	d[N-1] = 6.*( (y[N]-y[N-1])/(x[N]-x[N-1])-(y[N-1]-y[N-2])/(x[N-1]-x[N-2]) );
-		
-	//backsubstitute
-	gamma[1] = 0.0;
-	beta = b[1];
-	S[1] = d[1]/beta;
-	for(int k=2; k<N; k++){
-		gamma[k] = c[k-1]/beta;
-		beta = b[k] - a[k]*gamma[k];
-		S[k] =(d[k] - a[k]*S[k-1])/beta;
+	// there is no left-diagonal on first row, nor right-diagonal on last row
+	left[0] = rite[N-1] = 0.0;
+	// create the RHS of the equation
+	double *RHS = new double[N];
+	for(std::size_t i=0; i<N; i++){
+		RHS[i] = 6.0 * ( (y[i+2]-y[i+1])/(x[i+2]-x[i+1]) - (y[i+1]-y[i])/(x[i+1]-x[i]) );
 	}
-	for(int k=(N-2); k>=1; k--){
-		S[k] -= gamma[k+1]*S[k+1];
-	}
-	delete[] gamma;
-	delete[] a;
-	delete[] b;
-	delete[] c;
-	delete[] d;
+	// solve  the equation -- note this finds S_1, ... S_{len-2}
+	matrix::invertTridiagonal(left, diag, rite, RHS, S+1, N);
+	// clear the matrix coefficients
+	delete[] left;
+	delete[] rite;
+	delete[] diag;
+	delete[] RHS;
 }
 
+void Splinor::makeClampedSpline(
+	double const *const x,
+	double const *const y
+){
+	// the matrix coefficients
+	double *left = new double[len];
+	double *diag = new double[len];
+	double *rite = new double[len];
+	left[0] = rite[len-1] = 0.0;
+	// setup the first row {b_0 c_0 0 ... 0}
+	diag[0] = (x[1] - x[0]) * 2.0;
+	rite[0] = (x[1] - x[0]);
+	// setup the last row {0 ... 0 a_{N-1} b_{N-1}}
+	diag[len-1] = (x[len-1] - x[len-2]) * 2.0;
+	left[len-1] = (x[len-1] - x[len-2]);
+	// now fill in the rest
+	for(std::size_t i=1; i<len-1; i++){
+		left[i] = x[i] - x[i-1];
+		diag[i] = 2. * (x[i+1] - x[i-1]);
+		rite[i] = x[i+1] - x[i];
+	}
+	// create the RHS of the equation
+	double *RHS = new double[len];
+	RHS[0] = 6.0 * ( (y[1]-y[0])/(x[1]-x[0]) - yprimea);
+	for(std::size_t i=1; i<len-1; i++){
+		RHS[i] = 6.0 * ( (y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1]) );
+	}
+	RHS[len-1] = 6.0 * (yprimeb - (y[len-1]-y[len-2])/(x[len-1]-x[len-2]));
+	// solve the equation
+	matrix::invertTridiagonal(left, diag, rite, RHS, S, len);
+	// clear the matrix coefficients
+	delete[] left;
+	delete[] rite;
+	delete[] diag;
+	delete[] RHS;
+}
+
+void Splinor::makeQuadraticSpline(
+	double const *const x,
+	double const *const y
+){
+	// the matrix coefficients
+	double *left = new double[len];
+	double *diag = new double[len];
+	double *rite = new double[len];
+	left[0] = rite[len-1] = 0.0;
+	// setup the first row {b_0 c_0 0 ... 0}
+	diag[0] = 1.0;
+	rite[0] = -1.0;
+	// setup the last row {0 ... 0 a_{N-1} b_{N-1}}
+	diag[len-1] = 1.0;
+	left[len-1] = -1.0;
+	// now fill in the rest
+	for(std::size_t i=1; i<len-1; i++){
+		left[i] = x[i] - x[i-1];
+		diag[i] = 2. * (x[i+1] - x[i-1]);
+		rite[i] = x[i+1] - x[i];
+	}
+	// create the RHS of the equation
+	double *RHS = new double[len];
+	RHS[0] = 0.0;
+	for(std::size_t i=1; i<len-1; i++){
+		RHS[i] = 6.0 * ( (y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1]) );
+	}
+	RHS[len-1] = 0.0;
+	// solve  the equation
+	matrix::invertTridiagonal(left, diag, rite, RHS, S, len);
+	// clear the matrix coefficients
+	delete[] left;
+	delete[] rite;
+	delete[] diag;
+	delete[] RHS;
+}
+
+void Splinor::calculateSplineCoefficients(
+	double const *const x,
+	double const *const y,
+	bc const bc_type
+){
+	switch(bc_type){
+		case bc::NATURAL:
+			makeNaturalSpline(x,y);
+			break;
+		case bc::CLAMPED:
+			makeClampedSpline(x,y);
+			break;
+		case bc::QUADRATIC:
+			makeQuadraticSpline(x,y);
+			break;
+		default:
+			// if for some reason this is unset, make a natural spline
+			makeNaturalSpline(x,y);
+	}
+}
 
 #endif

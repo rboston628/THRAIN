@@ -9,66 +9,75 @@
 #ifndef THRAINUNITSH
 #define THRAINUNITSH
 
+namespace units{
 
-int format_units(CalculationOutputData& data){	
+inline double GMR2FromLogg(const Calculation::OutputData& data){
+	// logg is a dimensioned quantity -- return GM/R^2 in indicated units
+	return pow(10.0,data.logg) * pow(data.unitset.base_length,2)/data.unitset.base_mass*data.unitset.G/G_CGS;
+}
+
+inline double getLoggFromRM (const Calculation::OutputData& data){
+	// unfortunately this is a dimensioned quantity, and must be given in CGS units
+	return log10(G_CGS*data.mass*data.unitset.base_mass*pow(data.unitset.base_length*data.radius,-2));
+}
+inline double getZsurfFromRM(const Calculation::OutputData& data){
+	return 1./sqrt( 1. - 2.*data.unitset.G*data.mass/(data.radius*pow(data.unitset.C,2)) ) - 1.;
+}
+
+inline double getRadiusFromZM(const Calculation::OutputData& data){
+	return 2.*data.unitset.G*data.mass*pow(data.unitset.C,-2)/(1.-pow(1.+data.zsurf,-2));
+}
+
+inline double getRadiusFromLoggM(const Calculation::OutputData& data){
+	return sqrt(data.unitset.G*data.mass / GMR2FromLogg(data));
+}
+
+inline double getMassFromRZ(const Calculation::OutputData& data){
+	return 0.5*pow(data.unitset.C,2)*data.radius/data.unitset.G*(1.-pow(1.+data.zsurf,-2));
+}
+
+inline double getMassFromRLogg(const Calculation::OutputData& data){
+	return pow(data.radius,2)*GMR2FromLogg(data)/data.unitset.G;
+}
+
+int format_units(Calculation::OutputData& data){	
 	//fix the unitset based on which united were specified
-	switch(data.units){
-		case units::astro:
-			data.unitset.G = G_astro;
-			data.unitset.C = C_astro;
-			data.unitset.base_mass = MSOLAR;
-			data.unitset.base_length = 100000.0; // 1 km in cm
-			data.unitset.base_time = 1.0; //use base time of 1 second
-			break;
-		case units::geo:
-			data.unitset.G = 1.0;
-			data.unitset.C = 1.0;
-			data.unitset.base_time = 1.0; //use base time of 1 second
-			data.unitset.base_length = 1.0/C_CGS;// 1 lightsecond, in cm
-			data.unitset.base_mass = 1.0/C_CGS;// mass equivalent to 1 lightsecond, in cm
-			break;
-		case units::SI:
-			data.unitset.G = G_CGS*1.0e-3;
-			data.unitset.C = C_CGS*1.0e-2;
-			data.unitset.base_time = 1.0; //use base time of 1 second;
-			data.unitset.base_length = 100.0; //use base length of 1m, in cm
-			data.unitset.base_mass = 1000.0; //use base mass of 1kg, in g
-			break;
-		case units::CGS:	
-			data.unitset.G = G_CGS;
-			data.unitset.C = C_CGS;
-			data.unitset.base_time = 1.0; //use base time of 1 second;
-			data.unitset.base_length = 1.0; //use base length of 1cm
-			data.unitset.base_mass = 1.0; //use base mass of 1g
-			break;
-	}
+	data.unitset = units::unitSets.at(data.units);
 	
 	//the user can specify certain parameters of the star for the model; this calculates the others
 	switch(data.params){
-		case (units::pmass|units::pradius):
-			data.logg = log10(G_CGS*data.mass*data.unitset.base_mass*pow(data.unitset.base_length*data.radius,-2));
-			data.zsurf = 1./sqrt( 1. - 2.*data.unitset.G*data.mass/(data.radius*pow(data.unitset.C,2)) ) - 1.;
+		case (ParamType::pmass|ParamType::pradius):
+			data.logg = getLoggFromRM(data);
+			data.zsurf = getZsurfFromRM(data);
 			break;
-		case (units::pmass|units::pzsurf):
-			data.radius = 2.*data.unitset.G*data.mass*pow(data.unitset.C,-2)/(1.-pow(1.+data.zsurf,-2));
-			data.logg = log10(G_CGS*data.mass*data.unitset.base_mass*pow(data.unitset.base_length*data.radius,-2));
+		case (ParamType::pmass|ParamType::pzsurf):
+			data.radius = getRadiusFromZM(data);
+			data.logg = getLoggFromRM(data);
 			break;
-		case (units::pmass|units::plogg):
-			data.radius = sqrt(data.unitset.G*data.mass*pow(10.0,-data.logg));
-			data.zsurf = 1./sqrt( 1. - 2.*pow(10.,data.logg)*data.radius*pow(data.unitset.C,-2) ) - 1.;
+		case (ParamType::pmass|ParamType::plogg):
+			data.radius = getRadiusFromLoggM(data);
+			data.zsurf = getZsurfFromRM(data);
 			break;
-		case (units::pradius|units::pzsurf):
-			data.mass = 0.5*pow(data.unitset.C,2)*data.radius/data.unitset.G*(1.-pow(1.+data.zsurf,-2));
-			data.logg = log10(G_CGS*data.mass*data.unitset.base_mass*pow(data.unitset.base_length*data.radius,-2));
+		case (ParamType::pradius|ParamType::pzsurf):
+			data.mass = getMassFromRZ(data);
+			data.logg = getLoggFromRM(data);
 			break;
-		case (units::pradius|units::plogg):
-			data.mass = pow(data.radius,2)*pow(10.0,data.logg)/data.unitset.G;
-			data.zsurf = 1./sqrt( 1. - 2.*pow(10.,data.logg)*data.radius*pow(data.unitset.C,-2) ) - 1.;
+		case (ParamType::pradius|ParamType::plogg):
+			data.mass = getMassFromRLogg(data);
+			data.zsurf = getZsurfFromRM(data);
 			break;
-		case (units::pzsurf|units::plogg):
+		case (ParamType::pzsurf|ParamType::plogg):
 			//I don't know why this isn't implemented yet -- I don't feel like doing it now
 			data.mass   = 0.0;
 			data.radius = 0.0;
+			throw std::runtime_error("Unimplemented paramsets zsurf and logg, try another\n");
+			break;
+		case (ParamType::pmass|ParamType::pteff):
+			data.radius = data.zsurf = data.logg = 0.0;
+			break;
+		case 0:
+		default:
+			data.mass = data.radius = data.zsurf = data.logg = 0.0;
 			break;
 	}
 	
@@ -82,7 +91,7 @@ int format_units(CalculationOutputData& data){
 	
 	return 0;
 }
-
+}
 
 
 #endif

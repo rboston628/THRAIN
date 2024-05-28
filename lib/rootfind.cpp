@@ -4,7 +4,7 @@
 #include "rootfind.h"
 #include <complex>
 
-double pseudo_unif(){
+double rootfind::pseudo_unif(){
 	static int a=53, b=122, r=17737, dart = 39;//for pseudorandom positioning
 	dart = (a*dart+b)%r; //generates a psuedo-random integer in (0,r)
 	return (double(dart)/double(r));
@@ -12,62 +12,147 @@ double pseudo_unif(){
 
 // *************************************************************************************
 //					BISECTION METHODS
-//  These methods are for implementing bisection searches in one parameter
+//  These functions implement bisection searches in one parameter
 // *************************************************************************************
 
 // this will find brackets using a simple expansion/movement search
 // one bracket is moved to one side until the function changes sign, to find brackets
-void bisection_find_brackets_move(
-	std::function<double(double)> func,		//the function to find zero of
-	double x0,								//an initial guess for the zero
-	double& xmin,							//the lower bracket -- will be returned
-	double& xmax							//the upper bracket -- will be returned
+int rootfind::bisection_find_brackets_move(
+	std::function<double(double)>& func,    //the function to find zero of
+	double const x0,                        //an initial guess for the zero
+	double &xmin,                           //the lower bracket -- will be returned
+	double &xmax                            //the upper bracket -- will be returned
 ){
-	double x=x0, y = func(x), ymin, ymax;
-	double dx = x0;
-	
-	//find brackets on x that bound a zero in y
-	
-	if(y > 0){
-		xmin = x; ymin = y;
-		while(y > 0 && !isnan(y)){
-			x += dx;
-			y = func(x);
-			if(isnan(y)){
-				x = x0; dx *= 0.1; y = 1.0;
-			}
-		}
-		xmax = x; ymax = y;
+	// test two points near first guess
+	double DX = 0.01;
+	double x=x0, x1=(1.-DX)*x0, x2=(1.+DX)*x0;
+	double y=func(x), y1=func(x1), y2=func(x2);
+	double ymin, ymax;
+
+	// happy path 1
+	// y is the zero
+	if(y==0.0){
+		xmin = x0;
+		xmax = x0;
+		return 0;
 	}
-	else if (y < 0){
-		xmax = x; ymax = y;
-		while(y < 0){
-			x *= 0.5;
-			y = func(x);
+
+	// happy path 2
+	// either y1 or y2 are brackets
+	if(y1*y < 0.0) { // if y1 and y are on opposite side
+		xmin = x1;
+		xmax = x0;
+		return 0;
+	}
+	if(y2*y < 0.0) { // if y2 and y are on opposite sides
+		xmax = x2;
+		xmin = x0;
+		return 0;
+	}
+
+	// all sampled points on same side
+
+	// in ideal case, 
+	// either y1 < y < y2 (UP)
+	// or     y1 > y > y2 (DOWN)
+	// in non-ideal cases 
+	// could be y1 = y = y (FLAT)
+	// could be y>y1 and y>y2, (CONCAVE)
+	// or       y<y1 and y<y2
+	enum class Slope {NONE, UP, DOWN, FLAT, CONCAVE_UP, CONCAVE_DOWN};
+	Slope behavior = Slope::NONE;
+
+	if( (y1==y) && (y2==y) ) behavior = Slope::FLAT;
+	else if( (y1<=y && y<y2) || (y1<y && y<=y2) ) behavior = Slope::UP;
+	else if( (y1>=y && y>y2) || (y1>y && y>=y2) ) behavior = Slope::DOWN;
+	else if( (y1< y && y2<y) ) behavior = Slope::CONCAVE_DOWN;
+	else if( (y1>y && y2> y) ) behavior = Slope::CONCAVE_UP;
+	
+	// above zero
+	if(y>0){
+		switch(behavior){
+		case Slope::UP: {
+			while(y1 > 0.0){
+				DX *= 2.0;
+				x1 = (1.-DX)*x0;
+				y1 = func(x1);
+			}
+			xmin = x1;
+			xmax = x0;
+			return 0;
+		} break;
+		case Slope::CONCAVE_DOWN:
+		case Slope::DOWN: {
+			while(y2 > 0.0){
+				DX *= 2.0;
+				x2 = (1.+DX)*x0;
+				y2 = func(x2);
+			}
+			xmax = x2;
+			xmin = x0;
+			return 0;
+		} break;
+		default:{
+			xmin = nan("");
+			xmax = nan("");
+			perror("Unable to find a root near this guess");
+			return 1;
 		}
-		xmin = x; ymin = y;
+		}
+	}
+	// if below zero
+	else if (y<0.0){
+		switch(behavior){
+		case Slope::UP: 
+		case Slope::CONCAVE_UP: {
+			while(y2 < 0.0){
+				DX *= 2.0;
+				x2 = (1.+DX)*x0;
+				y2 = func(x2);
+			}
+			xmax = x2;
+			xmin = x0;
+			return 0;
+		} break;
+		case Slope::DOWN: {
+			while(y1 < 0.0){
+				DX *= 2.0;
+				x1 = (1.-DX)*x0;
+				y1 = func(x1);
+			}
+			xmin = x1;
+			xmax = x0;
+			return 0;
+		} break;
+		default:{
+			xmin = nan("");
+			xmax = nan("");
+			perror("Unable to find a root near this guess");
+			return 1;
+		}
+		}
 	}
 
 	//swap if they are backwards
+	// this conditionn should be unreachable
 	if(xmin > xmax){
 		double temp = xmax;
 		xmax = xmin; xmin = temp;
-		temp = ymax;
-		ymax = ymin; ymin = temp;
 	}
+	return 0;
 }
 
 // this will find brackets using newton's method to look for the next zero, then a bit beyond it
 // why use one zero-finding method to prepare another zero-finding method? 
 //    because Newton's method can fail, but bisection searches can go to nearly arbitrary accuracy
-void bisection_find_brackets_newton(
-	std::function<double(double)> func,		//the function to find zero of
-	double x,								//an initial guess for the zero
-	double& xmin,							//the lower bracket -- will be returned
-	double& xmax							//the upper bracket -- will be returned
+int rootfind::bisection_find_brackets_newton(
+	std::function<double(double)>& func, //the function to find zero of
+	double const x0,                     //an initial guess for the zero
+	double& xmin,                        //the lower bracket -- will be returned
+	double& xmax                         //the upper bracket -- will be returned
 ){
-	double y1=func(x), y2=y1;	
-	double x1=x, x2=x;
+	double y1=func(x0), y2=y1;	
+	double x1=x0, x2=x0;
 	double xdx, ydx;
 	double ymax, ymin;
 	//while the two ys are on same side of axis, keep reposition until zero is bound
@@ -133,24 +218,23 @@ void bisection_find_brackets_newton(
 		temp = ymax;
 		ymax = ymin; ymin = temp;
 	}
-
-
+	return 0;
 }
 
 //given brackets bounding a single zero, find the zero
 // the brackets xmin, xmax MUST bound a single zero
-double bisection_search(
-	std::function<double(double)> func,		//the function to find zero of
-	double &x,								//the location of zero -- will be returned
-	double xmin,							//the lower bracket
-	double xmax								//the upper bracket
+double rootfind::bisection_search(
+	std::function<double(double)>& func, //the function to find zero of
+	double &x,                           //the location of zero -- will be returned
+	double &xmin,                         //the lower bracket
+	double &xmax                          //the upper bracket
 ){
 	//now use bisection to find dx so that y=0.0
 	x = 0.5*(xmin+xmax);
 	double y = func(x), y2 = y;
 	double ymin = func(xmin), ymax=func(xmax);
 	double xold = x;
-	while( fabs(y)>0.0 || isnan(y) ){	
+	while( fabs(y)>0.0 || std::isnan(y) ){	
 		//printf("BISECT [%le %le], %le\n", xmin, xmax, x);	
 		if( (y*ymax>0.0) ){
 			xmax = x;
@@ -164,9 +248,9 @@ double bisection_search(
 		y = func(x);
 		
 		//it can happen that the search becomes stuck
-		// in this case, picking pseudorandom location within brackets can sometimes help
+		// in this case, picking random location within brackets can sometimes help
 		if(y2==y){//if the problem becomes stuck in a loop
-			x = xmin + pseudo_unif()*fabs(xmax-xmin);
+			x = xmin + rootfind::pseudo_unif()*fabs(xmax-xmin);
 			y = func(x);
 		}
 		y2 = y;		
@@ -176,23 +260,6 @@ double bisection_search(
 	}
 	x = 0.5*(xmin+xmax);
 	return func(x);
-}
-
-
-
-// *************************************************************************************
-//					NEWTON METHODS
-//  These methods are for gradient-descent methods
-// *************************************************************************************
-
-template<>
-double gen_abs<double> (double x){
-	return fabs(x);
-}
-
-template<>
-std::complex<double> gen_abs(std::complex<double> x){
-	return std::abs(x);
 }
 
 #endif

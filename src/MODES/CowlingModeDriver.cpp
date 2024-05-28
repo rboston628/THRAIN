@@ -20,7 +20,7 @@ CowlingModeDriver::CowlingModeDriver(Star *star, double Gamma1)
 	double R = star->Radius();
 	r = new double[len];
 	//define values of radius for the mode
-	for(int X=0; X<len-1; X++){
+	for(std::size_t X=0; X<len-1; X++){
 		r[X] = star->rad(2*X)/R;
 	}
 	r[len-1] = 1.0;
@@ -39,7 +39,7 @@ CowlingModeDriver::~CowlingModeDriver(){
 	delete[] C; delete[] V;
 }
 
-int CowlingModeDriver::length(){
+std::size_t CowlingModeDriver::length(){
 	return len;
 }
 
@@ -47,7 +47,7 @@ double CowlingModeDriver::Gamma1(){
 	return adiabatic_index;
 }
 
-double CowlingModeDriver::rad(int X){
+double CowlingModeDriver::rad(std::size_t X){
 	return (r[X]);
 }
 
@@ -59,7 +59,7 @@ void CowlingModeDriver::initializeArrays(){
 	V[0] = 0.0;
 	U[0] = 3.0;
 	C[0] = star->getC(0);
-	int X;
+	std::size_t X;
 	for(X=1; X<len_star-1; X++){
 		A[X] = star->getAstar(X, adiabatic_index);
 		U[X] = star->getU(X);
@@ -77,7 +77,7 @@ void CowlingModeDriver::initializeArrays(){
 //these functions come from coupled wave equations -- see Unno et al. Ch 18
 void CowlingModeDriver::getCoeff(
 	double *CCI,
-	int X,
+	std::size_t X,
 	int b,
 	double sig2,
 	int L
@@ -135,7 +135,7 @@ void CowlingModeDriver::setupBoundaries() {
 	k_surface = 0.0;
 }
 
-int CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){	
+std::size_t CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){
 	double yy[num_var][BC_C/2+1];//0,2,4
 	//the zero-order terms are simple
 	yy[0][0] = y0[0];
@@ -162,9 +162,9 @@ int CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l
 
 		trip[j] = yy[0][j]-yy[1][j];
 	}
-	//noew solve for y using expansion
-	int start = 1;
-	for(int X=0; X<=start; X++){
+	//now solve for y using expansion
+	std::size_t start = 1;
+	for(std::size_t X=0; X<=start; X++){
 		for(int i=0; i<num_var; i++){
 			ymode[i][X] = yy[i][0];
 			for(int j=1;j<=(central_bc_order/2);j++) ymode[i][X] += yy[i][j]*pow(r[X],2*j);
@@ -173,7 +173,7 @@ int CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l
 	return start;
 }
 
-int CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l, int m){
+std::size_t CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l, int m){
 	//specify initial conditions at surface
 	double yy[num_var][BC_S+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
 	double yyn[num_var]; for(int i=0;i<num_var;i++) yyn[i]=0.0;
@@ -216,10 +216,10 @@ int CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l
 		yyn[1] = (3.*kn*ys[1] + (n-(n+1.)/Gam1)*tripn)/(n+1.);
 	}*/
 	//the number of terms to calculate
-	int start = len-2;
+	std::size_t start = len-2;
 	double t;
 	for(int i=0; i<num_var; i++) ymode[i][len-1] = yy[i][0];
-	for(int X=len-2; X>=start; X--){
+	for(std::size_t X=len-2; X>=start; X--){
 		t = (1.-r[X]);
 		for(int i=0; i<num_var; i++){
 			ymode[i][X] = yy[i][0];
@@ -240,9 +240,9 @@ double CowlingModeDriver::SSR(double omeg2, int l, ModeBase* mode){
 	double difxi, dDP;
 	double rho,P,drhodr,dPdr,g,r,G1,freq2,L2,xi,chi,DPhi,dDPhi,Drho;
 	double b3,b2,b1,a1,a2,a3, h1;
-	freq2 = omeg2;//sigma2*star->mr(len_star-1)*pow(star->rad(len_star-1),-3);
-	for(int X=4; X<len-4; X++){
-		int XX = 2*X;
+	freq2 = omeg2;
+	for(std::size_t X=4; X<len-4; X++){
+		std::size_t XX = 2*X;
 		//stellar variables, to simplify equations
 		rho    = star->rho(XX);
 		P      = star->P(XX);
@@ -309,11 +309,11 @@ double CowlingModeDriver::tidal_overlap(ModeBase* mode){
 	double freq2 = omega2*star->Gee()*Mstar*pow(Rstar,-3);
 	double xir=0.0, xiH=0.0, rho=0.0, rlp1=0.0;
 	double dx;
-	int xx;
+	std::size_t xx;
 	//need to numerically integrate
 	double sum1=0.0, sum2=0.0, integral = 0.0;
 	double N1=0.0, N2=0.0, NN=0.0;
-	for(int x=1; x<len; x++){
+	for(std::size_t x=1; x<len; x++){
 		xx = 2*x;
 		if(x==len-1) xx = len_star-1;
 		dx = (r[x]-r[x-1])*rscale;
@@ -350,12 +350,12 @@ double CowlingModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
 	double xir1=0.0, xiH1=0.0, rho=0.0;
 	double xir2=0.0, xiH2=0.0;
 	double dx;
-	int xx;
+	std::size_t xx;
 	//need to numerically integrate
 	double sum1=0.0, sum2=0.0, integral = 0.0;
 	double N1=0.0, N2=0.0, NN=0.0;
 	double M1=0.0, M2=0.0, MM=0.0;
-	for(int x=1; x<len; x++){
+	for(std::size_t x=1; x<len; x++){
 		xx = 2*x;
 		if(x==len-1) xx = len_star-1;
 		dx = (r[x]-r[x-1])*rscale;

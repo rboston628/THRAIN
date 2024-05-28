@@ -13,50 +13,58 @@
 
 #include "Star.h"
 
+namespace Calculation {
+	struct InputData;
+}
+
 class Polytrope : public Star {
 public:
 
-	void graph_title(char* buff){
-		sprintf(buff, "polytrope n=%1.2f", n);
+	static int read_star_input(FILE* input_file, Calculation::InputData&);
+
+	std::string graph_title() override {
+		return strmakef("polytrope n=%1.2f", n);
 	}
-	//char* name(){return polyname;};
 	
-	Polytrope(double, double, double, int);	//constructor, M, R, n and length
-	Polytrope(double, int);					//constructor, n and length
-	Polytrope(double, int, const double);	//constructor, n and length, dx
+	Polytrope(double, double, double, std::size_t);	//constructor, M, R, n and length
+	Polytrope(double, std::size_t);					//constructor, n and length
+	Polytrope(double, std::size_t, const double);	//constructor, n and length, dx
 	virtual ~Polytrope();  //destructor
-	int length(){return len;}
+	std::size_t length() override {return len;}
 	//these three functions specify units
-	double Radius();	//total radius
-	double Mass();		//total mass
-	double Gee(){return GG;};
-	//in Newtonian, light speed is infinity... just use the max value to represent this
-	virtual double light_speed2(){return std::numeric_limits<double>::max();};
+	double Radius() override;	//total radius
+	double Mass() override;		//total mass
+	double Gee() override {return GG;};
 	
 	//these return value of indicated variable -- used in testing
-	double getX(int X){     return Y[X][x];}
-	double getY(int X){     return Y[X][y];}
-	double getYderiv(int X){return Y[X][z];}
+	double getX(std::size_t X){     return Y[X][x];}
+	double getY(std::size_t X){     return Y[X][y];}
+	double getYderiv(std::size_t X){return Y[X][z];}
 		
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double  mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double Gamma1(int);
-	double sound_speed2(int, double GamPert=0.0);
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	
+		
+	void writeStar(const char *const c=NULL) override;
 	
 		
 	void writeStar(char *c=NULL);
 	
 private:
-	int len;
+	void basic_setup();
+	void init_arrays();
+	std::size_t len;
 	double n;		//polytropic index
 	double Gamma;	//polytropic exponent
 	//the values of K, rho0, P0 relate to the choice of units and scale factors
@@ -73,33 +81,28 @@ private:
 	double *mass;
 	double *base; //= pow(y,n-1), avoids repeated calls to pow(y,n)
 	double GG;
-	
+	double set_mass(double const y[numvar]);
+		
+	//integrate Lane-Emden using basic RK4
 	void centerInit(double ycenter[numvar]);
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
-	
-	//integrate Lane-Emden using basic RK4
-	double RK4integrate(const int, double);
-	//a grid-multiplying RK4 method
-	int RK4integrate(const int, double, int);
-	//find the location of edge of star for last step of solution
-	void findEdge(int);
-	double integrateEdge(int Nedge, double dx);
+	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
+	double RK4integrate(const std::size_t, double, SurfaceBehavior);
 	
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface
 	void setupCenter();		//prepare values of ac[]
 	void setupSurface();	//prepare values of as[]
-	char polyname[40];		//a name of the polytrope... not yet implemented properly
 public:
 	//methods to find central, surfae power series expansions of key variables in pulsation
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter(double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double*, int&, double g=0);
-	void getUSurface(double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter(double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double*, int&, double g=0) override;
+	void getUSurface(double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
 };
 
 #endif

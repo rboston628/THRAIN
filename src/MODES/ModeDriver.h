@@ -15,8 +15,8 @@
 class ModeBase {
 public:
 	//file output methods to write and view plots of mode
-	virtual void printMode(char *c = NULL) = 0;
-	virtual void writeMode(char *c = NULL) = 0;
+	virtual void printMode(const char *const c = NULL) = 0;
+	virtual void writeMode(const char *const c = NULL) = 0;
 		
 	virtual ~ModeBase(){};
 	
@@ -28,9 +28,9 @@ public:
 	virtual double getFreq() =0;
 	virtual double getPeriod()=0;
 	
-	virtual double getRad(int x) =0;
-	virtual double getY(int i, int x) =0;
-	virtual double getYtilde(int i, int x) =0;
+	virtual double getRad(std::size_t x) =0;
+	virtual double getY(int i, std::size_t x) =0;
+	virtual double getYtilde(int i, std::size_t x) =0;
 };
 
 //**************************************************************************************
@@ -44,17 +44,17 @@ public:
 //**************************************************************************************
 class ModeDriver {
 public:
-	const size_t num_var;
+	const std::size_t num_var;
 	//constructor
 	ModeDriver(int nv, Star *s) : num_var(nv), star(s)  {};
 	virtual ~ModeDriver(){};
-	virtual int length() =0;
+	virtual std::size_t length() =0;
 	virtual double Gamma1() =0;
-	virtual double rad(int) =0;
+	virtual double rad(std::size_t) =0;
 
-	virtual int CentralBC(double **y, double *yo, double s2, int l, int m=0) =0;
-	virtual int SurfaceBC(double **y, double *ys, double s2, int l, int m=0) =0;
-	virtual void getCoeff(double *CC, const int, const int, const double, const int) =0;
+	virtual std::size_t CentralBC(double **y, double *yo, double s2, int l, int m=0) =0;
+	virtual std::size_t SurfaceBC(double **y, double *ys, double s2, int l, int m=0) =0;
+	virtual void getCoeff(double *CC, const std::size_t, const int, const double, const int) =0;
 	virtual void setupBoundaries() =0;
 	
 	virtual double SSR(double, int, ModeBase*) =0;
@@ -72,7 +72,7 @@ protected:
 	int surface_bc_order;
 	
 	friend class ModeBase;
-	template <size_t N> friend class Mode;
+	template <std::size_t N> friend class Mode;
 	friend class Star;
 };
 
