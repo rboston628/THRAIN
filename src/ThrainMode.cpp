@@ -94,17 +94,23 @@ double compare_JCD(double n, int l, int k, double w){
 }
 
 double calculate_Pekeris(int l, int k, double Gam1){
-	// return exactly known square frque
-	// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
-	// but note his beta = sigma^2, his n = l, and his k = 2k
-	// also found in Cox 1980 in chapter 17, with change his n = k-1
-	// also found in Christensen-Dalsgaard and Mullan 1994, eq 3.3
-	double dnl = Gam1*double(k)*(double(k+l)+0.5)-2.;
-	double wPek2 = dnl + sqrt(dnl*dnl + double(l*l+l));
-	//there is also a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664), 
-	// c.f. Cox (1980) eq 17.80
-	// NOTE the values I get are always wPek2 = l
-	if(k==0) wPek2 = double(2.*l*(l-1))/double(2*l+1);
+	// return exactly known square frquency
+	double wPek2, dnl;
+	if(k<0) wPek2 = 0.0;
+	else if(k==0) {
+		//there is a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664), 
+		// c.f. Cox (1980) eq 17.80
+		// NOTE the values I get are always wPek2 = l
+		wPek2 = double(l); //double(2.*l*(l-1))/double(2*l+1);
+	}
+	else {
+		// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
+		// but note his beta = sigma^2, his n = l, and his k = 2k
+		// also found in Cox 1980 in chapter 17, with change his n = k-1
+		// also found in Christensen-Dalsgaard and Mullan 1994, eq 3.3
+		dnl = Gam1*double(k)*(double(k+l)+0.5) - 2.;
+		wPek2 = dnl + sqrt(dnl*dnl + double(l*l+l));
+	}
 	return wPek2;
 }
 

@@ -84,6 +84,9 @@ double Star::SSR(){
 	checkPoiss = 0.0;
 	double d2Phi = 0.0;
 	double e1, e2, n1, n2;
+	// for Kahan summation
+	double x1, x2;
+	volatile double c1 = 0.0, c2 = 0.0, t1, t2;
 	for(std::size_t X=4; X<len-4; X++){
 		//Euler equation
 		e1 = fabs(dPdr(X) + rho(X)*dPhidr(X) );
@@ -105,8 +108,18 @@ double Star::SSR(){
 		//add absolute error
 		e1 = e1/n1;
 		e2 = e2/n2;
-		checkEuler += e1*e1;
-		checkPoiss += e2*e2;
+		// use Kahan summation -- supposed to have constant error scaling
+		// equivalent to adding up e1^2, e2^2
+		x1 = e1*e1 - c1;
+		t1 = checkEuler + x1;
+		volatile double d1 = (t1 - checkEuler) - x1;
+		c1 = d1;
+		checkEuler = t1;
+		x2 = e2*e2 - c2;
+		t2 = checkPoiss + x2;
+		volatile double d2 = (t2 - checkPoiss) - x2;
+		c2 = d2;
+		checkPoiss = t2;
 	}
 	return sqrt((checkPoiss+checkEuler)/double(2*len-8));
 }

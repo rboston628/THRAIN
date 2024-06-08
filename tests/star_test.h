@@ -7,11 +7,12 @@
 // *******************************************************************
 
 #include "../src/STARS/Star.h"
-#include "../src/STARS/Isopycnic.h"
 #include "../src/STARS/Polytrope.h"
 #include "../src/STARS/ChandrasekharWD++.h"
 #include "../src/STARS/MESA.h"
 #include <cxxtest/TestSuite.h>
+//import for testing
+#include "test_stars/Isopycnic.h"
 #include <random>
 #include <stdio.h>
 

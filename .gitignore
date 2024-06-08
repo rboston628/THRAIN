@@ -41,6 +41,11 @@ lib/*.o
 # the test suite
 !tests/
 !tests/*.h
+# include test classes
+!tests/test_modes/
+!tests/test_modes/*
+!tests/test_stars/
+!tests/test_stars/*
 # include the test inputs
 !tests/inputs/
 !tests/inputs/spline/

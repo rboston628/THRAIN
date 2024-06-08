@@ -3,7 +3,7 @@
 //	Mode.cpp
 //		Equation agnostic 
 //			-- all information specific to physics supplied by the driver
-// 		Capable of nonradial, Cowling, 1PN modes by supplying different drivers
+// 		Capable of Nonradial, Cowling modes by supplying different drivers
 //  Reece Boston Mar 24, 2022
 //  NOTE: If you make ANY changes to this file, you MUST make clean and recompile
 //**************************************************************************************
@@ -21,9 +21,9 @@ template <std::size_t  numvar>
 void Mode<numvar>::basic_setup(){
 	wronskian = [this](double x) -> double {return this->calculateWronskian(x);};
 	cee2 = star->light_speed2();
-	Gee = star->Gee();
+	Gee  = star->Gee();
 
-	//begin by setting all values to 1 -- will be changed later in code
+	//begin by setting all values to 1 -- will be rescaled for final solution
 	for(int i=0;i<numvar;i++){
 		yCenter[i]  = 1.0;
 		ySurface[i] = 1.0;
@@ -34,13 +34,6 @@ void Mode<numvar>::basic_setup(){
 	Gamma1   = driver->Gamma1();
 	
 	//determine the index where fit for inward and outward integrations will occur
-	//some experimentation suggests this should be closer to surface for large l
-	std::size_t imax = len;
-	R = star->rad(len_star-1);
-	double R80 = 0.8*R;	//at 80% of stellar radius
-	for(std::size_t i=0;i<len-1;i++) if(star->rad(2*i) > R80) {imax=i;break;}
-	double b = double(l)/double(l+1);
-	//based on l, set the fit infex at an intermediary point between stellar index and R80
 	xfit = star->indexFit;
 	//set the arrays that define the perturbation
 	rad = new double[len];
@@ -50,16 +43,17 @@ void Mode<numvar>::basic_setup(){
 	for(std::size_t X=0; X<len; X++){
 		rad[X] = driver->rad(X);
 	}
-	//define the conversion factor from frequency in rad/s to dimensionless; w=f*sig2omeg
-	sig2omeg = pow(star->Radius(),3)/(Gee*star->Mass());
+	//define the conversion factor from dimensionless frequency to angular f in rad/s
+	// f^2 = (omeg2freq) * w^2
+	omeg2freq = Gee * star->Mass() * pow(star->Radius(), -3);
 	
 	//set up boundary matrix and index array
 	double **yy = new double*[numvar];
 	int *ind = new int[numvar];
-	for(int i=0;i<numvar;i++) yy[i] = new double[numvar];
-	driver->getBoundaryMatrix(num_var, yCenter, ySurface, yy, ind);
-	for(int i=0;i<numvar;i++) for(int j=0;j<numvar;j++) boundaryMatrix[i][j]=yy[i][j];
-	for(int i=0;i<numvar;i++) indexOrder[i] = ind[i];
+	for(int yi=0; yi<numvar; yi++) yy[yi] = new double[numvar];
+	driver->getBoundaryMatrix(num_var, yy, ind);
+	for(int yi=0; yi<numvar; yi++) for(int yj=0; yj<numvar; yj++) boundaryMatrix[yi][yj]=yy[yi][yj];
+	for(int yi=0; yi<numvar; yi++) indexOrder[yi] = ind[yi];
 	delete[] yy;
 	delete[] ind;
 }
@@ -92,10 +86,10 @@ Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 		//see Cox 17.7, homogeneous model
 		//homogeneous model frequencies usually larger, so reduce size of n used
 		// there is no magic to this guess -- it just seems to work okay
-		double ks = double(k - (2*l-4));		
+		double ks = double(k); // - (2*l-4));		
 		// 2Dn = -4 + Gamma1*[ n*(2l+2n+5) + 2l + 3]
-		double Dn = Gamma1*( ks*(ks+ell+0.5) ) - 2.0;
-		if(Gamma1==0.0) Dn = star->Gamma1(0)*( ks*(ks+ell+0.5) ) - 2.0;
+		double gam1 = (Gamma1 == 0.0 ? star->Gamma1(0) : Gamma1);
+		double Dn = gam1*( ks*(ks+ell+0.5) ) - 2.0;
 		//omega^2 = Dn + sqrt( Dn^2 + l(l+1) )
 		omega2 = Dn + sqrt( Dn*Dn + ell*(ell+1.0) );
 		//from dimensional considerations, sigma^2 = (GM/R^3) *omega^2
@@ -134,23 +128,19 @@ Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv
 		double tmp = omeg2hi;
 		omeg2hi = omeg2lo;
 		omeg2lo = tmp;
-	}
-	else if (omeg2lo==omeg2hi){	//this should not occur
-		omeg2lo *= 0.9;
-	}
-	
+	}	
 	//the brackets given are often themselves zeros -- inch them closer to avoid this
-	double dw = (omeg2hi-omeg2lo)*1.0e-2;
-	double w2min = omeg2lo * 1.01; // +dw;
-	double w2max = omeg2hi * 0.99; // -dw;
+	double dw = (omeg2hi - omeg2lo) / 100.0;
+	double w2min = omeg2lo + dw;
+	double w2max = omeg2hi - dw;
 
 	//now find the initial bracketing values of the Wronskian
-	double w2 = 0.5*(omeg2lo + omeg2hi);
-	rootfind::bisection_find_brackets_move(this->wronskian, w2, omeg2lo, omeg2hi);
-	double W = rootfind::bisection_search(this->wronskian, w2, omeg2lo, omeg2hi);
+	double w2 = 0.5*(w2min + w2max);
+	double W = rootfind::bisection_search(this->wronskian, w2, w2min, w2max);
 	
 	//if the Wronskian still isn't good, just find values as normal
 	if(W > 1e-10) {
+		omega2=w2;
 		converge();
 	}
 	else {
@@ -182,12 +172,10 @@ void Mode<numvar>::converge(){
 //Find frequency using a bisection search, based on Wronskian, up to tolerance tol
 template <std::size_t numvar>
 void Mode<numvar>::convergeBisect(double tol){
-	//the apparently magical numbers are arbitrary
 	double w = omega2, wmin = 0.0, wmax, W;
-	rootfind::bisection_find_brackets_newton(this->wronskian, w, wmin, wmax);
+	rootfind::bisection_find_brackets_move(this->wronskian, w, wmin, wmax);
 	W = rootfind::bisection_search(this->wronskian, w, wmin, wmax);
 	omega2 = w;
-	fprintf(stderr, "Wronskian = %le for freq = %le\n", W, omega2);
 }	
 
 //Newton convergence on omega2, up to tolerance tol, max number of steps term
@@ -197,7 +185,6 @@ void Mode<numvar>::convergeNewton(double tol, int term){
 	double w = omega2, W;
 	W = rootfind::newton_search(this->wronskian, w, w, tol, (std::size_t)term);
 	omega2 = w;
-	printf("Wronskian = %le for freq = %le\n", W, omega2);
 }
 
 //integrates from both edges toward center and returns Wronskian
@@ -208,17 +195,15 @@ double Mode<numvar>::calculateWronskian(double w2){
 	double DY[numvar][numvar];
 	//store values of outward solution at fitting point in rows
 	for(int i=0;i<numvar/2;i++){
-		RK4out(xfit, w2, boundaryMatrix[i]);		
+		RK4out(xfit, w2, boundaryMatrix[i]);
 		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
 	}
 	//store values of inward solution at fitting point in rows
 	for(int i=numvar/2; i<numvar; i++){
-		RK4in( xfit, w2, boundaryMatrix[i]);		
+		RK4in( xfit, w2, boundaryMatrix[i]);
 		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
 	}
-	
 	//the Wronskian is the determinant of this matrix
-	fprintf(stderr, "WRONSKIAN = %le\n", matrix::determinant(DY));
 	return matrix::determinant(DY);
 }
 
@@ -402,7 +387,7 @@ double Mode<numvar>::getOmega2(){
 }
 template <std::size_t numvar> 
 double Mode<numvar>::getFreq(){
-	return sqrt(omega2/sig2omeg);
+	return sqrt(omeg2freq * omega2);
 }
 template <std::size_t numvar> 
 double Mode<numvar>::getPeriod(){
@@ -420,7 +405,5 @@ template <std::size_t numvar>
 double Mode<numvar>::tidal_overlap(){
 	return driver->tidal_overlap(this);
 }
-
-
 
 #endif
