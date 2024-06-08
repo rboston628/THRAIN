@@ -143,7 +143,7 @@ void test_bad_SSR(){
     ModeDriver *testDriver = new NonradialModeDriver(testStar, 5./3.);
     Mode<4UL> *testMode = new Mode<4UL>(K, L, 0, testDriver);
     TS_ASSERT_LESS_THAN( testDriver->length(), MIN_LEN );
-    TS_ASSERT_IS_NAN( testMode->SSR() );
+    TS_ASSERT( std::isnan(testMode->SSR()) );
     delete testStar;
     delete testDriver;
     delete testMode;
