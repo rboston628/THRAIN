@@ -75,8 +75,8 @@ void DummyModeDriver::setupBoundaries(){}
 double DummyModeDriver::SSR(double x, int y, ModeBase* ) {return 0.0;}
 double DummyModeDriver::tidal_overlap(ModeBase*) {return 0.0;}
 double DummyModeDriver::innerproduct(ModeBase*,ModeBase*) {return 0.0;}
-void DummyModeDriver::getBoundaryMatrix(int, double **, int*){};
-void DummyModeDriver::varnames(std::string*){};	//names of variables to print out
+void DummyModeDriver::getBoundaryMatrix(int, double **, int*){}
+void DummyModeDriver::varnames(std::string*){}	//names of variables to print out
 
 
 //**************************************************************************************
@@ -84,8 +84,8 @@ void DummyModeDriver::varnames(std::string*){};	//names of variables to print ou
 //  	Returns (sin wx, cos wx), where w = 2pi N, for N
 //      Intended for testing, comparing to results of SineModeDriver
 //**************************************************************************************
-SineMode::SineMode(int N, std::size_t len): N(N), len(len), freq(2. * M_PI * N) {};
-SineMode::~SineMode(){};
+SineMode::SineMode(int N, std::size_t len): N(N), len(len), freq(2. * M_PI * N) {}
+SineMode::~SineMode(){}
 // to match results of SindeModeDriver, define Osaki-Scuflaire mode order = -2N
 int SineMode::modeOrder(){return -2 * N;}
 // relate w^2, freq, and period
