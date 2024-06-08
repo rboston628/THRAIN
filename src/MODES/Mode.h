@@ -11,6 +11,7 @@
 #ifndef MODEH
 #define MODEH
 
+#include <functional>
 #include "../constants.h"
 #include "../STARS/Star.h"
 #include "../MODES/ModeDriver.h"
