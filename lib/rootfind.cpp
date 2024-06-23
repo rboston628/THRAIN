@@ -3,11 +3,23 @@
 
 #include "rootfind.h"
 #include <complex>
+#include <stdio.h>
 
 double rootfind::pseudo_unif(){
 	static int a=53, b=122, r=17737, dart = 39;//for pseudorandom positioning
 	dart = (a*dart+b)%r; //generates a psuedo-random integer in (0,r)
 	return (double(dart)/double(r));
+}
+
+double rootfind::pseudo_unif(double xmin, double xmax){
+	double dart = xmin;
+	if (xmin < xmax){
+		dart = xmin + rootfind::pseudo_unif() * (xmax - xmin);
+	}
+	else if (xmin > xmax){
+		dart = xmax + rootfind::pseudo_unif() * (xmin - xmax);
+	}
+	return dart;
 }
 
 // *************************************************************************************
@@ -226,40 +238,49 @@ int rootfind::bisection_find_brackets_newton(
 double rootfind::bisection_search(
 	std::function<double(double)>& func, //the function to find zero of
 	double &x,                           //the location of zero -- will be returned
-	double &xmin,                         //the lower bracket
-	double &xmax                          //the upper bracket
+	double &xmin,                        //the lower bracket
+	double &xmax                         //the upper bracket
 ){
-	//now use bisection to find dx so that y=0.0
-	x = 0.5*(xmin+xmax);
-	double y = func(x), y2 = y;
+	// if the brackets do not enclose a root, find better brackets
 	double ymin = func(xmin), ymax=func(xmax);
-	double xold = x;
+	while (ymin * ymax > 0){
+		bisection_find_brackets_newton(func, x, xmin, xmax);
+		ymin = func(xmin);
+		ymax = func(xmax);
+	}
+
+	x = 0.5*(xmin+xmax);
+	double xold = fabs(xmax-xmin), xnew = xold;
+	double y = 1.0, y2 = 0.0;
+
+	// now begin bisection search
 	while( fabs(y)>0.0 || std::isnan(y) ){	
-		//printf("BISECT [%le %le], %le\n", xmin, xmax, x);	
-		if( (y*ymax>0.0) ){
-			xmax = x;
-			ymax = y;
+		// continue trying new brackts until they move
+		while ( (xnew == xold) && !std::isnan(y) ) {
+			y = func(x);
+			if ( y*ymax > 0.0 ) {
+				xmax = x;
+				ymax = y;
+			}
+			else if ( y*ymin > 0.0 ) {
+				xmin = x;
+				ymin = y;
+			}
+			xnew = fabs(xmax - xmin);
+			x = rootfind::pseudo_unif(xmin, xmax);
+			// if it is truly stuck, y will not change either; then quit
+			if ( y2==y ) break;
+			y2 = y;
 		}
-		else if( (y*ymin>0.0) ){
-			xmin = x;
-			ymin = y;
-		}
+
 		x = 0.5*(xmin+xmax);
 		y = func(x);
-		
-		//it can happen that the search becomes stuck
-		// in this case, picking random location within brackets can sometimes help
-		if(y2==y){//if the problem becomes stuck in a loop
-			x = xmin + rootfind::pseudo_unif()*fabs(xmax-xmin);
-			y = func(x);
-		}
-		y2 = y;		
+			
 		//if the brackets are not moving, stop the search
-		if(xold == fabs(xmax-xmin)) break;
-		xold = fabs(xmax-xmin);
+		if(y2==y) break;
+		xold = xnew;
 	}
-	x = 0.5*(xmin+xmax);
-	return func(x);
+	return y;
 }
 
 

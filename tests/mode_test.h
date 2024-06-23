@@ -32,7 +32,7 @@ public:
 
 static ModeTest *createSuite (){
     system( "mkdir -p tests/artifacts" );
-    printf("\n## MODE TESTS ##\n");
+    printf("\n## MODE TESTS  -- some of these are slow ##\n");
     return new ModeTest();
 }
 static void destroySuite(ModeTest *suite) { 
@@ -163,6 +163,7 @@ void test_bad_SSR(){
     Mode<4UL> *fMode = new Mode<4UL>(0, L, 0, testDriver);
     TS_ASSERT_EQUALS( fMode->modeOrder(), 0 );
     TS_ASSERT_DIFFERS( testMode->modeOrder(), 0 );
+    // now check overlap
     double c0 = fabs(testDriver->innerproduct(testMode, fMode));
     TS_ASSERT_LESS_THAN( BAD_ERR, c0 );
     delete testStar;
@@ -173,9 +174,28 @@ void test_bad_SSR(){
 
 void test_SSR_scale(){}
 
+void test_w2_freq_period(){
+    std::size_t const LEN(1000);
+    double const GAM1(5./3.);
+    double const INDEX(1.5);
+    double const BIGM(1.9884099426e33);
+    double const BIGR(6.9599e10);
+    double const omeg2freq = G_CGS * BIGM * pow(BIGR, -3);
+    Polytrope *star = new Polytrope(BIGM, BIGR, INDEX, LEN);
+    CowlingModeDriver *driver = new CowlingModeDriver(star, GAM1);
+    Mode<2UL> *mode = new Mode<2UL>(mode::JCD1_5[0][0], 1, 0, driver);
+    // compare the dimensionless scaling factor to that from JCD-DJM
+    // must convert natural frequency to angular freuency
+    TS_ASSERT_DELTA( sqrt(omeg2freq) * 1.e6, 2. * M_PI * nug, 1.e-5 );
+    // ensure dimensionless frequency, frequency, and period are properly related
+    TS_ASSERT_EQUALS( sqrt(omeg2freq * mode->getOmega2()), mode->getFreq() );
+    TS_ASSERT_EQUALS( mode->getFreq(), 2 * M_PI / mode->getPeriod() )
+}
+
 /***** TESTS OF NONRADIAL MODES *****/
 
 void test_pekeris_frequency(){
+    fprintf(stderr, "\nPEKERIS TEST: ");
     double const Gam1(5./3.);
     double const ACCEPTABLE_ERROR(1.e-6);
     Mode<4UL> *testMode;
@@ -183,7 +203,6 @@ void test_pekeris_frequency(){
     double w2, wPek2, w2min, w2max;
     for(int L=1; L<4; L++){
         for(int K=1; K<10; K++){
-            fprintf(stderr, "\tmode %d, %d: ", L, K);
             w2min = mode::calculate_Pekeris(L, K-1, Gam1);
             w2max = mode::calculate_Pekeris(L, K+1, Gam1);
             wPek2 = mode::calculate_Pekeris(L, K  , Gam1);
@@ -192,12 +211,99 @@ void test_pekeris_frequency(){
             TS_ASSERT_EQUALS( k, K );
             w2 = testMode->getOmega2();
             wPek2 = mode::calculate_Pekeris(L, k, Gam1);
-            fprintf(stderr, "%le %le\n", w2, wPek2);
             TS_ASSERT_LESS_THAN( 2.0 * abs(w2-wPek2)/(w2+wPek2), ACCEPTABLE_ERROR );
             TS_ASSERT_LESS_THAN( testMode->SSR(), ACCEPTABLE_ERROR );
             delete testMode;
         }
     }
+}
+
+/*
+Compare to tables in Christensen-Dalsgaard and Mullan,  
+Mon. Not. R. Astron. Soc. 270, 921-935 (1994)
+*/
+
+void test_compare_JCD_DJM_1_5(){
+    // Table 1, Christensen-Dalsgaard and Mullan 1994
+    
+    fprintf(stderr, "\nCOMPARING TO JCD-DJM for n=1.5: ");
+    double const INDEX(1.5);
+    std::size_t const LEN(10000);
+    double const GAM1(5./3.);
+    // see paragraph after eqn. 3.2 for these values
+    // they give an M, but based on bad G; use GM instead
+    // GM is given as GM = 1.327124448e26 dyne-cm/g
+    // this code uses G = 6.67430e-8, so solving for M
+    // M is given as M = 1.9884099426e33
+    // R is given as R = 6.9599e10 cm
+    double const BIGM(1.9884099426e33);
+    double const BIGR(6.9599e10);
+    // to convert from angular rad/s to microhertz
+    double const CONV(1.e6 / (2.*M_PI));
+    Polytrope *polytrope = new Polytrope(BIGM, BIGR, INDEX, LEN);
+    NonradialModeDriver *driver = new NonradialModeDriver(polytrope, GAM1);
+    Mode<4UL> *mode;
+    for (int L=1; L<=3; L++){
+        for (int K=2; K<=14; K++){
+            mode = new Mode<4UL>(mode::omega2_JCD(INDEX, L, K-1), mode::omega2_JCD(INDEX, L, K+1), L, 0, driver);
+            TS_ASSERT_EQUALS( K, mode->modeOrder() );
+            TS_ASSERT_DELTA( mode->getFreq() * CONV, mode::freq_JCD(INDEX, L, K), 1.e-3 );
+            TS_ASSERT_LESS_THAN_EQUALS( mode::compare_JCD(INDEX, L, K, sqrt(mode->getOmega2())), 1.01e-4 );
+            TS_ASSERT_LESS_THAN( mode->SSR(), 1.e-7 );
+            delete mode;
+        }
+    }
+    delete driver;
+    delete polytrope;
+}
+
+void test_compare_JCD_DJM_3_0(){
+    // Table 2, Christensen-Dalsgaard and Mullan 1994
+    
+    fprintf(stderr, "\nCOMPARING TO JCD-DJM for n=3.0: ");
+    double const INDEX(3.0);
+    std::size_t const LEN(10000);
+    double const GAM1(5./3.);
+    Polytrope *polytrope = new Polytrope(INDEX, LEN);
+    NonradialModeDriver *driver = new NonradialModeDriver(polytrope, GAM1);
+    Mode<4UL> *mode;
+    for (int L=1; L<=3; L++){
+        for (int K=2; K<=14; K++){
+            mode = new Mode<4UL>(mode::omega2_JCD(INDEX, L, K-1), mode::omega2_JCD(INDEX, L, K+1), L, 0, driver);
+            TS_ASSERT_EQUALS( K, mode->modeOrder() );
+            TS_ASSERT_LESS_THAN_EQUALS( mode::compare_JCD(INDEX, L, K, sqrt(mode->getOmega2())), 1.01e-4 );
+            TS_ASSERT_LESS_THAN( mode->SSR(), 1.e-7 );
+            delete mode;
+        }
+    }
+    delete driver;
+    delete polytrope;
+}
+
+void test_compare_JCD_DJM_4_0(){
+    // Table 3, Christensen-Dalsgaard and Mullan 1994
+    
+    fprintf(stderr, "\nCOMPARING TO JCD-DJM for n=4.0: ");
+    double const INDEX(4.0);
+    std::size_t const LEN(10000);
+    double const GAM1(5./3.);
+    Polytrope *polytrope = new Polytrope(INDEX, LEN);
+    NonradialModeDriver *driver = new NonradialModeDriver(polytrope, GAM1);
+    Mode<4UL> *mode;
+    for (int L=1; L<=3; L++){
+        // NOTE Osaki-Scuflaire ordering breaks down for n=4 low-order modes
+        // the low-order modes in JCD-DJM use a different classification scheme for these
+        for (int K=7; K<=14; K++){
+            mode = new Mode<4UL>(mode::omega2_JCD(INDEX, L, K-1), mode::omega2_JCD(INDEX, L, K+1), L, 0, driver);
+            TS_ASSERT_EQUALS( K, mode->modeOrder() );
+            TS_ASSERT_LESS_THAN( mode::compare_JCD(INDEX, L, K, sqrt(mode->getOmega2())), 1.01e-4 );
+            TS_ASSERT_LESS_THAN( mode->SSR(), 1.e-7 );
+            delete mode;
+        }
+    }
+    delete driver;
+    delete polytrope;
+    fprintf(stderr, "\n");
 }
 
 
@@ -224,7 +330,7 @@ void test_same_coefficients_star(){
     TS_ASSERT_EQUALS( mode_len, nonradialDriver->length());
     for(std::size_t i=0; i<mode_len; i++){
         TS_ASSERT_EQUALS(cowlingDriver->rad(i), nonradialDriver->rad(i));
-        // get the coefficient matrices andc compared upper-left 2x2 block
+        // get the coefficient matrices and compared upper-left 2x2 block
         cowlingDriver->getCoeff(&cowlingMatrix[0][0], i, 0, fakeW2, L);
         nonradialDriver->getCoeff(&nonradialMatrix[0][0], i, 0, fakeW2, L);
         for(std::size_t j=0; j<2UL; j++ ){
@@ -239,6 +345,13 @@ void test_same_coefficients_star(){
 }
 
 void test_same_on_dummy_star(){
+    /*
+    It can be shown that for the DummyStar with P=rho=const, 
+    that there is only a single mode per L,
+    that this mode has a frequency of sqrt(L),
+    and that it is the same in both Cowling and 4th-order wave forms.
+    */
+   double const MACHINE_PRECISION = 1.e-15;
     std::size_t const LEN (1001);
     double const Gam1 (4./3.);
     DummyStar *testStar = new DummyStar(LEN);
@@ -248,18 +361,12 @@ void test_same_on_dummy_star(){
     Mode<2UL> *cowlingMode;
 
     // create a Cowling mode and Nonradial mode on the same star
-    int L = 3;
-    for(int K=1; K<10; K++){
-        nonradialMode = new Mode<4UL>(K,L,0, nonradialDriver);
-        cowlingMode   = new Mode<2UL>(K,L,0, cowlingDriver);
-        fprintf(stderr, "MODES %d %le : %d %le\n", 
-            cowlingMode->modeOrder(), cowlingMode->getOmega2(),
-            nonradialMode->modeOrder(), nonradialMode->getOmega2()
-        );
-        // make sure the modes are comparable
-        TS_ASSERT_EQUALS( cowlingMode->getOmega2(), nonradialMode->getOmega2() );
+    for (int L=1; L<10; L++){
+        nonradialMode = new Mode<4UL>(0,L,0, nonradialDriver);
+        cowlingMode   = new Mode<2UL>(0,L,0, cowlingDriver);
+        TS_ASSERT_DELTA( cowlingMode->getOmega2(), nonradialMode->getOmega2(), MACHINE_PRECISION );
+        TS_ASSERT_DELTA( cowlingMode->getOmega2(), double(L), MACHINE_PRECISION );
     }
-
 }
 
 

@@ -8,6 +8,8 @@ namespace rootfind {
 
 double pseudo_unif();
 
+double pseudo_unif(double xmin, double xmax);
+
 // *************************************************************************************
 //					BISECTION METHODS
 //  These methods are for implementing bisection searches in one parameter

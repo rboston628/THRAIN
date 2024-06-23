@@ -68,29 +68,40 @@ void get_max_from_set(
 	}
 }
 
-double compare_JCD(double n, int l, int k, double w){
-	if((n!=1.5) && (n!=3.0) && (n!=4.0) ){
-		return nan("");
-	}
-	//convert dimensionless freuqueny to same scale used in JCD-DJM paper
-	w = round(w*nug*10000.0)/10000.0;
-	double fJCD = 0.0;
-	//for polytropes n=1.5, n=3, n=4, compare to tables,l=1,2,3, with 1<=k<=35
-	if((l==1 | l==2 | l==3) & (k>0 & k<36)){
-		switch(int(n*10)){
-			case 15:
-				fJCD = JCD1_5[l-1][k-1];
-				break;
-			case 30:
-				fJCD = JCD3_0[l-1][k-1];
-				break;
-			case 40:
-				fJCD = JCD4_0[l-1][k-1];
-				break;
+double freq_JCD(double n, int l, int k){
+	double fJCD = nan("");
+	if((n==1.5) || (n==3.0) || (n==4.0) ){
+		//for polytropes n=1.5, n=3, n=4, compare to tables,l=1,2,3, with 1<=k<=35
+		if((l==1 | l==2 | l==3) & (k>0 & k<36)){
+			switch(int(n*10)){
+				case 15:
+					fJCD = JCD1_5[l-1][k-1];
+					break;
+				case 30:
+					fJCD = JCD3_0[l-1][k-1];
+					break;
+				case 40:
+					fJCD = JCD4_0[l-1][k-1];
+					break;
+			}
 		}
-		return abs(w-fJCD);
 	}
-	else return nan("");
+	return fJCD;
+}
+
+double omega2_JCD(double n, int l, int k) {
+	double w2 = mode::freq_JCD(n, l, k);
+	w2 /= nug;
+	return w2*w2;
+}
+
+double compare_JCD(double n, int l, int k, double w){
+	double diff = mode::freq_JCD(n, l, k);
+	if ( !std::isnan(diff) ) {
+		w = round(w*nug*10000.0)/10000.0;
+		diff = abs(w - diff);
+	}
+	return diff;
 }
 
 double calculate_Pekeris(int l, int k, double Gam1){

@@ -134,7 +134,7 @@ Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv
 	double w2min = omeg2lo + dw;
 	double w2max = omeg2hi - dw;
 
-	//now find the initial bracketing values of the Wronskian
+	//now perform the search
 	double w2 = 0.5*(w2min + w2max);
 	double W = rootfind::bisection_search(this->wronskian, w2, w2min, w2max);
 	
@@ -240,7 +240,7 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 		ys[indexOrder[a]] *= aa[a];
 	}
 	ys[indexOrder[0]] = 1.0;
-	
+
 	RK4out(xfit, w2, y0);
 	RK4in( xfit, w2, ys);
 }
