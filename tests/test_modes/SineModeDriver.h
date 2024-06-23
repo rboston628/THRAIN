@@ -1,24 +1,25 @@
 //**************************************************************************************
-//						COWLING PULSATION nlm MODE DRIVER
-// Cowling ModeDriver.h
-//		Solves the Newtonian LAWE in Dziembowski variables in the Cowling approximation
-//		Does not consider perturbtations to gravitational field, making 2nd-order modes
+//						SINE MODE DRIVER
+// SineModeDriver.h
+//		Solves simple sinusoidal equation for sine waves.
+//	THIS IS NOT PART OF THRAIN -- ONLY FOR CERTAIN TESTS
+//  Reece Boston Mar 14, 2024
 //***************************************************************************************
 
-#ifndef COWLINGDRIVERH
-#define COWLINGDRIVERH
+#ifndef SINEMODEDRIVERH
+#define SINEMODEDRIVERH
 
-#include "ModeDriver.h"
+#include "../../src/MODES/ModeDriver.h"
 
-class CowlingModeDriver : public ModeDriver {
+class SineModeDriver : public ModeDriver {
 public:
-	static const unsigned int num_var=2U;
+	static const std::size_t num_var=2UL;
 	
 	//constructor
-	//initialize from a background star and an adiabatic index
-	CowlingModeDriver(Star*, double);
+	//initialize from a background star
+	SineModeDriver(Star*);
 	//destructor
-	virtual ~CowlingModeDriver();
+	virtual ~SineModeDriver();
 	
 	std::size_t length() override;
 	double Gamma1() override;//the adiabatic index, if set; 0 if same as star
@@ -29,27 +30,17 @@ public:
 private:
 	std::size_t len;		//number of grid points for mode
 	std::size_t len_star;	//number of grid points in star
-	double adiabatic_index;	//adiabatic index; set to 0 to use star's Gamma1
-	
-	//perturbation quantities
-	double *r, *A, *U, *C, *V;
-	void initializeArrays();
-	
-	static const int BC_C = 4;	//the desired order near the center
-	static const int BC_S = 4;	//the desired order near the surface
-	//expansion coefficients near surface;
-	double As[BC_S+1], Vs[BC_S+1], cs[BC_S+1], Us[BC_S+1], cProds[BC_S+1], k_surface;
-	//expansion coefficients near center;
-	double Ac[BC_C/2+1], Vc[BC_C/2+1], cc[BC_C/2+1], Uc[BC_C/2+1], cProdc[BC_C/2+1];
+	enum VarNames {sin=0, cos};
+
+	double x(std::size_t const, int const);
+		
 	void setupBoundaries() override;
 	std::size_t CentralBC(double **y, double *yo, double s2, int l, int m=0) override;
 	std::size_t SurfaceBC(double **y, double *yo, double s2, int l, int m=0) override;
 
 public:	
 	void getBoundaryMatrix(int, double**, int*) override;
-	void varnames(std::string *names) override{
-		names[0] = "y1"; names[1]="y2";
-	}
+	void varnames(std::string *names) override;
 	
 	//for the Mode passed, calculate sum-square residual
 	double SSR(double, int l, ModeBase*) override;

@@ -62,16 +62,16 @@ void NonradialModeDriver::initializeArrays(){
 	std::size_t X;
 	for(X=1; X<len_star-1; X++){
 		A[X] = star->getAstar(X, adiabatic_index);
-		U[X] = star->getU(X);
-		C[X] = star->getC(X);
-		V[X] = star->getVg(X, adiabatic_index);
+		V[X] = star->getVg(   X, adiabatic_index);
+		U[X] = star->getU(    X);
+		C[X] = star->getC(    X);
 	}
 	//surface requires special treatment
 	X = len_star-1;
-	V[X] = 0.0;
-	U[X] = 0.0;
-	A[X] = 0.0;  
-	C[X] = 1.0;
+	A[X] = 0.0; // this diverges at the surface
+	V[X] = 0.0; // this diverges at the surface
+	U[X] = 0.0; // this is usually, but not always, 0 at the surface
+	C[X] = 1.0; // this value is needed to relate certain quantities
 }
 
 //these functions come from coupled wave equations -- see Unno et al. Ch 18
@@ -81,8 +81,7 @@ void NonradialModeDriver::getCoeff(
 	int b,
 	double omeg2,
 	int L
-)
-{	
+){	
 	double (*CC)[num_var] =(double (*)[num_var]) CCI;
 	//avoid recalculations
 	double Ax, Ux, Cx, Vx;
@@ -91,29 +90,28 @@ void NonradialModeDriver::getCoeff(
 	Cx = C[2*X+b];
 	Vx = V[2*X+b];
 	//dy1/dx
-	CC[0][0] = Vx - double(L+1);
-	CC[0][1] = double(L*L+L)/(omeg2*Cx) - Vx;
-	CC[0][2] = Vx;
-	CC[0][3] = 0.0;
+	CC[y1][y1] = Vx - double(L+1);
+	CC[y1][y2] = double(L*L+L)/(omeg2*Cx) - Vx;
+	CC[y1][y3] = Vx;
+	CC[y1][y4] = 0.0;
 	//dy2/dx
-	CC[1][0] = omeg2*Cx - Ax;
-	CC[1][1] = double(3-L) + Ax - Ux;
-	CC[1][2] =-Ax;
-	CC[1][3] = 0.0;
+	CC[y2][y1] = omeg2*Cx - Ax;
+	CC[y2][y2] = double(3-L) + Ax - Ux;
+	CC[y2][y3] =-Ax;
+	CC[y2][y4] = 0.0;
 	//dy3/dx
-	CC[2][0] = 0.0;
-	CC[2][1] = 0.0;
-	CC[2][2] = double(3-L) - Ux;
-	CC[2][3] = 1.0;
+	CC[y3][y1] = 0.0;
+	CC[y3][y2] = 0.0;
+	CC[y3][y3] = double(3-L) - Ux;
+	CC[y3][y4] = 1.0;
 	//dy4/dx
-	CC[3][0] = Ax*Ux;
-	CC[3][1] = Vx*Ux;
-	CC[3][2] = double(L*L+L) - Vx*Ux;
-	CC[3][3] = double(2-L) - Ux;
+	CC[y4][y1] = Ax*Ux;
+	CC[y4][y2] = Vx*Ux;
+	CC[y4][y3] = double(L*L+L) - Vx*Ux;
+	CC[y4][y4] = double(2-L) - Ux;
 }
 
-
-void NonradialModeDriver::getBoundaryMatrix(int nv, double *y0, double* ys, double **y, int* indexOrder){
+void NonradialModeDriver::getBoundaryMatrix(int nv, double **y, int* indexOrder){
 	double one = 1.0; //this is used only to provide visual distinction in grid
 	//a basis of independent solutions to be used at center and surface
 	const double yy[num_var][num_var] = {
@@ -122,14 +120,13 @@ void NonradialModeDriver::getBoundaryMatrix(int nv, double *y0, double* ys, doub
 		{ 0.0, one, one, one},
 		{ one, one, 0.0, 0.0}
 	};
-	for(int i=0; i<nv; i++)
-		for(int j=0; j<nv; j++)
-			y[i][j] = yy[i][j];
+	for(int yi=0; yi<nv; yi++)
+		for(int yj=0; yj<nv; yj++)
+			y[yi][yj] = yy[yi][yj];
 	//when matching outward/inward, indexOrder matches correct coefficient to correct solution
 	const int indices[num_var] = {y1,y3,y3,y1};
 	for(int i=0; i<nv; i++) indexOrder[i] = indices[i];
 }
-
 
 void NonradialModeDriver::setupBoundaries() {
 	//set up coefficients for the central boundary
@@ -164,51 +161,48 @@ void NonradialModeDriver::setupBoundaries() {
 std::size_t NonradialModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){
 	double yy[num_var][BC_C/2+1];//0,2,4
 	//the zero-order terms are simple
-	yy[y1][0] = y0[0];
-	yy[y2][0] = y0[0]*C[0]*omeg2/double(l);
-	yy[y3][0] = y0[2];
-	yy[y4][0] = y0[2]*double(l);
+	yy[y1][0] = y0[y1];
+	yy[y2][0] = y0[y1]*C[0]*omeg2/double(l);
+	yy[y3][0] = y0[y3];
+	yy[y4][0] = y0[y3]*double(l);
 	
 	double L2 = double(l*l+l);
-	double Gam1 = adiabatic_index;
-	
-	for(int i=0; i<num_var; i++) ymode[i][1] = ymode[i][0] = yy[i][0];
-	
+		
 	double sumU, sumC, sumG, sumV, sumA, sumUY, sumUZ;
-	double trip[3]; trip[0] = yy[0][0]-yy[1][0]+yy[2][0];
+	double trip[3]; trip[0] = yy[y1][0]-yy[y2][0]+yy[y3][0];
 	for(int j=1;j<=central_bc_order/2;j++){
 		sumA = sumV = sumG = sumC = sumU = 0.0;
 		for(int k=0; k<j; k++){
 			sumV += Vc[j-k] *trip[k];
 			sumA += Ac[j-k] *trip[k];
-			sumC += cc[j-k]*yy[0][k];
-			sumU += Uc[j-k]*yy[1][k];
+			sumC += cc[j-k]*yy[y1][k];
+			sumU += Uc[j-k]*yy[y2][k];
 			sumG += L2*cProdc[j-k]*yy[1][k]/omeg2;
 		}
-		yy[0][j] = ( double(2*j+l)*(sumG+sumV) - L2*(sumU+sumA+omeg2*sumC)/(omeg2*cc[0]) )/double(2*j*(1+2*j+2*l));
-		yy[1][j] = (omeg2*cc[0]*yy[0][j] - omeg2*sumC - sumU - sumA)/double(2*j+l);
+		yy[y1][j] = ( double(2*j+l)*(sumG+sumV) - L2*(sumU+sumA+omeg2*sumC)/(omeg2*cc[0]) )/double(2*j*(1+2*j+2*l));
+		yy[y2][j] = (omeg2*cc[0]*yy[0][j] - omeg2*sumC - sumU - sumA)/double(2*j+l);
 		sumUY = sumUZ = sumU = sumV = 0.0;
 		for(int k=0; k<j; k++){
-			sumUY += Uc[j-k]*yy[2][k];
-			sumUZ += Uc[j-k]*yy[3][k];
+			sumUY += Uc[j-k]*yy[y3][k];
+			sumUZ += Uc[j-k]*yy[y4][k];
 			sumV = 0.0;
-			for(int m=0; m<k; m++) sumV += Ac[k-m]*yy[0][m] + Vc[k-m]*(yy[1][m]-yy[2][m]);
+			for(int m=0; m<k; m++) sumV += Ac[k-m]*yy[y1][m] + Vc[k-m]*(yy[y2][m]-yy[y3][m]);
 			sumU += Uc[j-k]*sumV;
 		}
 		//the sumU requires an extra step
-		for(int m=0, sumV=0.0; m<j; m++) sumV += Ac[j-m]*yy[0][m] + Vc[j-m]*(yy[1][m]-yy[2][m]);
+		for(int m=0, sumV=0.0; m<j; m++) sumV += Ac[j-m]*yy[0][m] + Vc[j-m]*(yy[y2][m]-yy[y3][m]);
 		sumU += Uc[0]*sumV;
 		//now calculate the coefficients
-		yy[2][j] = (double(l+2*j+1)*sumUY+sumUZ-sumU)/double(2*j*(2*l+2*j+1));
-		yy[3][j] =  double(l+2*j)*yy[2][j] + sumUY;
+		yy[y3][j] = (double(l+2*j+1)*sumUY+sumUZ-sumU)/double(2*j*(2*l+2*j+1));
+		yy[y4][j] =  double(l+2*j)*yy[y3][j] + sumUY;
 		
-		trip[j] = yy[0][j]-yy[1][j]+yy[2][j];
+		trip[j] = yy[y1][j]-yy[y2][j]+yy[y3][j];
 	}
 	std::size_t start = std::size_t(1);
 	for(std::size_t X=0; X<=start; X++){
-		for(int i=0; i<num_var; i++){
-			ymode[i][X] = yy[i][0];
-			for(int j=1;j<=(central_bc_order/2);j++) ymode[i][X] += yy[i][j]*pow(r[X],2*j);
+		for(int yi=0; yi<num_var; yi++){
+			ymode[X][yi] = yy[yi][0];
+			for(int j=1;j<=(central_bc_order/2);j++) ymode[X][yi] += yy[yi][j]*pow(r[X],2*j);
 		}
 	}
 	return start;
@@ -225,11 +219,11 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 	//int surface_bc_order = 4;
 	//specify initial conditions at surface
 	double yy[num_var][BC_S+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
-	double yyn[num_var]; for(int i=0;i<num_var;i++) yyn[i]=0.0;
-	yy[0][0] = ys[0];
-	yy[1][0] = ys[0] + ys[2];
-	yy[2][0] = ys[2];
-	yy[3][0] = -double(l+1)*ys[2];
+	double yyn[num_var]; for(int yi=0;yi<num_var;yi++) yyn[yi]=0.0;
+	yy[y1][0] = ys[y1];
+	yy[y2][0] = ys[y1] + ys[y3];
+	yy[y3][0] = ys[y3];
+	yy[y4][0] = -double(l+1)*ys[y3];
 	
 	//constants that show up
 	double L2 = double(l*l+l);
@@ -239,33 +233,33 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 	double sumV, sumA, sumUX, sumUY, sumUZ, sumU, sumC, sumG;
 	for(int k=0; k<surface_bc_order; k++){
 		//calculate "triples" (W[k]-X[k]+Y[k]) which appear in recursion relation
-		trip[k] = yy[0][k] - yy[1][k] + yy[2][k];
+		trip[k] = yy[y1][k] - yy[y2][k] + yy[y3][k];
 		sumV=sumA=sumC=sumG=sumUX=sumUY=sumUZ = 0.0;
 		for(int j=0; j<=k; j++){
 			sumV += Vs[O+k-j]*trip[j];
 			sumA += As[O+k-j]*trip[j];
-			sumC += omeg2*cs[k-j]*yy[0][j];
-			sumG += L2/omeg2*cProds[k-j]*yy[1][j];
-			sumUX += Us[k-j]*yy[1][j];
-			sumUY += Us[k-j]*yy[2][j];
-			sumUZ += Us[k-j]*yy[3][j];
+			sumC += omeg2*cs[k-j]*yy[y1][j];
+			sumG += L2/omeg2*cProds[k-j]*yy[y2][j];
+			sumUX += Us[k-j]*yy[y2][j];
+			sumUY += Us[k-j]*yy[y3][j];
+			sumUZ += Us[k-j]*yy[y4][j];
 		}
 		trip[k+1] = (sumC-sumG-sumUX+sumUY - sumV-sumA
-					+ double(k+l-3)*trip[k] + 4.*yy[0][k] - yy[3][k])/(double(k+1)+Vs[O-1]+As[O-1]);
+					+ double(k+l-3)*trip[k] + 4.*yy[y1][k] - yy[y4][k])/(double(k+1)+Vs[O-1]+As[O-1]);
 		sumV += Vs[O-1]*trip[k+1];
 		sumA += As[O-1]*trip[k+1];
-		yy[0][k+1] = (double(k+l+1)*yy[0][k] - sumG - sumV)/double(k+1);
-		yy[1][k+1] = (double(k+l-3)*yy[1][k] - sumC + sumA + sumUX)/double(k+1);
-		yy[2][k+1] = (double(k+l-3)*yy[2][k] - yy[3][k] + sumUY)/double(k+1);
+		yy[y1][k+1] = (double(k+l+1)*yy[y1][k] - sumG - sumV)/double(k+1);
+		yy[y2][k+1] = (double(k+l-3)*yy[y2][k] - sumC + sumA + sumUX)/double(k+1);
+		yy[y3][k+1] = (double(k+l-3)*yy[y3][k] - yy[y4][k] + sumUY)/double(k+1);
 		sumU=0.0;
 		for(int m=-1; m<=k; m++){
 			sumV = 0.0;
 			for(int j=0; j<=m+1; j++){
-				sumV += As[O+m-j]*yy[0][j] + Vs[O+m-j]*(yy[1][j]-yy[2][j]);
+				sumV += As[O+m-j]*yy[y1][j] + Vs[O+m-j]*(yy[y2][j]-yy[y3][j]);
 			}
 			sumU += Us[k-m]*sumV;
 		}
-		yy[3][k+1] = (double(k+l-2)*yy[3][k] - L2*yy[2][k] - sumU + sumUZ)/double(k+1);
+		yy[y4][k+1] = (double(k+l-2)*yy[y4][k] - L2*yy[y3][k] - sumU + sumUZ)/double(k+1);
 	}
 	//if n<1, then an additional term is needed
 	if(k_surface != 0.0){
@@ -273,31 +267,32 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 		double n=0.0;
 		double Gam1 = adiabatic_index;
 		double kn = pow(k_surface, n);
-		double tripn = -3.*kn*ys[0]/(2.*n+1.);
-		yyn[0] = -tripn/Gam1;
-		yyn[1] = (3.*kn*ys[1] + (n-(n+1.)/Gam1)*tripn)/(n+1.);
-		yyn[2] = (3.*kn*ys[2])/(n+1.);
-		yyn[3] =  3.*kn*(ys[3]+(n+1.)/Gam1*trip[1] - n*yy[0][1])/(n+1.);
+		double tripn = -3.*kn*ys[y1]/(2.*n+1.);
+		yyn[y1] = -tripn/Gam1;
+		yyn[y2] = (3.*kn*ys[y2] + (n-(n+1.)/Gam1)*tripn)/(n+1.);
+		yyn[y3] = (3.*kn*ys[y3])/(n+1.);
+		yyn[y4] =  3.*kn*(ys[y4]+(n+1.)/Gam1*trip[1] - n*yy[y1][1])/(n+1.);
 	}
 	//the number of terms to calculate
 	std::size_t start = len-2;
 	double t;
-	for(int i=0; i<num_var; i++) ymode[i][len-1] = yy[i][0];
+	for(int yi=0; yi<num_var; yi++) ymode[len-1][yi] = yy[yi][0];
 	//calculate the y in terms of power series solution
 	for(std::size_t X=len-2; X>=start; X--){
 		t = (1.-r[X]);
-		for(int i=0; i<num_var; i++){
-			ymode[i][X] = yy[i][0];
-			for(int k=1; k<=surface_bc_order; k++) ymode[i][X] += yy[i][k]*pow(t,k);
-			//ymode[i][X] += yyn[i]*pow(t, n+1);
+		for(int yi=0; yi<num_var; yi++){
+			ymode[X][yi] = yy[yi][0];
+			for(int k=1; k<=surface_bc_order; k++) ymode[X][yi] += yy[yi][k]*pow(t,k);
 		}
 	}
 	return start;
 }
 
+
 // *** this method is assuming a uniform grid ***
 // *** we cannot assume a unifirm grid for all stars
 double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
+	if(len < 14UL) return nan("Mode SSR must have at least 14 grid points\n");
 	double checkCont=0.0;
 	double checkNewt=0.0;
 	double checkPois=0.0;
@@ -325,7 +320,6 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		r      = star->rad(XX)   /Rstar;
 		G1     = (Gamma1()==0.0? star->Gamma1(XX) : Gamma1());
 		//mode variables
-		
 		L2     = double(l*l+l);
 		xi   = r  *mode->getY(y1,X);	//r  *y1
 		chi  = r*g*mode->getY(y2,X);	//r*g*y2
@@ -352,12 +346,12 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 		a3=star->rad(XX+6)*mode->getY(y1,X+3);
 		difxi = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1);
 		//now dDP/dr, DP = rho*(chi-DPhi), chi=rg*y2, DPhi=rg*y3
-		b3=star->rho(XX-6)*star->dPhidr(XX-6)*star->rad(XX-6)*(mode->getY(1,X-3)-mode->getY(y3,X-3));
-		b2=star->rho(XX-4)*star->dPhidr(XX-4)*star->rad(XX-4)*(mode->getY(1,X-2)-mode->getY(y3,X-2));
-		b1=star->rho(XX-2)*star->dPhidr(XX-2)*star->rad(XX-2)*(mode->getY(1,X-1)-mode->getY(y3,X-1));
-		a1=star->rho(XX+2)*star->dPhidr(XX+2)*star->rad(XX+2)*(mode->getY(1,X+1)-mode->getY(y3,X+1));
-		a2=star->rho(XX+4)*star->dPhidr(XX+4)*star->rad(XX+4)*(mode->getY(1,X+2)-mode->getY(y3,X+2));
-		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(1,X+3)-mode->getY(y3,X+3));
+		b3=star->rho(XX-6)*star->dPhidr(XX-6)*star->rad(XX-6)*(mode->getY(y2,X-3)-mode->getY(y3,X-3));
+		b2=star->rho(XX-4)*star->dPhidr(XX-4)*star->rad(XX-4)*(mode->getY(y2,X-2)-mode->getY(y3,X-2));
+		b1=star->rho(XX-2)*star->dPhidr(XX-2)*star->rad(XX-2)*(mode->getY(y2,X-1)-mode->getY(y3,X-1));
+		a1=star->rho(XX+2)*star->dPhidr(XX+2)*star->rad(XX+2)*(mode->getY(y2,X+1)-mode->getY(y3,X+1));
+		a2=star->rho(XX+4)*star->dPhidr(XX+4)*star->rad(XX+4)*(mode->getY(y2,X+2)-mode->getY(y3,X+2));
+		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(y2,X+3)-mode->getY(y3,X+3));
 		dDP = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1)/Pscale*Rstar;
 		
 		if(isnan(d2Phi)) d2Phi = 0.0;
@@ -480,8 +474,5 @@ double NonradialModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
 	}
 	return integral/sqrt(NN*MM);
 }
-
-
-
 
 #endif

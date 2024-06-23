@@ -124,43 +124,66 @@ void get_max_from_set(
 	}
 }
 
-double compare_JCD(double n, int l, int k, double w){
-	if((n!=1.5) && (n!=3.0) && (n!=4.0) ){
-		return nan("");
-	}
-	//convert dimensionless freuqueny to same scale used in JCD-DJM paper
-	w = round(w*nug*10000.0)/10000.0;
-	double fJCD = 0.0;
-	//for polytropes n=1.5, n=3, n=4, compare to tables,l=1,2,3, with 1<=k<=35
-	if((l==1 | l==2 | l==3) & (k>0 & k<36)){
-		switch(int(n*10)){
-			case 15:
-				fJCD = JCD1_5[l-1][k-1];
-				break;
-			case 30:
-				fJCD = JCD3_0[l-1][k-1];
-				break;
-			case 40:
-				fJCD = JCD4_0[l-1][k-1];
-				break;
+double freq_JCD(double n, int l, int k){
+	double fJCD = nan("");
+	if((n==1.5) || (n==3.0) || (n==4.0) ){
+		//for polytropes n=1.5, n=3, n=4, compare to tables,l=1,2,3, with 1<=k<=35
+		if((l==1 | l==2 | l==3) & (k>0 & k<36)){
+			switch(int(n*10)){
+				case 15:
+					fJCD = JCD1_5[l-1][k-1];
+					break;
+				case 30:
+					fJCD = JCD3_0[l-1][k-1];
+					break;
+				case 40:
+					fJCD = JCD4_0[l-1][k-1];
+					break;
+			}
 		}
-		return abs(w-fJCD);
 	}
-	else return nan("");
+	return fJCD;
+}
+
+double omega2_JCD(double n, int l, int k) {
+	double w2 = mode::freq_JCD(n, l, k);
+	w2 /= nug;
+	return w2*w2;
+}
+
+double compare_JCD(double n, int l, int k, double w){
+	double diff = mode::freq_JCD(n, l, k);
+	if ( !std::isnan(diff) ) {
+		w = round(w*nug*10000.0)/10000.0;
+		diff = abs(w - diff);
+	}
+	return diff;
+}
+
+double calculate_Pekeris(int l, int k, double Gam1){
+	// return exactly known square frquency
+	double wPek2, dnl;
+	if(k<0) wPek2 = 0.0;
+	else if(k==0) {
+		//there is a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664), 
+		// c.f. Cox (1980) eq 17.80
+		// NOTE the values I get are always wPek2 = l
+		wPek2 = double(l); //double(2.*l*(l-1))/double(2*l+1);
+	}
+	else {
+		// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
+		// but note his beta = sigma^2, his n = l, and his k = 2k
+		// also found in Cox 1980 in chapter 17, with change his n = k-1
+		// also found in Christensen-Dalsgaard and Mullan 1994, eq 3.3
+		dnl = Gam1*double(k)*(double(k+l)+0.5) - 2.;
+		wPek2 = dnl + sqrt(dnl*dnl + double(l*l+l));
+	}
+	return wPek2;
 }
 
 //a single function to check against the Pekeris formula
 double compare_Pekeris(double w, int l, int k, double Gam1){
-	// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
-	// but note his beta = sigma^2, his n = l, and his k = 2k
-	// also found in Cox 1980 in chapter 17, with change his n = k-1
-	// also found in Christensen-Dalsgaard and Mullan 1994, eq 3.3
-	double dnl = Gam1*double(k)*(double(k+l)+0.5)-2.;
-	double wPek2 = dnl + sqrt(dnl*dnl + double(l*l+l));
-	//there is also a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664), 
-	// c.f. Cox (1980) eq 17.80
-	// NOTE the values I get are always wPek2 = l
-	if(k==0) wPek2 = double(2.*l*(l-1))/double(2*l+1);
+	double const wPek2 = calculate_Pekeris(l, k, Gam1);
 	return fabs(w*w - wPek2)/wPek2;
 }
 

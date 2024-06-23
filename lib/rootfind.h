@@ -8,6 +8,8 @@ namespace rootfind {
 
 double pseudo_unif();
 
+double pseudo_unif(double xmin, double xmax);
+
 // *************************************************************************************
 //					BISECTION METHODS
 //  These methods are for implementing bisection searches in one parameter
@@ -75,6 +77,8 @@ T newton_search(
 	double const tol,						//tolerance of search, to be this accurate
 	std::size_t const max_iter=0			//maximum number of iterations in search
 );
+
+/** multi-variable methods **/
 
 template <std::size_t np>
 void newton_search(

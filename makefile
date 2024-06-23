@@ -17,8 +17,7 @@ _STARTYPES = \
 		STARS/Polytrope \
 		STARS/ChandrasekharWD++ \
 		STARS/MESA \
-		STARS/SimpleWD \
-		STARS/Isopycnic 
+		STARS/SimpleWD
 _STARDEPS = constants.h 
 
 STARDEPS = $(patsubst %, $(IDIR)/%.h, $(_STARTYPES)) $(patsubst %, $(IDIR)/%, $(_STARDEPS))
@@ -96,14 +95,41 @@ obj/STARS:
 obj/MODES:
 	mkdir -p obj/MODES
 
-tests: thrain tests/*.h
+# define test dependencies
+# these are "mock" classes that are only useful for testing
+TDIR = tests
+_TESTSTARS = test_stars/Isopycnic test_stars/DummyStar
+_TESTSTARDEPS = constants.h STARS/Star.h STARS/Star.cpp
+_TESTMODES = test_modes/SineModeDriver test_modes/DummyMode
+_TESTMODEDEPS = constants.h MODES/ModeDriver.h
+TESTSTARDEPS = $(patsubst %, $(TDIR)/%.h, $(_TESTSTARS)) $(patsubst %, $(IDIR)/%, $(_TESTSTARDEPS))
+TESTMODEDEPS = $(patsubst %, $(TDIR)/%.h, $(_TESTMODES)) $(patsubst %, $(IDIR)/%, $(_TESTMODEDEPS))
+TESTSTARSRC = $(patsubst %, $(TDIR)/%.cpp, $(_TESTSTARS))
+TESTMODESRC = $(patsubst %, $(TDIR)/%.cpp, $(_TESTMODES))
+TESTSTAROBJ = $(patsubst %, $(ODIR)/%.o, $(_TESTSTARS))
+TESTMODEOBJ = $(patsubst %, $(ODIR)/%.o, $(_TESTMODES))
+
+tests: thrain $(TDIR)/*.h $(TESTSTAROBJ) $(TESTMODEOBJ)
 	cxxtestgen --error-printer -o tests/tests.cpp tests/*.h
 #	this line makes cxxtest print to stderr so that stdout can be captured
 	sed 's/CxxTest::ErrorPrinter tmp;/CxxTest::ErrorPrinter tmp(std::cerr);/' \
-		tests/tests.cpp > changed.cpp && mv changed.cpp tests/tests.cpp
-	$(CC) -o tests/tests.out \
+		$(TDIR)/tests.cpp > changed.cpp && mv changed.cpp $(TDIR)/tests.cpp
+	$(CC) -o $(TDIR)/tests.out \
 		$(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(ODIR)/ThrainStellar.o \
-		$(MODEOBJ) $(STAROBJ) $(DRVOBJ) tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
+		$(MODEOBJ) $(STAROBJ) $(DRVOBJ) \
+		$(TESTMODEOBJ) $(TESTSTAROBJ) \
+		tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
+
+$(TESTSTAROBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTSTARDEPS) |obj/test_stars
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(TESTMODEOBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTMODEDEPS) |obj/test_modes
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+obj/test_stars:
+	mkdir -p obj/test_stars
+obj/test_modes:
+	mkdir -p obj/test_modes
 
 cppcheck:
 	cppcheck lib/ --error-exitcode=1 --std=c++14
