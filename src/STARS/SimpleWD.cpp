@@ -82,7 +82,7 @@ SimpleWD::SimpleWD(
 	//prepare a starting model from a ChandrasekharWD, to guess R, P0
 	initFromChandrasekhar();
 	printf("INIT FROM CHWD IS DONE\n");
-	
+	fflush(stdout);
 	//
 	if(Ntot%2==0) Ntot = Ntot+1;
 	std::size_t Ntrue = Ntot;
@@ -140,11 +140,13 @@ SimpleWD::SimpleWD(
 	double maxDF = 1.0;
 	while( maxDF > 1.0e-10 ){
 		printf("ITERATION: %d\n", count++);
+		fflush(stdout);
 		//recompute difference, and Jacobian matrix
 		joinAtCenter(x, f, F);
 		printf("\tX1:\t"); for(int i=0; i<numv; i++) printf("%le ", x[i]); printf("\n");
 		printf("\tf1:\t"); for(int i=0; i<numv; i++) printf("%le ", f[i]); printf("\n");
 		printf("\tF1:\t%le\n", F);
+		fflush(stdout);
 		
 		//calculate a Jacobian matrix by varying each variable
 		for(int i=0; i<numv; i++) varied[i] = 1.01*x[i];
@@ -213,6 +215,7 @@ SimpleWD::SimpleWD(
 		maxDF = -1.0;
 		for(int i=0; i<numv; i++) if(fabs(f[i]) > maxDF) maxDF = fabs(f[i]);		
 		printf("MAX DIF = %le\n", maxDF);
+		fflush(stdout);
 	}
 	
 	printf("MODEL CONVERGED!\n");
@@ -338,6 +341,7 @@ void SimpleWD::initFromChandrasekhar(){
 		delete testStar;
 		testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
 		Mtry = testStar->Mass()/MSOLAR-Msolar;
+		fflush(stdout);
 	}
 	
 	Rstar = testStar->Radius();
@@ -359,7 +363,7 @@ void SimpleWD::initFromChandrasekhar(){
 	
 	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
 	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
-
+	fflush(stdout);
 	return;
 }
 
