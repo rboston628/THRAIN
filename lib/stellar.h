@@ -10,6 +10,7 @@ namespace chemical {
 	enum elem {h=0, he, c, o};
 	const double Z[] = {1., 2.,  6.,  8.};
 	const double A[] = {1., 4., 12., 16.};
+	
 	double partial_mean_A(elem i, Abundance const& X);
 	double partial_mean_Z(elem i, Abundance const& X);
 	double partial_mu_e(  elem i, Abundance const& X);

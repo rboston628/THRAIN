@@ -613,6 +613,8 @@ double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance c
 }
 
 
+
+
 //pressure of electron gas, where degeneracy can be considered large
 // following Pichon 1989, eq 27-29, based on Sommerfeld approximation
 // can also be seen in Cox & Giuli, sec 24.2

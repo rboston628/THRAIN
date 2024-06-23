@@ -135,7 +135,7 @@ cppcheck:
 	cppcheck lib/ --error-exitcode=1 --std=c++14
 	cppcheck src/ --error-exitcode=1 --std=c++14
 
-.PHONY: clean pull library clean-test
+.PHONY: clean pull library
 
 library:
 	rm -f lib/*.o

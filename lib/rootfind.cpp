@@ -283,4 +283,5 @@ double rootfind::bisection_search(
 	return y;
 }
 
+
 #endif
