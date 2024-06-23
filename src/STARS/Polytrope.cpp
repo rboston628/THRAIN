@@ -57,7 +57,7 @@ void Polytrope::init_arrays(){
 
 //initalize polytrope from index and length, fit to mass M, radius R
 Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
-	: n(n), len(L), Gamma(1.0+1.0/n)
+	: n(n), len(L), Gamma(1.0+1.0/n), GG(G_CGS)
 {
 	basic_setup();
 
@@ -83,7 +83,6 @@ Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 		
 	//set initial density, pressure
 	// the physical units can be included through homology
-	GG = G_CGS;
 	rho0 = BigM/(4.*m_pi)*pow(BigR,-3)*(-Y[len-1][x]/Y[len-1][z]);
 	P0   = G_CGS*pow(BigM,2)*pow(BigR,-4)/(4.*m_pi)*pow(Y[len-1][z],-2)/(n+1.);
 	Rn   = BigR/Y[len-1][x];
@@ -335,7 +334,6 @@ void Polytrope::getVgCenter(double *Vc, int& maxPow, double g){
 
 void Polytrope::getUCenter(double *Uc, int& maxPow){
 	double x1 = Y[len-1][x];
-	// fprintf(stderr, "xi1 = %0.18le\n", x1);
 	//depending on power requested, return appropriate number of terms
 	if(maxPow>=0) Uc[0] = 3.0;
 	if(maxPow>=2) Uc[1] = -0.2 * n * pow(x1,2);

@@ -3,7 +3,7 @@
 //	Mode.cpp
 //		Equation agnostic 
 //			-- all information specific to physics supplied by the driver
-// 		Capable of nonradial, Cowling, 1PN modes by supplying different drivers
+// 		Capable of Nonradial, Cowling modes by supplying different drivers
 //  Reece Boston Mar 24, 2022
 //  NOTE: If you make ANY changes to this file, you MUST make clean and recompile
 //**************************************************************************************
@@ -19,10 +19,11 @@
 //The individual constructors differ only in how they initialize frequency
 template <std::size_t  numvar>
 void Mode<numvar>::basic_setup(){
+	wronskian = [this](double x) -> double {return this->calculateWronskian(x);};
 	cee2 = star->light_speed2();
-	Gee = star->Gee();
+	Gee  = star->Gee();
 
-	//begin by setting all values to 1 -- will be changed later in code
+	//begin by setting all values to 1 -- will be rescaled for final solution
 	for(int i=0;i<numvar;i++){
 		yCenter[i]  = 1.0;
 		ySurface[i] = 1.0;
@@ -33,32 +34,26 @@ void Mode<numvar>::basic_setup(){
 	Gamma1   = driver->Gamma1();
 	
 	//determine the index where fit for inward and outward integrations will occur
-	//some experimentation suggests this should be closer to surface for large l
-	std::size_t imax = len;
-	R = star->rad(len_star-1);
-	double R80 = 0.8*R;	//at 80% of stellar radius
-	for(std::size_t i=0;i<len-1;i++) if(star->rad(2*i) > R80) {imax=i;break;}
-	double b = double(l)/double(l+1);
-	//based on l, set the fit infex at an intermediary point between stellar index and R80
 	xfit = star->indexFit;
 	//set the arrays that define the perturbation
 	rad = new double[len];
-	y = new double*[numvar];
-	for(int i=0;i<numvar;i++) y[i] = new double[len];
+	y = new double*[len];
+	for(int i=0;i<len;i++) y[i] = new double[numvar];
 	//define values of radius for the mode
 	for(std::size_t X=0; X<len; X++){
 		rad[X] = driver->rad(X);
 	}
-	//define the conversion factor from frequency in rad/s to dimensionless; w=f*sig2omeg
-	sig2omeg = pow(star->Radius(),3)/(Gee*star->Mass());
+	//define the conversion factor from dimensionless frequency to angular f in rad/s
+	// f^2 = (omeg2freq) * w^2
+	omeg2freq = Gee * star->Mass() * pow(star->Radius(), -3);
 	
 	//set up boundary matrix and index array
 	double **yy = new double*[numvar];
 	int *ind = new int[numvar];
-	for(int i=0;i<numvar;i++) yy[i] = new double[numvar];
-	driver->getBoundaryMatrix(num_var, yCenter, ySurface, yy, ind);
-	for(int i=0;i<numvar;i++) for(int j=0;j<numvar;j++) boundaryMatrix[i][j]=yy[i][j];
-	for(int i=0;i<numvar;i++) indexOrder[i] = ind[i];
+	for(int yi=0; yi<numvar; yi++) yy[yi] = new double[numvar];
+	driver->getBoundaryMatrix(num_var, yy, ind);
+	for(int yi=0; yi<numvar; yi++) for(int yj=0; yj<numvar; yj++) boundaryMatrix[yi][yj]=yy[yi][yj];
+	for(int yi=0; yi<numvar; yi++) indexOrder[yi] = ind[yi];
 	delete[] yy;
 	delete[] ind;
 }
@@ -91,10 +86,10 @@ Mode<numvar>::Mode(int K, int L, int M, ModeDriver *drv)
 		//see Cox 17.7, homogeneous model
 		//homogeneous model frequencies usually larger, so reduce size of n used
 		// there is no magic to this guess -- it just seems to work okay
-		double ks = double(k - (2*l-4));		
+		double ks = double(k); // - (2*l-4));		
 		// 2Dn = -4 + Gamma1*[ n*(2l+2n+5) + 2l + 3]
-		double Dn = Gamma1*( ks*(ks+ell+0.5) ) - 2.0;
-		if(Gamma1==0.0) Dn = star->Gamma1(0)*( ks*(ks+ell+0.5) ) - 2.0;
+		double gam1 = (Gamma1 == 0.0 ? star->Gamma1(0) : Gamma1);
+		double Dn = gam1*( ks*(ks+ell+0.5) ) - 2.0;
 		//omega^2 = Dn + sqrt( Dn^2 + l(l+1) )
 		omega2 = Dn + sqrt( Dn*Dn + ell*(ell+1.0) );
 		//from dimensional considerations, sigma^2 = (GM/R^3) *omega^2
@@ -128,41 +123,24 @@ Mode<numvar>::Mode(double omeg2lo, double omeg2hi, int l, int m, ModeDriver *drv
 
 	//BEGIN BISECTION HUNT
 	converged = false;
-	int a=53, b=122, r=17737, ok = 39;//for pseudorandom bracket division
 	//if omegas are in wrong order, swap 'em!
 	if (omeg2lo > omeg2hi){
 		double tmp = omeg2hi;
 		omeg2hi = omeg2lo;
 		omeg2lo = tmp;
-	}
-	else if (omeg2lo==omeg2hi){	//this should not occur
-		omeg2lo *= 0.9;
-	}
-	
+	}	
 	//the brackets given are often themselves zeros -- inch them closer to avoid this
-	double dw = (omeg2hi-omeg2lo)*1.0e-2;
-	double w2min = omeg2lo+dw;
-	double w2max = omeg2hi-dw;
+	double dw = (omeg2hi - omeg2lo) / 100.0;
+	double w2min = omeg2lo + dw;
+	double w2max = omeg2hi - dw;
 
-	std::function<double(double)> wronskian = [this](double w)->double {
-		return this->RK4center(w, this->yCenter, this->ySurface);
-	};
-	//now find the initial bracketing values of the Wronskian
-	double Wsmin = wronskian(w2min); //, yCenter, ySurface);
-	double Wsmax = wronskian(w2max); //(omeg2hi, yCenter, ySurface);
-	
-	//if the bracketing values do not bound a zero, just use the mid-point as a starting value
-	if(Wsmin*Wsmax>0.0) {
-		omega2 = 0.5*(w2min+w2max);
-		converge();
-		this->k = verifyMode();
-		return;
-	}
-	double w2 = 0.5*(omeg2lo + omeg2hi);
-	double W = rootfind::bisection_search(wronskian, w2, omeg2lo, omeg2hi);
+	//now perform the search
+	double w2 = 0.5*(w2min + w2max);
+	double W = rootfind::bisection_search(this->wronskian, w2, w2min, w2max);
 	
 	//if the Wronskian still isn't good, just find values as normal
 	if(W > 1e-10) {
+		omega2=w2;
 		converge();
 	}
 	else {
@@ -179,7 +157,7 @@ template <std::size_t numvar>
 Mode<numvar>::~Mode(){
 		//free space used by y1,...,y4 from stack
 		delete[] rad;
-		for(int i=0; i<numvar; i++)
+		for(int i=0; i<len; i++)
 			delete[] y[i];
 }
 
@@ -187,146 +165,46 @@ template <std::size_t numvar>
 void Mode<numvar>::converge(){
 	converged = false;
 	convergeBisect(0.0);
-	linearMatch(omega2, yCenter,ySurface);
+	linearMatch(omega2, yCenter, ySurface);
 	converged = true;
 }
 
 //Find frequency using a bisection search, based on Wronskian, up to tolerance tol
 template <std::size_t numvar>
 void Mode<numvar>::convergeBisect(double tol){
-	//the apparently magical numbers are arbitrary
-	double w1  = omega2, w2, W1, W2;
-	//brackets
-	double wmax, wmin, wdx;
-	double Wmax, Wmin, Wdx;
-	int stop = 0, bnd = 200;
-	int a=53, b=122, r=17737, ok = 39;//for pseudorandom positioning
-	
-	W1 = W2 = RK4center(w1, yCenter,ySurface);	
-	//while the two Ws are on same side of axis, keep reposition until zero is bound
-	//we use Newton's method to the nearest zero
-	w2=w1;
-	while(W1*W2 >= 0.0){
-		//compute numerical derivative
-		wdx = 1.01*w2;
-		Wdx = RK4center(wdx, yCenter,ySurface);\
-		wdx = w2 - W2*(wdx-w2)/(Wdx-W2);
-		//Newton's method can fail at this if it only approaches the zero from one direction
-		//In such a case, slightly broaden the bracket to get to other side of zero
-		if( wdx == w2 ) {
-			if(wdx>w1) wdx *= 1.01;
-			if(wdx<w1) wdx *= 0.99;
-		}
-		//limit amount of change allowed in single step
-		if(wdx > 1.1*w2) wdx = 1.1*w2;	//if we increased, don't increase too much
-		if(wdx < 0.9*w2) wdx = 0.9*w2;	//if we decreased, don't decrease too much
-		Wdx = W2;
-		W2 = RK4center(wdx, yCenter, ySurface);
-		w2 = wdx;
-	}
-	//sometimes the brackets will be on either end of hyperbolic divergence
-	//check that solution changes continuously between the two brackets
-	double w3 = 0.5*(w1+w2), W3 = RK4center(w3, ySurface, yCenter);
-	double scale = 1.01;
-	while( (W3*W1>=0.0 & fabs(W3)>fabs(W1)) | (W3*W2>=0.0 & fabs(W3)>fabs(W2))){
-		//this can sometimes be solved by taking broader steps in secant method
-		scale *= 1.1;
-		w2=w1;
-		W2=W1;
-		while(W1*W2 >= 0.0){
-			//compute numerical derivative
-			wdx = scale*w2;
-			Wdx = RK4center(wdx, yCenter,ySurface);
-			wdx = w2 - W2*(wdx-w2)/(Wdx-W2);
-			//Newton's method can fail at this if it only approaches the zero from one direction
-			//In such a case, slightly broaden the bracket to get to other side of zero
-			if( wdx == w2 ) {
-				if(wdx>w1) wdx *= 1.01;
-				if(wdx<w1) wdx *= 0.99;
-			}
-			//limit amount of change allowed in single step
-			Wdx = W2;
-			W2 = RK4center(wdx, yCenter, ySurface);
-			w2 = wdx;
-		}
-		w3 = 0.5*(w1+w2);
-		W3 = RK4center(w3, yCenter, ySurface);
-	}
-	
-	if(w2 > w1){
-		wmax = w2; Wmax = W2;
-		wmin = w1; Wmin = W1; 
-	}
-	else {
-		wmax = w1; Wmax = W1;
-		wmin = w2; Wmin = W2;
-	}
-	//swap if they are backwards
-	if(wmin > wmax){
-		double temp = wmax;
-		wmax = wmin; wmin = temp;
-		temp = Wmax;
-		Wmax = Wmin; Wmin = temp;
-	}
-	
-	//now bisect search inside the brackets
-	w1 = 0.5*(wmin+wmax);
-	W2 = RK4center(w1, yCenter,ySurface);
-	stop=0;
-	while( fabs(w2-w1) > tol ){
-		w2 = w1;
-		W1 = W2;
-		//test s
-		if( W1*Wmax > 0.0 ){
-			if( w1 < wmax ){
-				wmax = w1;
-				Wmax = W1;
-			}
-		}
-		else if( W1*Wmin > 0.0 ){
-			if( w1 > wmin ){
-				wmin = w1;
-				Wmin = W1;
-			}
-		}
-		w1 = 0.5*(wmin+wmax);
-		W2 = RK4center(w1, yCenter, ySurface);
-		if(W2==W1){//if the problem becomes stuck in a loop
-			ok = (a*ok+b)%r; //generates a psuedo-random integer in (0,r)
-			w1 = wmin + (double(ok)/double(r))*fabs(wmax-wmin);
-			W2 = RK4center(w1, yCenter,ySurface);
-		}
-	}
-	omega2 = w1;
-}
+	double w = omega2, wmin = 0.0, wmax, W;
+	rootfind::bisection_find_brackets_move(this->wronskian, w, wmin, wmax);
+	W = rootfind::bisection_search(this->wronskian, w, wmin, wmax);
+	omega2 = w;
+}	
 
-//This is deprecated
 //Newton convergence on omega2, up to tolerance tol, max number of steps term
 //if term = 0, then no maximum number of steps (until integer overflow, anyway)
 template <std::size_t numvar> 
 void Mode<numvar>::convergeNewton(double tol, int term){
-	int stop=1, fix=0, kick=3;
-	double w1  = 0.0, w2 = omega2;
-	double W1 = RK4center(omega2, yCenter,ySurface), W2;
-	while( fabs(w1-w2) > tol){
-		w1=w2;		
-		w2 = 1.01*w1;
-		W2 = RK4center(w2, yCenter,ySurface);
-		if(W2==W1){
-			printf("stux\n");
-			omega2 = w1;
-			return;
-		}
-		w2 = w1 - W1*(w2-w1)/(W2-W1);
-		W1 = RK4center(w2, yCenter,ySurface);
-		
-		if(std::isnan(W1)) printf("NaN in W1 at step %d\n", stop);
-		if(std::isnan(w2)) printf("NaN in w2 at step %d\n", stop);
+	double w = omega2, W;
+	W = rootfind::newton_search(this->wronskian, w, w, tol, (std::size_t)term);
+	omega2 = w;
+}
 
-		if( stop++ == term) break;
+//integrates from both edges toward center and returns Wronskian
+//this approach based on Christensen-Dalsgaard, Astrophys.SpaceSci.316:113-120,2008
+template <std::size_t numvar> 
+double Mode<numvar>::calculateWronskian(double w2){		
+	//prepare a matrix
+	double DY[numvar][numvar];
+	//store values of outward solution at fitting point in rows
+	for(int i=0;i<numvar/2;i++){
+		RK4out(xfit, w2, boundaryMatrix[i]);
+		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
 	}
-	omega2 = w2;
-	printf("W2 = %le", W1);
+	//store values of inward solution at fitting point in rows
+	for(int i=numvar/2; i<numvar; i++){
+		RK4in( xfit, w2, boundaryMatrix[i]);
+		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
+	}
+	//the Wronskian is the determinant of this matrix
+	return matrix::determinant(DY);
 }
 
 //linearly match inward and outward solutions
@@ -335,11 +213,11 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 	double DY[numvar][numvar];
 	for(int i=0;i<numvar/2;i++){
 		RK4out(xfit, w2, boundaryMatrix[i]  );
-		for(int j=0;j<numvar;j++) DY[i][j] = y[j][xfit];
+		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
 	}
 	for(int i=numvar/2; i<numvar; i++){
 		RK4in( xfit, w2, boundaryMatrix[i]);
-		for(int j=0;j<numvar;j++) DY[i][j] = y[j][xfit];
+		for(int j=0;j<numvar;j++) DY[i][j] = y[xfit][j];
 	}
 		
 	//ALROGITHM TO FIND COEFFICIENTS
@@ -362,121 +240,59 @@ void Mode<numvar>::linearMatch(double w2, double y0[numvar], double ys[numvar]){
 		ys[indexOrder[a]] *= aa[a];
 	}
 	ys[indexOrder[0]] = 1.0;
-	
-	
+
 	RK4out(xfit, w2, y0);
 	RK4in( xfit, w2, ys);
 }
 
 //integrates outward from interior to xmax
-template <std::size_t numvar> 
-void Mode<numvar>::RK4out(std::size_t xmax, double w2, double y0[numvar]){
-	//intermediate values used in equations
-	double XC=0.0, YC[num_var]={0.0};
-	//contain shifts dy1 = dx*y1', dy2 = dx*y2', etc.
-	double K[4][num_var];
-	//Butcher tableau for RK4
-	static const double b[4] = {0.5, 0.5, 1.0, 0.0};
-	static const double c[4] = {1.0, 2.0, 2.0, 1.0};
-	static const int    d[4] = {0, 1, 1, 2};
-	
-	//step size, based on star's grid
-	double dx = rad[1];
-	//coefficients for derivatives
-	double coeff[num_var][num_var];
-
-	//set initial values
+template<std::size_t numvar>
+void Mode<numvar>::RK4out( std::size_t xmax, double w2, double y0[numvar]){
 	std::size_t start = driver->CentralBC(y, y0, w2, l);
-	
-	//now begin RK4
-	for(std::size_t x = start; x<xmax; x++){
-		//begin using grid values for first correction
-		XC = rad[x];
-		for(int i=0;i<num_var;i++) YC[i] = y[i][x];
-		//dx = log(rad[x+1]/rad[x]);
-		dx = rad[x+1]-rad[x];
-		for(int a = 0; a<4; a++){
-			driver->getCoeff( &coeff[0][0],x,d[a],w2,l);
-			//calculate shift for next step
-			for(int i=0;i<num_var;i++){
-				K[a][i] = 0.0;
-				for(int j=0;j<num_var;j++) K[a][i] += dx*coeff[i][j]*YC[j]/XC;
-			}
-			//evaluate next correction from shift
-			XC = rad[x] + b[a]*dx;
-			for(int i=0;i<num_var;i++) YC[i] = y[i][x] + b[a]*K[a][i];
-		}
-		//calculate value of solution at next step by averaging corrections
-		for(int i=0;i<num_var;i++){
-			y[i][x+1] = y[i][x] + (K[0][i]/6.+K[1][i]/3.+K[2][i]/3.+K[3][i]/6.);
-		}
+	double dx;
+	for(std::size_t x = start; x < xmax; x++){
+		dx = rad[x+1] - rad[x];
+		RK4step(x, w2, dx, y[x], y[x+1]);
 	}
 }
 
 //integrates inward from surface toward xmin
-template <std::size_t numvar> 
+template<std::size_t numvar>
 void Mode<numvar>::RK4in( std::size_t xmin, double w2, double ys[numvar]){
-	//the XC, Y1C-Y4C are intermediate values used in equations
-	double YC[numvar], XC;
-	//contain shifts dy1 = dx*y1', dy2 = dx*y2', etc.
-	double K[4][numvar];
-	//Butcher tableau for RK4
-	static const double b[4] = {0.5, 0.5, 1.0, 0.0};
-	static const double c[4] = {1.0, 2.0, 2.0, 1.0};
-	//step backward, not forward
-	static const int d[4] = {0,-1,-1,-2};
-
-	//step size, based on star's grid
-	double dx = rad[len-2] - rad[len-1];
-	//coefficients for derivatives
-	double coeff[numvar][numvar];
-
-	//set initial values
 	std::size_t start = driver->SurfaceBC(y, ys, w2, l);
-	//now begin RK4
-	for(std::size_t x = start; x>xmin; x--){
-		//begin using grid values for first correction
-		XC = rad[x];
-		for(int i=0;i<num_var;i++) YC[i] = y[i][x];
-		//dx = log(rad[x-1]/rad[x]);
+	double dx;
+	for(std::size_t x = start; x > xmin; x--){
 		dx = rad[x-1] - rad[x];
-		for(int a = 0; a<4; a++){
-			driver->getCoeff(&coeff[0][0],x,d[a],w2,l);
-			//calculate shift for next step
-			for(int i=0;i<num_var;i++){
-				K[a][i] = 0.0;
-				for(int j=0;j<num_var;j++) K[a][i] += dx*coeff[i][j]*YC[j]/XC;
-			}
-			//evaluate next correction from shift
-			XC = rad[x] + b[a]*dx;
-			for(int i=0;i<num_var;i++) YC[i] = y[i][x] + b[a]*K[a][i];
-		}
-		//calculate value of solution at next step by averaging shifts
-		for(int i=0;i<num_var;i++){
-			y[i][x-1] = y[i][x] + (K[0][i]/6.+K[1][i]/3.+K[2][i]/3.+K[3][i]/6.);
-		}
+		RK4step(x, w2, dx, y[x], y[x-1]);
 	}
 }
 
-//integrates from both edges toward center and returns Wronskian
-//this approach based on Christensen-Dalsgaard, Astrophys.SpaceSci.316:113-120,2008
-template <std::size_t numvar> 
-double Mode<numvar>::RK4center(double w2, double y0[numvar], double ys[numvar]){		
-	//prepare a matrix
-	double DY[numvar][numvar];
-	//store values of outward solution at fitting point in rows
-	for(int i=0;i<numvar/2;i++){
-		RK4out(xfit, w2, boundaryMatrix[i]);		
-		for(int j=0;j<numvar;j++) DY[i][j] = y[j][xfit];
+template <std::size_t numvar>
+void Mode<numvar>::RK4step(std::size_t x, double w2, double dx, double yin[numvar], double yout[numvar]){
+	int sign = (std::signbit(dx) ? -1 : +1);
+	double XC = rad[x], YC[numvar];
+	double K[4][numvar];
+	static double coeff[numvar][numvar];
+	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
+	static const double b[4] = {6.0, 3.0, 3.0, 6.0};
+	static const int    d[4] = {0, 1, 1, 2};
+
+	for(std::size_t i=0; i<numvar; i++) YC[i] = yin[i];
+	for(std::size_t a=0; a<4; a++){
+		driver->getCoeff( &coeff[0][0], x, sign * d[a], w2, l);
+		// calcuate shift for next step
+		for(std::size_t i=0; i<numvar; i++){
+			K[a][i] = 0.0;
+			for(std::size_t j=0; j<numvar; j++) K[a][i] += dx * coeff[i][j]*YC[j]/XC;
+		}
+		//evaluate next correction from shift
+		XC = rad[x] + B[a] * dx;
+		for(std::size_t i=0; i<numvar; i++) YC[i] = yin[i] + B[a]*K[a][i];
 	}
-	//store values of inward solution at fitting point in rows
-	for(int i=numvar/2; i<numvar; i++){
-		RK4in( xfit, w2, boundaryMatrix[i]);		
-		for(int j=0;j<numvar;j++) DY[i][j] = y[j][xfit];
+	for(std::size_t i=0; i<numvar; i++){
+		yout[i] = yin[i];
+		for(std::size_t a=0; a<4; a++) yout[i] += K[a][i]/b[a];
 	}
-	
-	//the Wronskian is the determinant of this matrix
-	return matrix::determinant(DY);
 }
 
 //this method serves to verify that the n is indeed the desired mode number
@@ -488,7 +304,7 @@ int Mode<numvar>::verifyMode(){
 	for(std::size_t x=1; x<len-2; x++){
 		quadP = quad;
 		//determine quadrant of (xi, chi)
-		quad = (y[0][x]>=0 ? (y[1][x]>0? 1 : 2 ) : (y[1][x]>=0? 4 : 3));
+		quad = (y[x][0]>=0 ? (y[x][1]>0? 1 : 2 ) : (y[x][1]>=0? 4 : 3));
 		if(quadP==quad) continue;
 		//if solution rotates clockwise, count as negative modes (g modes)
 		if(quadP == 1 & quad == 2) N--;
@@ -500,15 +316,10 @@ int Mode<numvar>::verifyMode(){
 	return N;
 }
 
-
 //print out the mode information and plot it on gnuplot
 template <std::size_t numvar> 
 void Mode<numvar>::writeMode(const char *const c){
 	//create names for files to be opened
-	// char filename[256];
-	// char rootname[256];
-	// char txtname[256];
-	// char outname[256];
 	std::string filename, modename = strmakef("/mode_%d.%d", l, k);
 	if(c==NULL)	filename = "./out/" + star->name + "/mode";
 	else filename = addstring("./", c) + "/modes";
@@ -525,7 +336,7 @@ void Mode<numvar>::writeMode(const char *const c){
 	double M = star->Mass();
 	for(std::size_t x=0; x<len; x++){
 		fprintf(fp, "%0.16le", rad[x]/R);
-		for(int a=0; a<num_var; a++) fprintf(fp, "\t%0.16le", y[a][x]);
+		for(int a=0; a<num_var; a++) fprintf(fp, "\t%0.16le", y[x][a]);
 		fprintf(fp, "\n");
 	}
 	fclose(fp);
@@ -556,7 +367,6 @@ void Mode<numvar>::writeMode(const char *const c){
 template <std::size_t numvar> 
 void Mode<numvar>::printMode(const char *const c){
 	writeMode(c);
-	// char outname[258];
 	std::string outname, modename = "mode_"+std::to_string(l)+"."+std::to_string(k)+".png";
 	if(c==NULL) outname = "./out/"+star->name+"/mode/"+modename;
 	else {
@@ -577,17 +387,15 @@ double Mode<numvar>::getOmega2(){
 }
 template <std::size_t numvar> 
 double Mode<numvar>::getFreq(){
-	return sqrt(omega2/sig2omeg);
+	return sqrt(omeg2freq * omega2);
 }
 template <std::size_t numvar> 
 double Mode<numvar>::getPeriod(){
 	return 2.*m_pi/getFreq();
 }
 
-
 //we want to be able to call SSR() on each Mode object
 //however, SSR() requires equations from ModeDriver
-//this is the best compromise
 template <std::size_t numvar> 
 double Mode<numvar>::SSR(){
 	return driver->SSR(omega2, l, this);
@@ -597,7 +405,5 @@ template <std::size_t numvar>
 double Mode<numvar>::tidal_overlap(){
 	return driver->tidal_overlap(this);
 }
-
-
 
 #endif

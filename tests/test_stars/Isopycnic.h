@@ -9,7 +9,7 @@
 //		THIS IS NOT PART OF THRAIN -- ONLY FOR CERTAIN TESTS WITH NONRADIAL MODES
 //**************************************************************************************
 
-#include "Star.h"
+#include "../../src/STARS/Star.h"
 
 #ifndef ISOPYCNICH
 #define ISOPYCNICH
@@ -44,20 +44,15 @@ public:
 	
 private:
 	std::size_t len;
-	double Gamma;	//polytropic exponent
-	double rho0;	//central density
-	double P0;		//central pressure
-	double Rn;		//radius scale factor
+	double GG;      // Newton's constant for units of this model
+	double Gamma;	// adiabatic exponent
+	double x2r;     // convert x to r
+	double x2m;     // convert x to mass
 	//lane-emden solution functions
-	double *x;	//normalized radius (xi)
-	double *y;	//lane-emden solution (theta)
-	double *z;	//derivative (dtheta/dxi)
-	double *mass;
-	double GG;
-	
-	//integrate Lane-Emden using basic RK4
-	std::size_t populateValues(const std::size_t, double);
-	
+	double x(std::size_t);
+	double y(std::size_t);
+	double z(std::size_t);
+		
 	//methods for handling the BCs
 	void setupCenter();		//for conformity
 	void setupSurface();	//for conformity

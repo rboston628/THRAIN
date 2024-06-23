@@ -17,7 +17,6 @@ public:
 	//the order of equation set is fourth
 	static const unsigned int num_var=4U;
 	
-	
 	//constructor
 	//initialize from a background star and an adiabatic index
 	NonradialModeDriver(Star*, double);
@@ -52,7 +51,7 @@ private:
 	std::size_t SurfaceBC(double **y, double *yo, double s2, int l, int m=0) override;
 
 public:	
-	void getBoundaryMatrix(int, double*, double*, double**, int*) override;
+	void getBoundaryMatrix(int, double**, int*) override;
 	void varnames(std::string *names) override {
 		names[y1] = "y1"; names[y2]="y2"; names[y3]="y3"; names[y4]="y4";
 	}

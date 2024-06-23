@@ -7,11 +7,12 @@
 // *******************************************************************
 
 #include "../src/STARS/Star.h"
-#include "../src/STARS/Isopycnic.h"
 #include "../src/STARS/Polytrope.h"
 #include "../src/STARS/ChandrasekharWD++.h"
 #include "../src/STARS/MESA.h"
 #include <cxxtest/TestSuite.h>
+//import for testing
+#include "test_stars/Isopycnic.h"
 #include <random>
 #include <stdio.h>
 
@@ -52,16 +53,17 @@ public:
 
 static StarTest *createSuite (){
     system( "mkdir -p tests/artifacts" );
-    printf("\nSTAR TESTS");
+    printf("\n## STAR TESTS ##\n");
     return new StarTest();
 }
 static void destroySuite(StarTest *suite) { 
-    printf("\n##########");
+    printf("\n################");
     delete suite; 
 }
 
 void setUp() {
-    freopen("tests/artifacts/logio.txt", "a", stdout);
+    freopen("tests/artifacts/startest_log.txt", "w", stdout);
+    printf("BEGIN STAR TESTS\n");
 }
 
 void tearDown() {
@@ -199,6 +201,19 @@ void test_uniform_boundaries(){
 
 /***** TESTS OF POLYTROPES *****/
 
+// // TODO enable this test
+// // by better handling errors in Polytrope.cpp
+// void test_fail_polytrope_bad_inputs(){
+//     std::size_t const LEN(10);
+//     Star* testStar;
+//
+//     double const low_index(-1.0e-3);
+//     TS_ASSERT_THROWS_ANYTHING(testStar = new Polytrope(low_index, LEN));
+//
+//     double const high_index(5.001);
+//     TS_ASSERT_THROWS_ANYTHING(testStar = new Polytrope(low_index, LEN));
+// }
+
 std::size_t do_test_center(Star *const testStar, double const tol){
     /* test center expansions */
     constexpr std::size_t NC(4);             // number of steps to calculate
@@ -292,7 +307,6 @@ void test_polytrope_n0(){
     ** solution of an isopycnic (aka uniform-density) star.  The polytrope solution 
     ** should arrive at the isopycnic solution, but through numerical 
     ** integration as opposed to direct setting by an equation.*/
-    fprintf(stderr, "\n##########");
     fprintf(stderr, "\nSTAR TESTS - POLYTROPE n=0.0");
     double const INDEX (0.0);
     std::size_t const LEN (1001);
@@ -413,6 +427,7 @@ void test_several_polytropes(){
     Star *testStar;
 
     double const expected_error = pow(1.0/LEN, 3);
+    double const acceptable_error(1.e-4);
     double residual;
 
     for(double n : INDEX){
@@ -420,7 +435,6 @@ void test_several_polytropes(){
         residual = pow(10.0,ceil(log10(testStar->SSR())));
         // TS_ASSERT_LESS_THAN(residual, expected_error);
         // assert P/rho = theta?
-        double acceptable_error(1.e-4);
         do_test_center ( testStar, acceptable_error );
         do_test_surface( testStar, acceptable_error );
         delete testStar;
@@ -445,8 +459,8 @@ void test_polytrope_MR_constructor(){
                 TS_ASSERT_DELTA(R, testStar->Radius()/REARTH, 1.e-14);
                 TS_ASSERT_LESS_THAN(testStar->SSR(), expected_error);
                 for(std::size_t i=0; i<LEN; i++){
-                    TS_ASSERT_DELTA( testStar->getY(i), refStar->getY(i), expected_error );
-                    TS_ASSERT_DELTA( testStar->getX(i), refStar->getX(i), expected_error );
+                    TS_ASSERT_EQUALS( testStar->getY(i), refStar->getY(i) );
+                    TS_ASSERT_EQUALS( testStar->getX(i), refStar->getX(i) );
                 }
                 delete testStar;
                 delete refStar;
@@ -534,7 +548,7 @@ void test_CHWD_against_chandrasekhar(){
 }
 
 void test_CHWD_grad_constructor(){
-    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS\n");
+    fprintf(stderr, "\nSTAR TESTS - CHANDRASEKHAR CONSTRUCTORS");
     // test the constructor that accepts a gradiant in mu
     // try both a constant gradient, and a sigmoidal gradient
     std::size_t const LEN(1001);

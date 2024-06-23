@@ -2,6 +2,7 @@
 #include "../src/constants.h"
 #include <cxxtest/TestSuite.h>
 #include <random>
+#include <set>
 
 class RootFindTest : public CxxTest::TestSuite {
 public:
@@ -42,6 +43,40 @@ RootFindTest(){
         f[0] =-(x[0] - this->xroot[0]);
         f[1] =-(x[1] - this->xroot[1]);
     };
+}
+
+void test_pseudo_unif(){
+    /** 
+     * make sure the pseudo_unif produces a value between 0 and 1
+     * also make sure that in 1000 iterations, the same value is not repeated
+    */
+    std::size_t const LEN(1000);
+    double dart;
+    std::set<double> darts;
+    for (std::size_t i=0; i<LEN; i++){
+        dart = rootfind::pseudo_unif();
+        TS_ASSERT_LESS_THAN_EQUALS( 0.0, dart);
+        TS_ASSERT_LESS_THAN_EQUALS(dart,  1.0);
+        TS_ASSERT_EQUALS(darts.count(dart), 0);
+        darts.insert(dart);
+    }
+}
+
+void test_pseudo_unif_range(){
+    /**
+     * make sure the pseudo_unif produces a value between xmin and xmax
+     * also make sure that in 1000 iterations, the same value is not repeated
+    */
+    std::size_t const LEN(1000);
+    double xmin = 3.0, xmax = 7.0, dart;
+    std::set<double> darts;
+    for (std::size_t i=0; i<LEN; i++){
+        dart = rootfind::pseudo_unif(xmin, xmax);
+        TS_ASSERT_LESS_THAN_EQUALS(xmin, dart);
+        TS_ASSERT_LESS_THAN_EQUALS(dart, xmax);
+        TS_ASSERT_EQUALS(darts.count(dart), 0);
+        darts.insert(dart);
+    }
 }
 
 void test_find_brackets_move_lines(){
