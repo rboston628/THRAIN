@@ -12,6 +12,10 @@
 
 #include "ThrainMain.h"
 
+namespace rootfind {
+	double pseudo_unif(double xmin, double xmax);
+}
+
 namespace mode {
 
 template <class MODE>
@@ -31,6 +35,7 @@ void save_mode (
 		modefilled[K] = modetry;
 		modetry = nullptr;
 	}
+	delete modetry;
 }
 
 template <class MODE, class MODEDRIVER>
@@ -74,6 +79,7 @@ int mode_finder(Calculation::OutputData &data){
 	int nextmode = 0;
 	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
 		const int ltarget = *lt;
+		printf("L=%d\n", ltarget);
 
 		std::set<int> kl = kl_lists[ltarget];
 		//these will be filled as we discover modes
@@ -88,12 +94,20 @@ int mode_finder(Calculation::OutputData &data){
 		
 // STEP 2:  perform first run with rough guesses 
 // STEP 2a: fill in all easy modes from simple guesses based on K
+		printf("\tinitial calculation of modes...\t"); fflush(stdout);
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
 			modetry = new MODE(*kt, ltarget, 0, data.driver);
 			mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 		}
+		std::size_t found=0, total=0;
+		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
+			total++;
+			found += kfilled.count(*kt);
+		}
+		printf("found %lu/%lu!\n", found, total);
+
 		// save values for the min,max values of K in list
-		int klo=*(kfilled.begin()), khi=*(kfilled.rbegin());
+		int klo=*(kl.begin()), khi=*(kl.rbegin());
 
 
 		//****************************************************************************
@@ -104,7 +118,6 @@ int mode_finder(Calculation::OutputData &data){
 		//     accident to reduce the amount of recalculation
 		//   Search uses a bracketed bisection search on omega2.
 		//****************************************************************************
-		printf("L=%d\n", ltarget);
 
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){	
 			int ktarget = *kt;
@@ -120,15 +133,16 @@ int mode_finder(Calculation::OutputData &data){
 // STEP 3: set brackets
 // STEP 3a: search within discovered modes to see if brackets exist	
 			printf("finding brackets.\n");
+			ktry = klo-1;
 			double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0;
-			int kmax=khi+1, kmin=klo-1;
+			int kmax=klo-1, kmin=khi+1;
 			mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 			mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 			printf("\t\t(%d,%d) first fit\n", kmin, kmax);
 
 // STEP 3b: if one or both brackets do not exist, look for brackets
-			bool nomax = (kmax==khi+1), nomin = (kmin==klo-1); 
-			if( nomax || nomin ){
+			bool nomax = (kmax==klo-1), nomin = (kmin==khi+1); 
+			if( nomax || nomin ) {
 				// create a trial mode and add it to the list
 				modetry = new MODE(ktarget, ltarget, 0, data.driver);
 				ktry = modetry->modeOrder();
@@ -165,7 +179,7 @@ int mode_finder(Calculation::OutputData &data){
 						MODE* modeMaxQuest = nullptr; // preserve modetry while on quest
 						double incr = 2.0;
 						while(kmax < ktarget){
-							delete modetry;
+							// delete modeMaxQuest;
 							// increase the frequency and look
 							w2max = incr*w2max;
 							// create a mode with this larger frequency
@@ -173,7 +187,7 @@ int mode_finder(Calculation::OutputData &data){
 							kmax = modeMaxQuest->modeOrder();
 							w2max = modeMaxQuest->getOmega2();
 							printf("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
-							if( isnan(w2max) ) return 1;
+							if( std::isnan(w2max) ) return 1;
 							// add this mode to discovered lists
 							mode::save_mode<MODE>(modeMaxQuest, kfilled, w2filled, modefilled);
 							//if we found it, quit
@@ -189,8 +203,8 @@ int mode_finder(Calculation::OutputData &data){
 								printf("No Dice\n");
 								break;
 							}
+							mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 						}
-						mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 						mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 					}
 				}
@@ -208,22 +222,21 @@ int mode_finder(Calculation::OutputData &data){
 // reiterate bisection search until desired mode is found
 			double prevmin=w2min, prevmax=w2max; //value of previous frequency
 			int stop=0; //integer to limit number of iterations
-			while(ktry != ktarget){
+			while(!kfilled.count(ktarget)){
 //STEP 4a: bisect the brackets 
 				w2in = 0.5*(w2min+w2max); //bisect the brackets
 
 //STEP 4b: create a trial mode and add to list
-				delete modetry;
 				modetry = new MODE(w2in, ltarget,0,data.driver);
-				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				ktry = modetry->modeOrder();
 				w2try = modetry->getOmega2();
+				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				printf("%d\t\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
 						ltarget,kmin, kmax, w2min, w2max, *kt, ktry, w2in, w2try);
-				
+
 //STEP 4c: compare the trial mode to desired mode
 //if we found it, move on to next
-				if(kfilled.count(ktarget)) {
+				if(ktry==ktarget) {
 					printf("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
 					break;
 				}
@@ -231,11 +244,17 @@ int mode_finder(Calculation::OutputData &data){
 //STEP 4d: if we didn't find it, try to move brackets
 				mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 				mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
+				//accounts for fact multiple w2in lead to same k
+				if(ktry > ktarget && w2in < w2max && w2try>0.0){
+					w2max = w2in;
+				}
+				else if(ktry < ktarget && w2in > w2min && w2try>0.0){
+					w2min = w2in;
+				}
 
 //STEP 4e: if the sought mode is bracketed between two known frequencies
 // then we can use special Mode constructor
-				if((kmin == ktarget-1) & (kmax == ktarget+1)){
-					delete modetry;
+				if((kmin == ktarget-1) && (kmax == ktarget+1)){
 					modetry = new MODE(w2min, w2max, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
@@ -245,7 +264,7 @@ int mode_finder(Calculation::OutputData &data){
 					mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				}
 				
-//STEP 4f:  check if the brackets have moved since last iteration
+//STEP 4f: check if the brackets have moved since last iteration
 				//if not, pick a random location within brackets to test
 				//repeat until one of the brackets can move
 				//this prevents us from getting stuck
@@ -253,8 +272,7 @@ int mode_finder(Calculation::OutputData &data){
 				int enough=0;
 				while(ktry!=ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 					//pick a pseudo-random place in brackets
-					w2in = w2minT + pseudo_unif()*(w2maxT-w2minT);
-					delete modetry;
+					w2in = rootfind::pseudo_unif(w2minT, w2maxT);
 					modetry = new MODE(w2in, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
@@ -267,15 +285,15 @@ int mode_finder(Calculation::OutputData &data){
 					mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 					
 					//accounts for fact multiple w2in lead to same k
-					if(w2in < w2maxT && ktry == kmax && w2in>0.0){
-						w2maxT = w2in;
+					if(w2in < w2max && ktry > ktarget && w2in>0.0){
+						w2max = w2in;
 					}
-					else if(w2in > w2minT && ktry == kmin && w2in>0.0){
-						w2minT = w2in;
+					else if(w2in > w2min && ktry < ktarget && w2in>0.0){
+						w2min = w2in;
 					}
 					//sometimes zeros are inaccessible
 					//move brackets and try again
-					if(fabs(w2minT-w2maxT)<1e-2*w2minT) {
+					if(fabs(w2min-w2max)<1e-2*w2min) {
 						w2min = w2minT;
 						w2max = w2maxT;
 						break;
@@ -323,6 +341,7 @@ int mode_finder(Calculation::OutputData &data){
 				//STEP 5b (i): find brackets to use in bisection by scanning list of modes
 				//  this pass through, we are more likely to have bracketing modes
 				printf("\t\t%d\t", *kt); fflush(stdout);
+				ktry = klo-1;
 				double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0;
 				const int khi=*(kfilled.rbegin()), klo=*(kfilled.begin());
 				int kmax=khi+1, kmin=klo-1;
@@ -347,7 +366,6 @@ int mode_finder(Calculation::OutputData &data){
 				while(!kfilled.count(ktarget)){
 					w2in = 0.5*(w2min+w2max); //bisect the brackets
 					//create a trial mode
-					delete modetry;
 					modetry = new MODE(w2in, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
@@ -363,10 +381,10 @@ int mode_finder(Calculation::OutputData &data){
 					//if the sought mode is bracketed between two known frequencies
 					// then we can use special Mode constructor
 					if((kmin == ktarget-1) && (kmax == ktarget+1)){
-						delete modetry;
 						modetry = new MODE(w2min, w2max, ltarget,0,data.driver);
 						ktry = modetry->modeOrder();
 						w2try = modetry->getOmega2();
+						mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 					}
 					
 					//check if the brackets have moved since last time
@@ -376,8 +394,7 @@ int mode_finder(Calculation::OutputData &data){
 					int enough=0;
 					while(ktry != ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 						//if scanning didn't work, pick a pseudo-random place in brackets
-						w2in = w2minT + pseudo_unif()*(w2maxT-w2minT);
-						delete modetry;
+						w2in = rootfind::pseudo_unif(w2minT, w2maxT);
 						modetry = new MODE(w2in, *lt,0,data.driver);
 						ktry = modetry->modeOrder();
 						w2try = modetry->getOmega2();
@@ -413,11 +430,9 @@ int mode_finder(Calculation::OutputData &data){
 					if(stop++ > 5) {
 						break;
 					}
-				}	
-				//now save the mode numbers, frequency
-				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
+				}
 				//if we found it, say so
-				if(ktry == ktarget) printf("found\n");
+				if(kfilled.count(ktarget)) printf("found\n");
 				else printf("not found\n");
 			}
 		}
@@ -439,15 +454,15 @@ int mode_finder(Calculation::OutputData &data){
 				data.f.push_back(data.freq0*data.w[nextmode]/(twopi));
 				//period in seconds is 1/f
 				data.period.push_back(1./data.f[nextmode]);
-				data.mode_SSR.push_back(modefilled[ktarget]->SSR());	
+				data.mode_SSR.push_back(data.mode[nextmode]->SSR());
 			}
 			//STEP 5b: otherwise, say so and save nothing to it
 			else {
 				data.w.push_back(0.0);
 				data.f.push_back(0.0);
 				data.period.push_back(0.0);
-				data.mode_SSR.push_back(0.0);	
-				data.mode.push_back(NULL);	
+				data.mode_SSR.push_back(1.0);	
+				data.mode.push_back(nullptr);
 			}
 			nextmode++;
 			data.mode_done++;
@@ -465,7 +480,7 @@ int mode_finder(Calculation::OutputData &data){
 			e++;
 		}
 		//STEP 7b: for realistic models, use overlap c0 to indicate numerical error
-		//  this logic is not workign very well yet
+		//  this logic is not working very well yet
 		if(data.error[error::isC0]){
 			int testK = (*lt==1 ? 1 : 0);
 			MODE *testmode;
@@ -515,6 +530,13 @@ int mode_finder(Calculation::OutputData &data){
 
 //STEP 8: at the end of each L, print all data to the output file 
 		io::write_mode_output(data);
+
+		// clean up the remaining allocated pointers to modes
+		// delete only the modes that were not in the list
+		for(auto mt=modefilled.begin(); mt!=modefilled.end(); mt++){
+			if(!kl.count(mt->second->modeOrder()))
+				delete mt->second;
+		}
 	}
 
 	// cleanup the sizes of L,K arrays to actually discovered data

@@ -53,13 +53,17 @@ int create_classical_polytrope(Calculation::OutputData& data){
 int create_classical_CHWD(Calculation::OutputData& data){
 	switch((int)data.input_params[1]){
 		case 0:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2.,1.,1.,1.);
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, Chandrasekhar::constant_mu{2.0});
 			break;
-		case 1:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 2., 100, 0.6, 0.95);
-			break;
+		case 1: {
+			double Y0 = data.input_params[0];
+			double X0 = sqrt(Y0*Y0-1.);
+			double F0 = Chandrasekhar::factor_f(X0);
+			Chandrasekhar::sigmoidal_in_logf func {2.0, F0, 2.0, 1.0};
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, func);
+		} break;
 		default:
-			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid, 1.,1.,1.,1.);
+			data.star = new ChandrasekharWD(data.input_params[0], data.Ngrid,  Chandrasekhar::constant_mu{1.0});
 	}
 	
 	//adjust inputs to match the actual values
@@ -78,9 +82,8 @@ int create_classical_CHWD(Calculation::OutputData& data){
 
 //create a classical WD found in MESA
 int create_classical_MESA(Calculation::OutputData& data){
-	char inputname[255];
-	sprintf(inputname, "%s.dat", data.str_input_param.c_str());
-	data.star = new MESA(inputname, data.Ngrid);
+	std::string inputname = data.str_input_param + ".dat";
+	data.star = new MESA(inputname.c_str(), data.Ngrid);
 	
 	//adjust the inputs around the fact this is a MESA object
 	data.mass = data.star->Mass()/data.unitset.base_mass;		//the mass is determined by model

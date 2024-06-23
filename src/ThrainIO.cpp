@@ -63,26 +63,12 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	//handle the use of different parameters that help construct the stellar model
 	//POLYTROPE INPUT
 	if(calcdata.model==model::polytrope){
-		if(Polytrope::read_star_input(calcdata, input_file)) return 1;
+		if(Polytrope::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//CHANDRASEKHAR WD INPUT
 	else if(calcdata.model==model::CHWD){
-		calcdata.input_params.reserve(3);
-		fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the central y value
-		printf("y0=%lf\n", calcdata.input_params[0]);
-		//read in an integer designating the chemical composition to use for mu
-		fscanf(input_file, " %lf", &calcdata.input_params[1]);
-		switch((int) calcdata.input_params[1]){
-			case 0:
-				printf("standard Chandrasekhar WD\n");
-				break;
-			case 1:
-				printf("using logistic composition\n");
-				break;
-		}
-		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
-		calcdata.Ngrid = int(calcdata.input_params[2]);
+		if(ChandrasekharWD::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//MESA INPUT
@@ -97,23 +83,24 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	
 	//SIMPLE WD INPUT
 	else if(calcdata.model==model::SWD){
-		calcdata.input_params.reserve(10);
+		calcdata.input_params.resize(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
-		printf("Ngrid=%d\n", calcdata.Ngrid);
+		printf("Ngrid=%lu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
 		FILE *swd = fopen("swd.txt", "w");
 		fscanf(input_file, "EOS:\n");
 		fprintf(swd, "# equation of state\n");
 		//read the EOS specification
-		fscanf(input_file, "\tcore\t%[^\n]", input_buffer);
+		fscanf(input_file, "\tcore\t%[^\n]\n", input_buffer);
 		fprintf(swd, "core:\n\t%s\n", input_buffer);
 		calcdata.str_input_param = std::string(input_buffer);
 		calcdata.str_input_param += std::string("\n");
-		fscanf(input_file, "\tatm\t%[^\n]", input_buffer);
+		fscanf(input_file, "\tatm\t%[^\n]\n", input_buffer);
 		fprintf(swd, "atm:\n\t%s\n\n", input_buffer);
 		calcdata.str_input_param += std::string(input_buffer);
+		printf("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
 		
 		//on a new line, specify chemical paramters
 		fscanf(input_file, "chemical parameters:\n");  //skip a line of formatting
@@ -126,7 +113,6 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		fprintf(swd, "\to \t%lf\t%lf\t%lf\n", calcdata.input_params[7], calcdata.input_params[8], calcdata.input_params[9]);
 		fprintf(swd, "\n");
 		fclose(swd);
-		printf("%s\n", calcdata.str_input_param.c_str());
 		fscanf(input_file, "\n");
 	
 		//now read in desired physical properties of star
@@ -134,7 +120,6 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		double temp;
 		//read in first physical parameter -- name as string, value as double
 		fscanf(input_file, "Params: %s %lf ", input_buffer, &temp);
-		printf("%s %lf\n", input_buffer, temp);
 		instring=std::string(input_buffer);
 		//save value in appropriate slot use bit-masking to keep track of variables
 		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
@@ -203,7 +188,7 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
-	printf(" MAKING A ");
+	printf("MAKING A ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
 	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
@@ -220,10 +205,11 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 }
 
 int read_units(FILE* input_file, Calculation::InputData& calcdata){
-	char input_buffer[128];		//for read-in from file and text processing
+	char input_buffer[256];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 
 	fscanf(input_file, "Units: %s\n", input_buffer);
+	printf("USING UNITS: ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
 	else if(!instring.compare("geo")) calcdata.units = units::Units::geo;
@@ -236,6 +222,7 @@ int read_units(FILE* input_file, Calculation::InputData& calcdata){
 		printf("This error is fatal.  Quitting.\n");
 		return 1;
 	}
+	printf("%s\n", input_buffer);
 	return 0;
 }
 
@@ -271,7 +258,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 		fscanf(input_file, "%s\n", input_buffer);
 		calcdata.mode_num++;
 	}
-	printf("Number of frequencies: %d\n", calcdata.mode_num);
+	printf("Number of frequencies: %lu\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
 	//now read in the L,K as specified 
 	for(int j=0; j<calcdata.mode_num; j++){
@@ -302,17 +289,14 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 int echo_input(Calculation::InputData &calcdata){
 	printf("Copying input file...\t"); fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s_in.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
 	FILE* output_file;
 	
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
-		char command[140]; 
-		sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -337,7 +321,7 @@ int echo_input(Calculation::InputData &calcdata){
 		case model::SWD:
 			fprintf(output_file, "SWD ");
 	}
-	fprintf(output_file, "%d\n", calcdata.Ngrid);
+	fprintf(output_file, "%lu\n", calcdata.Ngrid);
 	
 	switch(calcdata.model){
 		case model::polytrope:
@@ -392,7 +376,12 @@ int echo_input(Calculation::InputData &calcdata){
 			fprintf(output_file, "cowling\t");
 			break;	
 	}
-	fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the adiabatic index
+	double a = calcdata.adiabatic_index*3.0;
+	if(fabs(a-5.0)<1e-10) fprintf(output_file, "5/3\n");
+	else if (fabs(a-4.0)<1e-10) fprintf(output_file, "4/3\n");
+	else fprintf(output_file, "%1.3lf\n", calcdata.adiabatic_index);
+	// write the requested mode numbers
 	int checkcount=0;
 	for(int L : calcdata.l){
 		for(int K : calcdata.kl.at(L)){
@@ -435,7 +424,9 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.teff = data_in.teff;
 	data_out.params = data_in.params;
 	//formatting units may need to be re-performed after calculation, depending on star
+	printf("MASS = %le\n", data_out.mass);
 	units::format_units(data_out);
+	printf("MASS = %le\n", data_out.mass);
 	
 	//now prepare the modes
 	data_out.mode_num = data_in.mode_num;
@@ -460,28 +451,25 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.period.reserve(data_out.mode_num);
 	data_out.mode_SSR.reserve(data_out.mode_num);
 
-
 	//setup error columns
 	data_out.i_err = 0;
 	//if the star is a simple model, use RMSR to estimate mode error
-	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) | (data_out.model==model::CHWD));
+	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) || (data_out.model==model::CHWD));
 	//if the star is a realistic model, use overlap c_0 to estimate mode error
-	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) | (data_out.model==model::SWD));
+	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) || (data_out.model==model::SWD));
 	//if it is a polytrope with n=0, use the Pekeris formula to compare
-	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) & (data_out.input_params[0]==0.0));
+	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) && (data_out.input_params[0]==0.0));
 	//if it is a Newtonian polytrope with Gamma=5/3 and n=1.5,3,4, then compare to JCD-DJM
-	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &
-		(data_out.regime==regime::PN0) &
-		(data_out.input_params[0]==1.5 | data_out.input_params[0]==3.0 | data_out.input_params[0]==4.0) &
-		(fabs(data_out.adiabatic_index - 5./3.)<1.e-5);
-
+	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &&
+		(data_out.regime==regime::PN0) &&
+		(data_out.input_params[0]==1.5 || data_out.input_params[0]==3.0 || data_out.input_params[0]==4.0) &&
+		(fabs(data_out.adiabatic_index - 5./3.)<1.e-3);
 	//count the number of pertinent errors
 	for(int e=0; e<error::numerror; e++)
 		if(data_out.error[e]) data_out.i_err++;
 	//create the error columns
 	data_out.err = new double*[data_out.i_err];
 	for(int e=0; e<data_out.i_err; e++) data_out.err[e] = new double[data_out.mode_num];
-	
 	printf("done\n");
 	return 0;
 }
@@ -513,16 +501,15 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	printf("Writing stellar data to file...\t");fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
 		printf("creating file..."); fflush(stdout);
-		char command[140]; sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -541,74 +528,72 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	fprintf(output_file, "\n");
 	
-	char s[256],m[256];
+	// char s[256],m[256];
+	std::string s, m;
 	switch(calcdata.model){
 		case model::polytrope:
-		sprintf(s,"Polytropic star");
+		s = "Polytropic star";
 		break;
 		case model::CHWD:
-		sprintf(s,"Chandrasekhar WD");
+		s = "Chandrasekhar WD";
 		break;
 		case model::MESA:
-		sprintf(s,"MESA model");
+		s = "MESA model";
 		break;
 		case model::SWD:
-		sprintf(s,"Simple WD model");
+		s = "Simple WD model";
 		break;
 	}
 	switch(calcdata.modetype){
 		case modetype::radial:
-			sprintf(m,"radial");
+			m = "radial";
 			break;
 		case modetype::nonradial:
-			sprintf(m,"nonradial");
+			m = "nonradial";
 			break;
 		case modetype::cowling:
-			sprintf(m,"Cowling");
+			m = "Cowling";
 			break;
 	}	
-	fprintf(output_file, "%s  %s with %s pulsations\n", dwarf[d++], s, m);
+	fprintf(output_file, "%s  %s with %s pulsations\n", dwarf[d++], s.c_str(), m.c_str());
 
 	//print out a message showing which observable parameters were passed, and with which units
-	char unitM[100], unitL[10], unitT[10], unitG[10], unitZ[10];
+	// char unitM[10], unitL[10], unitT[10], unitG[10], unitZ[10];
+	std::string unitM, unitL, unitT, unitG, unitZ = "        ";
 	switch(calcdata.units){
 		case units::Units::astro:
-			sprintf(unitM, "(Msolar)");
-			sprintf(unitL, "(km)    ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(Msolar)";
+			unitL = "(km)    ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  Astronomical Units (Msolar, km, s)\n", dwarf[d++]);
 			break;
 		case units::Units::geo:
-			sprintf(unitM, "(m)     ");
-			sprintf(unitL, "(m)     ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(m)     ";
+			unitL = "(m)     ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  Geometric Units (G=c=1)\n", dwarf[d++]);
 			break;
 		case units::Units::SI:
-			sprintf(unitM, "(kg)    ");
-			sprintf(unitL, "(m)     ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(kg)    ";
+			unitL = "(m)     ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  SI Units (kg, m, s)\n", dwarf[d++]);
 			break;
 		case units::Units::CGS:
-			sprintf(unitM, "(g)     ");
-			sprintf(unitL, "(cm)    ");
-			sprintf(unitG, "(cm/s^2)");
-			sprintf(unitZ, "        ");
+			unitM = "(g)     ";
+			unitL = "(cm)    ";
+			unitG = "(cm/s^2)";
 			//fprintf(output_file,"%s  CGS Units (g, cm, s)\n", dwarf[d++]);
 			break;
 	}
-	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM, calcdata.mass,  (calcdata.params&units::ParamType::pmass?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL, calcdata.radius,(calcdata.params&units::ParamType::pradius?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Mass   %s = %1.5lg %s", dwarf[d++], unitM.c_str(), calcdata.mass,  (calcdata.params&units::ParamType::pmass?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Radius %s = %1.5lg %s", dwarf[d++], unitL.c_str(), calcdata.radius,(calcdata.params&units::ParamType::pradius?"(specified)\n":"(derived)\n"));
 	if(calcdata.teff!=0.0)
-	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ, calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff (K)%s= %lg %s",    dwarf[d++], unitZ.c_str(), calcdata.teff,  (calcdata.params&units::ParamType::pteff?"(specified)\n":"(derived)\n"));
 	else
-	fprintf(output_file,"%s      Teff      = N/A \n",    dwarf[d++]);	
-	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG, calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
-	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ, calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Teff    %s= N/A \n",    dwarf[d++], unitZ.c_str());	
+	fprintf(output_file,"%s      log g%s   = %1.5lg %s", dwarf[d++], unitG.c_str(), calcdata.logg,  (calcdata.params&units::ParamType::plogg?"(specified)\n":"(derived)\n"));
+	fprintf(output_file,"%s      Zsurf  %s = %1.5le %s", dwarf[d++], unitZ.c_str(), calcdata.zsurf, (calcdata.params&units::ParamType::pzsurf?"(specified)\n":"(derived)\n"));
 	fprintf(output_file,"%s  \n", dwarf[d++]);
 	
 
@@ -637,7 +622,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 			break;
 	}
 	fprintf(output_file, "%s  \n", dwarf[d++]);
-	fprintf(output_file, "%s  Number of grid points : %d\n", dwarf[d++], calcdata.Ngrid);
+	fprintf(output_file, "%s  Number of grid points : %lu\n", dwarf[d++], calcdata.Ngrid);
 	fprintf(output_file, "%s  Fractional RMS error  : %1.3le\n", dwarf[d++], calcdata.star_SSR);
 	//bottom bar
 	fprintf(output_file, "#");
@@ -645,9 +630,8 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	fprintf(output_file, "\n");
 	fclose(output_file);
 	
-	char outname[128];
-	sprintf(outname, "./output/%s",calcdata.calcname.c_str());
-	calcdata.star->writeStar(outname);
+	std::string outname = "./output/"+calcdata.calcname;
+	calcdata.star->writeStar(outname.c_str());
 	
 	printf("done\n");
 	return 0;
@@ -656,11 +640,10 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 int write_mode_output(Calculation::OutputData& calcdata){
 	printf("Writing mode data to file...\t"); fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/%s.txt", calcdata.calcname.c_str(),calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "a")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
 		printf("the file doesn't exist\n");
 		return 1;
 	}
@@ -720,15 +703,13 @@ int write_mode_output(Calculation::OutputData& calcdata){
 			continue;
 		}
 		fprintf(output_file, "%0.12le \t%3.12le \t%0.12le", calcdata.w[j], calcdata.f[j],calcdata.period[j]);
-		//fprintf(output_file, "\t%1.2le", calcdata.mode_SSR[j]);
 		for(int e=0; e<calcdata.i_err; e++){
 			if(!std::isnan(calcdata.err[e][j])) fprintf(output_file, "\t%1.2le", calcdata.err[e][j]);
 			else fprintf(output_file, "\tN/A");
 		}
 		fprintf(output_file, "\n");
-		char outname[128];
-		sprintf(outname, "./output/%s",calcdata.calcname.c_str());
-		(calcdata.mode[j])->writeMode(outname);
+		std::string outname = "./output/"+calcdata.calcname;
+		(calcdata.mode[j])->writeMode(outname.c_str());
 		fflush(output_file);
 		calcdata.mode_writ++;
 	}
@@ -738,7 +719,7 @@ int write_mode_output(Calculation::OutputData& calcdata){
 	return 0;
 }
 
-void print_splash(FILE* output_file, char* title, int WIDTH){
+void print_splash(FILE* output_file, const char *const title, int WIDTH){
 	//first bar
 	fprintf(output_file, "#");
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
@@ -751,20 +732,17 @@ void print_splash(FILE* output_file, char* title, int WIDTH){
 	fprintf(output_file, "\n");
 }
 
-//NOTE: this function has a problem and will always cause a seg fault
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
 	//open file to write output summary
-	char output_file_name[128];
-	sprintf(output_file_name, "./output/%s/tidal_overlap.txt", calcdata.calcname.c_str());
+	std::string output_file_name = "./output/"+calcdata.calcname+"/tidal_overlap.txt";
 	FILE* output_file;
 	//try to open the output file
-	if( !(output_file = fopen(output_file_name, "w")) ){
+	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
 		printf("creating file...\n"); fflush(stdout);
-		char command[140]; sprintf(command, "mkdir -p ./output/%s", calcdata.calcname.c_str());
-		system(command);
-		if( !(output_file = fopen(output_file_name, "w")) ){
+		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			printf("output file not found.\n");
 			return 1;
 		}
@@ -772,9 +750,8 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	
 	//print the cool splash
 	int WIDTH = 80;
-	char splashy[1100];
-	sprintf(splashy, "tidal overlap coefficients for %s", calcdata.calcname.c_str());
-	print_splash(output_file, splashy, WIDTH);
+	std::string splashy = "tidal overlap coefficients for "+calcdata.calcname;
+	print_splash(output_file, splashy.c_str(), WIDTH);
 	fflush(output_file);
 		
 	//produce a list of the different L asked for, each represented once
@@ -787,7 +764,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	std::unordered_map<int, ModeBase*> fmode;
 	for(auto lt = l_list.begin(); lt!=l_list.end(); lt++){
 		if(*lt<2){
-			printf("no tidal response at this order\n");
+			printf("\tl=%d\tno tidal response at this order\n", *lt);
 			continue;
 		}
 		for(int i=0; i<calcdata.mode_done; i++){
@@ -797,8 +774,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 			}
 		}
 	}
-		
-			
+
 	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
@@ -825,7 +801,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	}
 	fclose(output_file);
 	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
-		delete fmode[*lt];
+		fmode[*lt] = nullptr;
 	}
 	printf("\tdone\n");
 	printf("done!\n");

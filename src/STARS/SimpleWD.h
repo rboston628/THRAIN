@@ -23,39 +23,37 @@ extern PartialPressure ideal, rad_gas, coul, deg_zero, deg_finite, deg_trap, deg
 
 class SimpleWD : public Star {
 public:
-	void graph_title(char* buff){
-		sprintf(buff, "Simple WD, M=%1.3f, R=%1.3f, T_{eff}=%1.3le", Msolar, Rsolar*exp(logY[Ntot-1][radi]), Teff);
+	std::string graph_title() override {
+		return strmakef("Simple WD, M=%1.3lf, R=%1.3lf, T_{eff}=%1.3le", Msolar, Rsolar*exp(logY[Ntot-1][radi]), Teff);
 	}
 	//constructor
 	SimpleWD(
 		double M, 	//the mass, in solar units
 		double T,	//effective temperature in K
-		int N
+		std::size_t N
 	);
 	virtual ~SimpleWD();	//destructor
-	int length(){return Ntot;}
+	std::size_t length() override {return Ntot;}
 	//these three functions specify units
-	double Radius();	//total radius
-	double Mass();	//total mass
-	double Gee();
-	//in Newtonian, light speed is infinity... just use the max value to represent this
-	virtual double light_speed2();
+	double Radius() override;	//total radius
+	double Mass() override;	    //total mass
+	double Gee() override;
 	
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double  mr(std::size_t) override;
 	
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double Gamma1(int);
-	double sound_speed2(int, double GamPert=0.0);
-	double Ledoux(int, double GamPert=0.0);
-	double BruntVaisala(int, double GamPert=0.0);
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double Gamma1(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	double Ledoux(std::size_t, double GamPert=0.0);
+	double BruntVaisala(std::size_t, double GamPert=0.0);
 	Abundance Xmass;
 		
 private:
@@ -66,7 +64,7 @@ private:
 	void rescaleR();
 
 
-	int Ntot, Ncore, Natm;//number of grid points
+	std::size_t Ntot, Ncore, Natm;//number of grid points
 	
 	//surfce values
 	double Msolar, Mstar; //in solar and CGS units
@@ -80,8 +78,8 @@ private:
 	double *logQ;	   // the independent variable
 	StellarVar*  logY; // log density, radius, pressure, mass, temperature, luminosity
 	StellarVar* dlogY; // dlogY/dlogQ, as above
-	void setupGrid(double, int);
-	void expandGrid(int);
+	void setupGrid(double, std::size_t);
+	void expandGrid(std::size_t);
 
 	StellarVar Yscale, logYscale;
 	StellarVar Ysolar;
@@ -100,11 +98,11 @@ private:
 	
 	//methods to calculate each of the three sections
 	static const int numv=3;
-	void   joinAtCenter(double x[numv], double f[numv], double& F);
-	double calculateCore( const double x[numv], int Nmax);
-	int    firstCoreStep( const double x[numv], double& rholast, int Nmax);
-	void   calculateAtmosphere( const double x[numv]);
-	int    firstAtmosphereStep( const double x[numv], double& rholast);
+	void        joinAtCenter(double x[numv], double f[numv], double& F);
+	double      calculateCore( const double x[numv], std::size_t Nmax);
+	std::size_t firstCoreStep( const double x[numv], double& rholast, std::size_t Nmax);
+	void        calculateAtmosphere( const double x[numv]);
+	std::size_t firstAtmosphereStep( const double x[numv], double& rholast);
 	StellarVar dYdR(       const StellarVar&, const double& delta, const double epsilon=1.0);
 	StellarVar dlogYdlogR( const StellarVar&, const double& delta, const double epsilon=1.0);
 	StellarVar dYdM(       const StellarVar&, const double& delta, const double epsilon=1.0);
@@ -134,24 +132,24 @@ private:
 	void setupCenter();
 	void setupSurface();
 public:
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter( double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double *, int&, double g=0);
-	void getUSurface( double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter( double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double *, int&, double g=0) override;
+	void getUSurface( double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
 	
 	//a particular output generation for this model of a WD
-	void writeStar(char *c=NULL);
-	double SSR();
+	void writeStar(const char *const c=NULL) override;
+	double SSR() override;
 private:
-	void printChem(char *c);
-	void printBV(char *c);
-	void printOpacity(char *c);
-	void printBigASCII(char *c);
-	void printCoefficients(char *c);
+	void printChem(const char *const c);
+	void printBV(const char *const c, const double g=0)  override;
+	void printOpacity(const char *const c);
+	void printBigASCII(const char *const c);
+	void printCoefficients(const char *const c, const double g=0) override;
 };
 
 #endif

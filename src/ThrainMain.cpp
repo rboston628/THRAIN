@@ -18,12 +18,10 @@ int main(int argc, char* argv[]){
 	FILE* input_file;
 	Calculation::InputData calcdataIn;
 	Calculation::OutputData calcdataOut;
-	char input_file_name[128];
 	if(argc == 2) {
 		//the calculation filename is sent as command-line argument
-		sprintf(input_file_name, "%s", argv[1]);
 		//call the read_input routine on the given filename (see GRPulseIO.h)
-		if(!io::read_input(input_file_name, calcdataIn)) printf("file read\n");
+		if(!io::read_input(argv[1], calcdataIn)) printf("file read\n");
 		else return 1;
 	}
 	else {
@@ -32,20 +30,13 @@ int main(int argc, char* argv[]){
 	}
 	
 	//remove any information from past calculations, and create directory for the calculation
-	char command[256];
-	sprintf(command, "rm -r ./output/%s", calcdataIn.calcname.c_str());
-	system(command);
-	sprintf(command, "mkdir ./output/%s", calcdataIn.calcname.c_str());
-	system(command);
-	sprintf(command, "mkdir ./output/%s/star", calcdataIn.calcname.c_str());
-	system(command);
-	sprintf(command, "mkdir ./output/%s/modes", calcdataIn.calcname.c_str());
-	system(command);
+	system( ( "rm -r ./output/"+calcdataIn.calcname ).c_str() );
+	system( ( "mkdir -p ./output/"+calcdataIn.calcname+"/star" ).c_str() );
+	system( ( "mkdir -p ./output/"+calcdataIn.calcname+"/modes" ).c_str() );
 	//print a copy of the input file for future reference
 	io::echo_input(calcdataIn);
 	//prepare the output, based on the input
 	io::setup_output(calcdataIn, calcdataOut);
-
 	//make the background stellar model
 	create_star(calcdataOut);
 	//write output on the bakground stellar model

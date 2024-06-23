@@ -5,6 +5,22 @@
 class UnitsBaseTest : public CxxTest::TestSuite {
 public:
 
+    static UnitsBaseTest *createSuite (){
+        printf("\nUNIT TESTS");
+        return new UnitsBaseTest;
+    }
+    static void destroySuite(UnitsBaseTest *suite) { 
+        delete suite; 
+    }
+
+    void setUp() {
+        freopen("tests/artifacts/logio.txt", "a", stdout);
+    }
+
+    void tearDown() {
+        freopen("/dev/tty", "w", stdout);
+    }
+
     Calculation::OutputData setupFakeCalcData(units::Units unitType){
         Calculation::OutputData fakeData;
         fakeData.star = nullptr;
@@ -39,6 +55,36 @@ public:
         return fakeData;
     }
 
+    void do_test_setUnits_noparams(units::Units unitType){
+
+        // test with an undefined params
+        Calculation::OutputData fakeData1;
+        fakeData1.star = nullptr;
+        fakeData1.driver = nullptr;
+        fakeData1.i_err = 0;
+        fakeData1.units = unitType;
+        TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData1));
+        // assert all safely zeroed out
+        TS_ASSERT_EQUALS(fakeData1.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData1.logg, 0.0);
+
+        // test with a zero-set params
+        Calculation::OutputData fakeData2;
+        fakeData2.star = nullptr;
+        fakeData2.driver = nullptr;
+        fakeData2.i_err = 0;
+        fakeData2.params = 0;
+        fakeData2.units = unitType;
+        TS_ASSERT_THROWS_NOTHING(units::format_units(fakeData2));
+        // assert all safely zeroed out
+        TS_ASSERT_EQUALS(fakeData2.mass, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.radius, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.zsurf, 0.0);
+        TS_ASSERT_EQUALS(fakeData2.logg, 0.0);
+    }    
+
     void do_test_setUnits(units::Units unitType){
         Calculation::OutputData fakeData = setupFakeCalcData(unitType);
         // assert units set properly
@@ -56,6 +102,13 @@ public:
         TS_ASSERT_DELTA(fakeData.zsurf, zsurf, 1e-4);
         TS_ASSERT(fakeData.logg == logg);
         TS_ASSERT(fakeData.freq0 == sqrt(G_CGS*mcgs*pow(rcgs,-3)));
+    }
+
+    void test_setAllUnits_noparams(){
+        do_test_setUnits_noparams(units::Units::astro);
+        do_test_setUnits_noparams(units::Units::geo);
+        do_test_setUnits_noparams(units::Units::SI);
+        do_test_setUnits_noparams(units::Units::CGS);
     }
 
     void test_setAllUnits(){

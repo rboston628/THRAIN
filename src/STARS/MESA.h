@@ -1,4 +1,10 @@
-//Class to calculate read in MESA data for pulsation calculations d
+//**************************************************************************************
+//							MESA Wrapper
+// MESA.h
+//		This is a simple wrapper, intended to work with data generated using MESA
+//	
+// Reece Boston, Sep 02, 2023
+//**************************************************************************************
 
 #ifndef MESACLASSH
 #define MESACLASSH
@@ -7,42 +13,32 @@
 
 class MESA : public Star {
 public:	
-	MESA(const char*, int);	//constructor
+	MESA(const char*, std::size_t);	//constructor
 	virtual ~MESA(); //destructor - clears all space in memory
-	int length(){return len;}
-	double Mass();
-	double Radius();
-	double Gee();
-	double light_speed2();
-	void graph_title(char* buff){
-		sprintf(buff, "MESA model w/ Mass=%lg", Mtot);
+	std::size_t length() override {return len;}
+	double Mass() override;
+	double Radius() override;
+	double Gee() override;
+	std::string graph_title () override {
+		return strmakef("MESA model w/ Mass=%lg", Mtot);
 	}
 	
-	double rad(int);
-	double rho(int), drhodr(int);
-	double   P(int),   dPdr(int);
-	double Phi(int), dPhidr(int);
-	double mr(int);
+	double rad(std::size_t) override;
+	double rho(std::size_t) override, drhodr(std::size_t) override;
+	double   P(std::size_t) override,   dPdr(std::size_t) override;
+	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double mr(std::size_t)  override;
 	
-	double Gamma1(int);
-	double Schwarzschild_A(int, double GamPert=0.0);
-	double getAstar(int, double GamPert=0.0);
-	double getVg(int, double GamPert=0.0);
-	double getU(int);
-	double getC(int);
-	double sound_speed2(int, double GamPert=0);
-	
+	double Gamma1(std::size_t) override;
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
+	double getAstar(std::size_t, double GamPert=0.0) override;
+	double getVg(std::size_t, double GamPert=0.0) override;
+	double getU(std::size_t) override;
+	double getC(std::size_t) override;
+	double sound_speed2(std::size_t, double GamPert=0) override;
+
 private:
-	void printSection(int, int);
-	void subgridCubicSpline(const int, const int, const int*);
-	void spline(
-		const int, const int, const int *const,
-		const double *const,  const double *const,
-		double*, double*
-	);
-	void getSplineCoefficients(const int, double*, const double *const, const double *const);
-	
-	int Ntot, len, subgrid;  //Ntot = grid size from MESA
+	std::size_t Ntot, len, subgrid;  //Ntot = grid size from MESA
 	double G, c2;
 	//in units of g, cm, erg/s, respectively
 	double Mtot, Rtot, Ltot;
@@ -52,7 +48,6 @@ private:
 	double *radi;	
 	Splinor *dens, *pres, *mass, *grav, *Gam1, *BVfq;
 	Splinor *aSpline, *vSpline, *uSpline, *cSpline;
-	
 	
 	//for BCs of modes
 	double nc;// effective polytropic index at center
@@ -67,19 +62,19 @@ private:
 	void setupSurface();
 	
 public:
-	void getAstarCenter(double *, int&, double g=0);
-	void getUCenter(double*, int&);
-	void getVgCenter(double*, int&, double g=0);
-	void getC1Center(double*, int&);
-	void getAstarSurface(double *, int&, double g=0);
-	void getUSurface(double*, int&);
-	void getVgSurface(double*, int&, double g=0);
-	void getC1Surface(double*, int&);
-	void writeStar(char *c=NULL);
-	double SSR();
+	void getAstarCenter(double *, int&, double g=0) override;
+	void getUCenter(double*, int&) override;
+	void getVgCenter(double*, int&, double g=0) override;
+	void getC1Center(double*, int&) override;
+	void getAstarSurface(double *, int&, double g=0) override;
+	void getUSurface(double*, int&) override;
+	void getVgSurface(double*, int&, double g=0) override;
+	void getC1Surface(double*, int&) override;
+	void writeStar(const char *const c=NULL) override;
+	double SSR() override;
 private:
-	void printBV(char *c);
-	void printCoefficients(char *c);
+	void printBV(const char *const, double const g=0) override;
+	void printCoefficients(const char *const, double const g=0) override;
 };
 
 #endif

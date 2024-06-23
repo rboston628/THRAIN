@@ -5,23 +5,24 @@
 //  Reece Boston, Mar 24, 2022
 // **************************************************************************************
 
-//constants and dependencies
-#ifndef CONSTANTS
-#define CONSTANTS
-
-#include <math.h>
+#include <cmath>
 #include <complex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <functional>
 #include "../lib/Splinor.h"
 #include "../lib/matrix.h"
-#include "../lib/rootfind.h"
+#include "../lib/string.h"
 // #include <time.h> //might use later to put a time stamp
 
+//constants and dependencies
+#ifndef CONSTANTS
+#define CONSTANTS
+
 //good ol' pi!
-const double m_pi = 3.141592653589793;
+const double m_pi = 3.1415926535897932384626433832795;
 //speed of light in CGS
 const double C_CGS = 2.99792458e10;// in CGS
 //gravitational constant in CGS
@@ -48,7 +49,7 @@ const double LSOLAR = 3.828e33;//in CGS
 //radius of earth, most useful length scale for WD models
 const double REARTH = 6.378e8 ;//in CGS
 
-//Plank constants in CGs units 
+//Planck constants in CGs units 
 const double planck_h_CGS = 6.62607015e-27;
 const double planck_hbar_CGS = 1.054571817e-27;
 
@@ -77,6 +78,3 @@ const double G_astro = 4.302e-3*30856775812800.0;// km (km/s)^2 /MSOLAR
 //const double G_astro = 1.90809e5;// RSOLAR (km/s)^2/MSOLAR
 
 #endif
-
-
-
