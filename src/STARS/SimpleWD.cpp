@@ -78,8 +78,10 @@ SimpleWD::SimpleWD(
 {
 	//begin by assigning values to EOS and chemical abundance based on file
 	setup();
+	printf("SETUP IS DONE\n");
 	//prepare a starting model from a ChandrasekharWD, to guess R, P0
 	initFromChandrasekhar();
+	printf("INIT FROM CHWD IS DONE\n");
 	
 	//
 	if(Ntot%2==0) Ntot = Ntot+1;
@@ -268,17 +270,18 @@ void SimpleWD::setup(){
 	EOS *pres = NULL;
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
+	printf("FOUND %c\n", c);
 	while(c != nullptr){
 		printf("READING %c\n", c);
 		c = std::fgets(input_buffer, buffer_size, input_file);
-		if(c != nullptr) printf("%s", input_buffer);
+		if(c != nullptr) {printf("%s", input_buffer); fflush(stdout);}
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
 		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
 		if(pres!=NULL){
 			std::fgets(input_buffer, buffer_size, input_file);
 			pressure = strtok(input_buffer, " \t\n");
 			while(pressure != NULL){
-				printf("\t%s", pressure);
+				printf("\t%s", pressure); fflush(stdout);
 				if(     !strcmp(pressure, "rad"))
 					pres->push_back(rad_gas);
 				else if(!strcmp(pressure, "ideal"))
