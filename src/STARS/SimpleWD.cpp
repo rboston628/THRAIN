@@ -315,7 +315,7 @@ void SimpleWD::initFromChandrasekhar(){
 	std::size_t Ntest = 500;
 	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
 	double Mtry = 0.0, Mmin = 0.0, Mmax = 2.02;
-	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
+	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
 	Mtry = testStar->Mass()/MSOLAR-Msolar;
 	Mmin = Mmin - Msolar;
 	Mmax = Mmax - Msolar;
@@ -331,7 +331,7 @@ void SimpleWD::initFromChandrasekhar(){
 		}
 		y0 = 0.5*(ymin+ymax);
 		delete testStar;
-		testStar = new ChandrasekharWD(y0, Ntest, 2.,1.,1.,1.);
+		testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
 		Mtry = testStar->Mass()/MSOLAR-Msolar;
 	}
 	
@@ -368,7 +368,7 @@ void SimpleWD::initFromChandrasekhar(){
 //        resulting in gradually tapering step size in m towars surface
 //**************************************************************************************/
 void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){	
-	int n=0;
+	std::size_t n=0;
 	double q = 4.94066e-324; //the center
 	logQ[0] = log(q);
 	

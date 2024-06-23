@@ -48,7 +48,7 @@ private:
 	std::size_t SurfaceBC(double **y, double *yo, double s2, int l, int m=0) override;
 
 public:	
-	void getBoundaryMatrix(int, double *, double*, double**, int*) override;
+	void getBoundaryMatrix(int, double**, int*) override;
 	void varnames(std::string *names) override{
 		names[0] = "y1"; names[1]="y2";
 	}

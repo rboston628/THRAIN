@@ -67,7 +67,7 @@ public:
 	
 	//the following two methods are added to make Mode agnostic
 	//provide the order of BCs to check in forming Wronskian
-	virtual void getBoundaryMatrix(int, double *, double*, double **, int*) =0;
+	virtual void getBoundaryMatrix(int, double **, int*) =0;
 	virtual void varnames(std::string*) =0;	//names of variables to print out
 
 protected:

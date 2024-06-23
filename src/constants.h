@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <functional>
 #include "../lib/Splinor.h"
 #include "../lib/matrix.h"
 #include "../lib/string.h"
@@ -77,6 +78,3 @@ const double G_astro = 4.302e-3*30856775812800.0;// km (km/s)^2 /MSOLAR
 //const double G_astro = 1.90809e5;// RSOLAR (km/s)^2/MSOLAR
 
 #endif
-
-
-

@@ -106,8 +106,8 @@ public:
 	//access the elements
 	double& operator[](const int n){ return (var[n]);};
 	double  operator[](const int n) const { return (var[n]);};
-	double& operator[](const VarName elem){ return (var[elem]);};
-	double  operator[](const VarName elem) const { return var[elem];};
+	double& operator[](const VarName n){ return (var[n]);};
+	double  operator[](const VarName n) const { return var[n];};
 	//constructors
 	StellarVar(const double x[num_var]){
 		for(int j=0; j<num_var; j++) var[j] = x[j];
@@ -171,7 +171,6 @@ StellarVar log(const StellarVar &x);
 //double radiative_opacity(StellarVar ly, Abundance const& X);
 //double conductive_opacity(StellarVar ly, Abundance const& X);
 
-
 struct PartialPressure {
 	typedef double (*funcptr)(double,double,Abundance const&);
 	funcptr P, partialRho, partialT;
@@ -185,7 +184,7 @@ struct PartialPressure {
 class EOS {
 public:
 	EOS() = default;
-	EOS(const std::vector<PartialPressure> p) : pressure(p) {rando++;};
+	EOS(const std::vector<PartialPressure> p) : pressure(p) {};
 	double invert(double rho_last, double P, double T, Abundance const& chem);
 	double invertNewton(double rho_last, double P, double T, Abundance const& chem);
 	double operator()(double rho, double T, Abundance const& chem){
@@ -214,10 +213,6 @@ public:
 private:
 	//the partial pressures are stored as function pointers in a vector object
 	std::vector<PartialPressure> pressure;
-	//for pseudorandom positioning -- used in bisection search of "invert"
-	//initialize a simple "cat map" PRNG (aka Lehmer PRNG)
-	static const int a=53, b=122, r=17737;
-	static int rando;
 };
 
 //************************************************************************************

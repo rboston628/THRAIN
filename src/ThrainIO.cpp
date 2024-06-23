@@ -68,21 +68,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	
 	//CHANDRASEKHAR WD INPUT
 	else if(calcdata.model==model::CHWD){
-		calcdata.input_params.reserve(3);
-		fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the central y value
-		printf("y0=%lf\n", calcdata.input_params[0]);
-		//read in an integer designating the chemical composition to use for mu
-		fscanf(input_file, " %lf", &calcdata.input_params[1]);
-		switch((int) calcdata.input_params[1]){
-			case 0:
-				printf("standard Chandrasekhar WD\n");
-				break;
-			case 1:
-				printf("using logistic composition\n");
-				break;
-		}
-		fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size
-		calcdata.Ngrid = int(calcdata.input_params[2]);
+		if(ChandrasekharWD::read_star_input(input_file, calcdata)) return 1;
 	}
 	
 	//MESA INPUT
@@ -202,7 +188,7 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
-	printf(" MAKING A ");
+	printf("MAKING A ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
 	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
@@ -219,10 +205,11 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 }
 
 int read_units(FILE* input_file, Calculation::InputData& calcdata){
-	char input_buffer[128];		//for read-in from file and text processing
+	char input_buffer[256];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 
 	fscanf(input_file, "Units: %s\n", input_buffer);
+	printf("USING UNITS: ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
 	else if(!instring.compare("geo")) calcdata.units = units::Units::geo;
@@ -235,6 +222,7 @@ int read_units(FILE* input_file, Calculation::InputData& calcdata){
 		printf("This error is fatal.  Quitting.\n");
 		return 1;
 	}
+	printf("%s\n", input_buffer);
 	return 0;
 }
 
@@ -460,28 +448,25 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.period.reserve(data_out.mode_num);
 	data_out.mode_SSR.reserve(data_out.mode_num);
 
-
 	//setup error columns
 	data_out.i_err = 0;
 	//if the star is a simple model, use RMSR to estimate mode error
-	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) | (data_out.model==model::CHWD));
+	data_out.error[error::isRMSR] = ((data_out.model==model::polytrope) || (data_out.model==model::CHWD));
 	//if the star is a realistic model, use overlap c_0 to estimate mode error
-	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) | (data_out.model==model::SWD));
+	data_out.error[error::isC0   ] = ((data_out.model==model::MESA) || (data_out.model==model::SWD));
 	//if it is a polytrope with n=0, use the Pekeris formula to compare
-	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) & (data_out.input_params[0]==0.0));
+	data_out.error[error::isIsopycnic] = ((data_out.model==model::polytrope) && (data_out.input_params[0]==0.0));
 	//if it is a Newtonian polytrope with Gamma=5/3 and n=1.5,3,4, then compare to JCD-DJM
-	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &
-		(data_out.regime==regime::PN0) &
-		(data_out.input_params[0]==1.5 | data_out.input_params[0]==3.0 | data_out.input_params[0]==4.0) &
-		(fabs(data_out.adiabatic_index - 5./3.)<1.e-5);
-
+	data_out.error[error::isJCD] = (data_out.model==model::polytrope) &&
+		(data_out.regime==regime::PN0) &&
+		(data_out.input_params[0]==1.5 || data_out.input_params[0]==3.0 || data_out.input_params[0]==4.0) &&
+		(fabs(data_out.adiabatic_index - 5./3.)<1.e-3);
 	//count the number of pertinent errors
 	for(int e=0; e<error::numerror; e++)
 		if(data_out.error[e]) data_out.i_err++;
 	//create the error columns
 	data_out.err = new double*[data_out.i_err];
 	for(int e=0; e<data_out.i_err; e++) data_out.err[e] = new double[data_out.mode_num];
-	
 	printf("done\n");
 	return 0;
 }
@@ -715,7 +700,6 @@ int write_mode_output(Calculation::OutputData& calcdata){
 			continue;
 		}
 		fprintf(output_file, "%0.12le \t%3.12le \t%0.12le", calcdata.w[j], calcdata.f[j],calcdata.period[j]);
-		//fprintf(output_file, "\t%1.2le", calcdata.mode_SSR[j]);
 		for(int e=0; e<calcdata.i_err; e++){
 			if(!std::isnan(calcdata.err[e][j])) fprintf(output_file, "\t%1.2le", calcdata.err[e][j]);
 			else fprintf(output_file, "\tN/A");
@@ -745,7 +729,6 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 	fprintf(output_file, "\n");
 }
 
-//NOTE: this function has a problem and will always cause a seg fault
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	printf("Writing tidal overlap coefficients...\t");fflush(stdout);
 	//open file to write output summary
