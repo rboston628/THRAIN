@@ -93,7 +93,6 @@ public:
     //     }
     // }
 
-
 //     /* test n=1 polytrope */
 //     void test_full_calculation_polytrope_15() {
 //         printf("TEST CALCULATION POLYTROPE n=1.5\n");

@@ -59,6 +59,8 @@ public:
 	void writeStar(const char *const c=NULL) override;
 	
 private:
+	void basic_setup();
+	void init_arrays();
 	std::size_t len;
 	double n;		//polytropic index
 	double Gamma;	//polytropic exponent
@@ -76,18 +78,13 @@ private:
 	double *mass;
 	double *base; //= pow(y,n-1), avoids repeated calls to pow(y,n)
 	double GG;
+	double set_mass(double const y[numvar]);
 		
 	//integrate Lane-Emden using basic RK4
 	void centerInit(double ycenter[numvar]);
 	void RK4step(double dx, double yin[numvar], double yout[numvar]);
-
-	//integrate Lane-Emden using basic RK4
-	double RK4integrate(const std::size_t, double);
- 	//a grid-multiplying RK4 method
- 	std::size_t RK4integrate(const std::size_t, double, int);
-	//find the location of edge of star for last step of solution
- 	void findEdge(std::size_t);
- 	double integrateEdge(std::size_t Nedge, double dx);
+	enum class SurfaceBehavior : bool {CONTINUE_FULL_LENGTH=false, STOP_AT_ZERO=true};
+	double RK4integrate(const std::size_t, double, SurfaceBehavior);
 	
 	//methods for handling the BCs
 	double ac[4], as[6];	//expansion coefficients of y near center, surface

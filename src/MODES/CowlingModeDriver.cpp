@@ -92,26 +92,25 @@ void CowlingModeDriver::getCoeff(
 	Cx = C[2*X+b];
 	Vx = V[2*X+b];
 	//dy1/dx
-	CC[0][0] = Vx - double(L+1);
-	CC[0][1] = double(L*L+L)/(sig2*Cx) - Vx;
+	CC[y1][y1] = Vx - double(L+1);
+	CC[y1][y2] = double(L*L+L)/(sig2*Cx) - Vx;
 	//dy2/dx
-	CC[1][0] = sig2*Cx - Ax;
-	CC[1][1] = double(3-L) + Ax - Ux;
+	CC[y2][y1] = sig2*Cx - Ax;
+	CC[y2][y2] = double(3-L) + Ax - Ux;
 }
 
 
-void CowlingModeDriver::getBoundaryMatrix(int nv, double *y0, double* ys, double **y, int* indexOrder){
+void CowlingModeDriver::getBoundaryMatrix(int nv, double **y, int* indexOrder){
 	const double yy[num_var][num_var] = {
 		{ 1.0, 1.0 },
 		{ 1.0, 1.0 }
 	};
-	const int indices[num_var] = {0,0};
-	for(int i=0; i<num_var; i++)
-		for(int j=0; j<num_var; j++)
-			y[i][j] = yy[i][j];
+	const int indices[num_var] = {y1,y1};
+	for(int yi=0; yi<num_var; yi++)
+		for(int yj=0; yj<num_var; yj++)
+			y[yi][yj] = yy[yi][yj];
 	for(int i=0; i<num_var; i++) indexOrder[i] = indices[i];
 }
-
 
 void CowlingModeDriver::setupBoundaries() {
 	//set up coefficients for the central boundary
@@ -146,31 +145,29 @@ std::size_t CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg
 	
 	double L2 = double(l*l+l);
 	double Gam1 = adiabatic_index;
-	
-	for(int i=0; i<num_var; i++) ymode[i][1] = ymode[i][0] = yy[i][0];
-	
+		
 	double sumU, sumC, sumG, sumV, sumA;
-	double trip[3]; trip[0] = yy[0][0]-yy[1][0];
+	double trip[3]; trip[0] = yy[y1][0]-yy[y2][0];
 	for(int j=1;j<=central_bc_order/2;j++){
 		sumA = sumV = sumG = sumC = sumU = 0.0;
 		for(int k=0; k<j; k++){
 			sumV += Vc[j-k] *trip[k];
 			sumA += Ac[j-k] *trip[k];
-			sumC += cc[j-k]*yy[0][k];
-			sumU += Uc[j-k]*yy[1][k];
-			sumG += L2*cProdc[j-k]*yy[1][k]/omeg2;
+			sumC += cc[j-k]*yy[y1][k];
+			sumU += Uc[j-k]*yy[y2][k];
+			sumG += L2*cProdc[j-k]*yy[y2][k]/omeg2;
 		}
-		yy[0][j] = ( double(2*j+l)*(sumG+sumV) - L2*(sumU+sumA+omeg2*sumC)/(omeg2*cc[0]) )/double(2*j*(1+2*j+2*l));
-		yy[1][j] = (omeg2*cc[0]*yy[0][j] - omeg2*sumC - sumU - sumA)/double(2*j+l);
+		yy[y1][j] = ( double(2*j+l)*(sumG+sumV) - L2*(sumU+sumA+omeg2*sumC)/(omeg2*cc[0]) )/double(2*j*(1+2*j+2*l));
+		yy[y2][j] = (omeg2*cc[0]*yy[y1][j] - omeg2*sumC - sumU - sumA)/double(2*j+l);
 
-		trip[j] = yy[0][j]-yy[1][j];
+		trip[j] = yy[y1][j]-yy[y2][j];
 	}
 	//now solve for y using expansion
 	std::size_t start = 1;
 	for(std::size_t X=0; X<=start; X++){
-		for(int i=0; i<num_var; i++){
-			ymode[i][X] = yy[i][0];
-			for(int j=1;j<=(central_bc_order/2);j++) ymode[i][X] += yy[i][j]*pow(r[X],2*j);
+		for(int yi=0; yi<num_var; yi++){
+			ymode[X][yi] = yy[yi][0];
+			for(int j=1;j<=(central_bc_order/2);j++) ymode[X][yi] += yy[yi][j]*pow(r[X],2*j);
 		}
 	}
 	return start;
@@ -180,8 +177,8 @@ std::size_t CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg
 	//specify initial conditions at surface
 	double yy[num_var][BC_S+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
 	double yyn[num_var]; for(int i=0;i<num_var;i++) yyn[i]=0.0;
-	yy[0][0] = ys[0];
-	yy[1][0] = ys[0];
+	yy[y1][0] = ys[y1];
+	yy[y2][0] = ys[y1];
 	
 	//constants that show up
 	double L2 = double(l*l+l);
@@ -191,32 +188,32 @@ std::size_t CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg
 	double sumV, sumA, sumU, sumC, sumG, sumUX, sumUY, sumUZ;
 	for(int k=0; k<surface_bc_order; k++){
 		//calculate "triples" (W[k]-X[k]+Y[k]) which appear in recursion relation
-		trip[k] = yy[0][k] - yy[1][k];
+		trip[k] = yy[y1][k] - yy[y2][k];
 		sumV=sumA=sumC=sumU=sumG=sumUX=sumUY=sumUZ = 0.0;
 		for(int j=0; j<=k; j++){
 			sumV += Vs[O+k-j]*trip[j];
 			sumA += As[O+k-j]*trip[j];
-			sumC += omeg2*cs[k-j]*yy[0][j];
-			sumG += L2/omeg2*cProds[k-j]*yy[1][j];
-			sumU += Us[k-j]*yy[1][j];
+			sumC += omeg2*cs[k-j]*yy[y1][j];
+			sumG += L2/omeg2*cProds[k-j]*yy[y2][j];
+			sumU += Us[k-j]*yy[y2][j];
 		}
 		trip[k+1] = (sumC-sumG-sumU  - sumV-sumA
 					+ double(k+l-3)*trip[k] + 4.*yy[0][k])/(double(k+1)+Vs[O-1]+As[O-1]);
 		sumV += Vs[O-1]*trip[k+1];
 		sumA += As[O-1]*trip[k+1];
-		yy[0][k+1] = (double(k+l+1)*yy[0][k] - sumG - sumV)/double(k+1);
-		yy[1][k+1] = (double(k+l-3)*yy[1][k] - sumC + sumA + sumU)/double(k+1);
+		yy[y1][k+1] = (double(k+l+1)*yy[y1][k] - sumG - sumV)/double(k+1);
+		yy[y2][k+1] = (double(k+l-3)*yy[y2][k] - sumC + sumA + sumU)/double(k+1);
 	}
 
 	//the number of terms to calculate
 	std::size_t start = len-2;
 	double t;
-	for(int i=0; i<num_var; i++) ymode[i][len-1] = yy[i][0];
+	for(int yi=0; yi<num_var; yi++) ymode[len-1][yi] = yy[yi][0];
 	for(std::size_t X=len-2; X>=start; X--){
 		t = (1.-r[X]);
-		for(int i=0; i<num_var; i++){
-			ymode[i][X] = yy[i][0];
-			for(int k=1; k<=surface_bc_order; k++) ymode[i][X] += yy[i][k]*pow(t,k);
+		for(int yi=0; yi<num_var; yi++){
+			ymode[X][yi] = yy[yi][0];
+			for(int k=1; k<=surface_bc_order; k++) ymode[X][yi] += yy[yi][k]*pow(t,k);
 		}
 	}
 	return start;
@@ -245,28 +242,28 @@ double CowlingModeDriver::SSR(double omeg2, int l, ModeBase* mode){
 		G1     = (Gamma1()==0.0? star->Gamma1(XX) : Gamma1());
 		//mode variables	
 		L2     = double(l*l+l);
-		xi   = r  *mode->getY(0,X);	//r  *y1
-		chi  = r*g*mode->getY(1,X);	//r*g*y2
+		xi   = r  *mode->getY(y1,X);	//r  *y1
+		chi  = r*g*mode->getY(y2,X);	//r*g*y2
 		Drho = rho*rho/(G1*P)*(chi - g*xi) - xi*drhodr;
 		
 		//calculate numerical derivatives
 		//double b3,b2,b1,a1,a2,a3, h1;
 		h1= star->rad(XX+2)-star->rad(XX );
 		//next dxi/dr, xi = r y
-		b3=star->rad(XX-6)*mode->getY(0,X-3);
-		b2=star->rad(XX-4)*mode->getY(0,X-2);
-		b1=star->rad(XX-2)*mode->getY(0,X-1);
-		a1=star->rad(XX+2)*mode->getY(0,X+1);
-		a2=star->rad(XX+4)*mode->getY(0,X+2);
-		a3=star->rad(XX+6)*mode->getY(0,X+3);
+		b3=star->rad(XX-6)*mode->getY(y1,X-3);
+		b2=star->rad(XX-4)*mode->getY(y1,X-2);
+		b1=star->rad(XX-2)*mode->getY(y1,X-1);
+		a1=star->rad(XX+2)*mode->getY(y1,X+1);
+		a2=star->rad(XX+4)*mode->getY(y1,X+2);
+		a3=star->rad(XX+6)*mode->getY(y1,X+3);
 		difxi = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1);
 		//now dDP/dr, DP = rho*(chi-DPhi), chi=rg*y2, DPhi=rg*y3
-		b3=star->rho(XX-6)*star->dPhidr(XX-6)*star->rad(XX-6)*(mode->getY(1,X-3));
-		b2=star->rho(XX-4)*star->dPhidr(XX-4)*star->rad(XX-4)*(mode->getY(1,X-2));
-		b1=star->rho(XX-2)*star->dPhidr(XX-2)*star->rad(XX-2)*(mode->getY(1,X-1));
-		a1=star->rho(XX+2)*star->dPhidr(XX+2)*star->rad(XX+2)*(mode->getY(1,X+1));
-		a2=star->rho(XX+4)*star->dPhidr(XX+4)*star->rad(XX+4)*(mode->getY(1,X+2));
-		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(1,X+3));
+		b3=star->rho(XX-6)*star->dPhidr(XX-6)*star->rad(XX-6)*(mode->getY(y2,X-3));
+		b2=star->rho(XX-4)*star->dPhidr(XX-4)*star->rad(XX-4)*(mode->getY(y2,X-2));
+		b1=star->rho(XX-2)*star->dPhidr(XX-2)*star->rad(XX-2)*(mode->getY(y2,X-1));
+		a1=star->rho(XX+2)*star->dPhidr(XX+2)*star->rad(XX+2)*(mode->getY(y2,X+1));
+		a2=star->rho(XX+4)*star->dPhidr(XX+4)*star->rad(XX+4)*(mode->getY(y2,X+2));
+		a3=star->rho(XX+6)*star->dPhidr(XX+6)*star->rad(XX+6)*(mode->getY(y2,X+3));
 		dDP = (45.*a1-9.*a2+a3-45.*b1+9.*b2-b3)/(60.*h1);
 		//Now calculate residuals
 		//continuity equation
@@ -289,7 +286,6 @@ double CowlingModeDriver::SSR(double omeg2, int l, ModeBase* mode){
 	return sqrt((checkCont+checkNewt)/double(2*len-7));
 }
 
-
 double CowlingModeDriver::tidal_overlap(ModeBase* mode){
 	double omega2 = mode->getOmega2();
 	int k,l,m;
@@ -309,8 +305,8 @@ double CowlingModeDriver::tidal_overlap(ModeBase* mode){
 		xx = 2*x;
 		if(x==len-1) xx = len_star-1;
 		dx = (r[x]-r[x-1])*rscale;
-		xir = mode->getY(0,x)*r[x]*rscale;
-		xiH = mode->getY(1,x)*star->dPhidr(xx)/freq2*rscale/Rstar;
+		xir = mode->getY(y1,x)*r[x]*rscale;
+		xiH = mode->getY(y2,x)*star->dPhidr(xx)/freq2*rscale/Rstar;
 		//
 		rho  = star->rho(xx)/dscale;
 		rlp1 = pow(r[x]*rscale,l+1);
@@ -371,7 +367,5 @@ double CowlingModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
 	}
 	return integral/sqrt(NN*MM);
 }
-
-
 
 #endif

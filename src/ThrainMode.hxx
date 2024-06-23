@@ -13,7 +13,7 @@
 #include "ThrainMain.h"
 
 namespace rootfind {
-	double pseudo_unif();
+	double pseudo_unif(double xmin, double xmax);
 }
 
 namespace mode {
@@ -272,7 +272,7 @@ int mode_finder(Calculation::OutputData &data){
 				int enough=0;
 				while(ktry!=ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 					//pick a pseudo-random place in brackets
-					w2in = w2minT + rootfind::pseudo_unif()*(w2maxT-w2minT);
+					w2in = rootfind::pseudo_unif(w2minT, w2maxT);
 					modetry = new MODE(w2in, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
@@ -394,7 +394,7 @@ int mode_finder(Calculation::OutputData &data){
 					int enough=0;
 					while(ktry != ktarget && (w2min==prevmin)&&(w2max==prevmax)){
 						//if scanning didn't work, pick a pseudo-random place in brackets
-						w2in = w2minT + rootfind::pseudo_unif()*(w2maxT-w2minT);
+						w2in = rootfind::pseudo_unif(w2minT, w2maxT);
 						modetry = new MODE(w2in, *lt,0,data.driver);
 						ktry = modetry->modeOrder();
 						w2try = modetry->getOmega2();

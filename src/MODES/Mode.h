@@ -41,8 +41,8 @@ public:
 
 	//methods to access mode functions
 	double getRad(std::size_t x){ return rad[x];};
-	double getY(int i, std::size_t x){ return pow(rad[x],l-2)*y[i][x];};
-	double getYtilde(int i, std::size_t x){ return y[i][x];};
+	double getY(int i, std::size_t x){ return pow(rad[x],l-2)*y[x][i];};
+	double getYtilde(int i, std::size_t x){ return y[x][i];};
 	
 protected:
 	//the equilibrium star
@@ -63,25 +63,28 @@ protected:
 	bool converged;		//a flag for indicating if calculation converged -- no longer needed
 	void convergeBisect(double);		//find frequency using a bisection search
 	void convergeNewton(double, int);	//find frequency using a Newton method
+
+	double calculateWronskian(double w2);
 	void linearMatch(double w2, double y0[numvar], double ys[numvar]);
+	std::function<double(double)> wronskian;
 	int verifyMode();
 	void converge();
 	//
+	void RK4step(std::size_t, double w2, double dx, double yin[numvar], double yout[numvar]);
 	void RK4out(std::size_t, double, double y0[numvar]);
 	void RK4in( std::size_t, double, double ys[numvar]);
-	double RK4center(double, double y0[numvar], double ys[numvar]);
 	
-	double boundaryMatrix[numvar][numvar];	//the BCs specified in matrix form
-	int    indexOrder[numvar];				//the order in which to multipy factors to match
+	double boundaryMatrix[numvar][numvar]; //the BCs specified in matrix form
+	int    indexOrder[numvar];             //the order in which to multipy factors to match
 	
-	std::size_t xfit;			//the coordinate where inner/outer solutions are fit
-	double sig2omeg;	//converstion from dimensionful frequency to dimensionless frequency
-	double R;			//the radius of the star
+	std::size_t xfit;    //the coordinate where inner/outer solutions are fit
+	double omeg2freq;    //converstion from dimensionless frequency to angular frequency
+	double R;            //the radius of the star
+
 public:
 	//file output methods to write and view plots of mode
 	void printMode(const char *const c = NULL);
 	void writeMode(const char *const c = NULL);
-
 };
 
 //template classes in C++ cannot be split into multiple files, so we must include Mode.pp

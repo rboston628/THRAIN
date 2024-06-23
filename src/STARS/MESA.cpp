@@ -39,7 +39,7 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 		fscanf(infile, "%*[^\n]\n");
 	}
 	fscanf(infile, "%*d %lg %lg %lg %*lg %lg %*lg %lg %*[^\n]", &Rtot, &Mtot, &Ltot, ts, &dels);
-	
+
 	//set scale quantities
 	Dscale = Mtot*pow(Rtot,-3)/(4.*m_pi);
 	Pscale = G_CGS*pow(Mtot,2)*pow(Rtot,-4)/(4.*m_pi);
@@ -57,10 +57,10 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	//read from the file
 	fseek(infile, firstdata, SEEK_SET);
 	for(std::size_t k=0; k<Ntot; k++){
-		fscanf(infile, "     %*d     %lg     %lg     %*lg", &rt[k], &mt[k]);
-		fscanf(infile, "     %lg     %*lg    %lg     %*lg", &pt[k], &dt[k]);
-		fscanf(infile, "     %lg     %lg     %*lg    %*lg", &Nt[k], &Gt[k]);
-		fscanf(infile, "%*[^\n]");
+		fscanf(infile, " %*d %lg  %lg  %*lg", &rt[k], &mt[k]);
+		fscanf(infile, " %lg %*lg %lg  %*lg", &pt[k], &dt[k]);
+		fscanf(infile, " %lg %lg           ", &Nt[k], &Gt[k]);
+		fscanf(infile, " %*[^\n]\n");
 		//dis-dimensionalize the variables
 		rt[k] /= Rtot;
 		mt[k] /= Mtot;
@@ -210,14 +210,14 @@ double MESA::Phi(std::size_t X){
 double MESA::dPhidr(std::size_t X){
 	if(X>=0 & X<len) return Gscale*grav->interp(radi[X]);
 	else {
-		printf("\ng out of range\n");	
+		perror("\ng out of range\n");	
 		return nan("");
 	}
 }
 double MESA::mr(std::size_t X){
 	if(X>=0 && X<len) return Mtot*mass->interp(radi[X]);
 	else {
-		printf("\nm out of range\n");	
+		perror("\nm out of range\n");	
 		return nan("");
 	}
 }
