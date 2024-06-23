@@ -269,6 +269,7 @@ void SimpleWD::setup(){
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
 	while(c != nullptr){
+		printf("READING %c\n", c);
 		c = std::fgets(input_buffer, buffer_size, input_file);
 		if(c != nullptr) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
