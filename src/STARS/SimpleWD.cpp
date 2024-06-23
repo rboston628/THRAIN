@@ -311,6 +311,7 @@ void SimpleWD::setup(){
 	printf("\the\t%lf\t%lf\t%lf\n", zy, by, my);
 	printf("\tc \t%lf\t%lf\t%lf\n", zc, bc, mc);
 	printf("\to \t%lf\t%lf\t%lf\n", zo, bo, mo);
+	fflush(stdout);
 }
 
 void SimpleWD::initFromChandrasekhar(){
