@@ -137,13 +137,11 @@ SimpleWD::SimpleWD(
 	double maxDF = 1.0;
 	while( maxDF > 1.0e-10 ){
 		printf("ITERATION: %d\n", count++);
-		fflush(stdout);
 		//recompute difference, and Jacobian matrix
 		joinAtCenter(x, f, F);
 		printf("\tX1:\t"); for(int i=0; i<numv; i++) printf("%le ", x[i]); printf("\n");
 		printf("\tf1:\t"); for(int i=0; i<numv; i++) printf("%le ", f[i]); printf("\n");
 		printf("\tF1:\t%le\n", F);
-		fflush(stdout);
 		
 		//calculate a Jacobian matrix by varying each variable
 		for(int i=0; i<numv; i++) varied[i] = 1.01*x[i];
@@ -212,7 +210,6 @@ SimpleWD::SimpleWD(
 		maxDF = -1.0;
 		for(int i=0; i<numv; i++) if(fabs(f[i]) > maxDF) maxDF = fabs(f[i]);		
 		printf("MAX DIF = %le\n", maxDF);
-		fflush(stdout);
 	}
 	
 	printf("MODEL CONVERGED!\n");
@@ -270,17 +267,16 @@ void SimpleWD::setup(){
 	EOS *pres = NULL;
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
-	printf("FOUND %c\n", c);
 	while(c != nullptr){
 		c = std::fgets(input_buffer, buffer_size, input_file);
-		if(c != nullptr) {printf("%s", input_buffer); fflush(stdout);}
+		if(c != nullptr) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
 		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
 		if(pres!=NULL){
 			std::fgets(input_buffer, buffer_size, input_file);
 			pressure = strtok(input_buffer, " \t\n");
 			while(pressure != NULL){
-				printf("\t%s", pressure); fflush(stdout);
+				printf("\t%s", pressure);
 				if(     !strcmp(pressure, "rad"))
 					pres->push_back(rad_gas);
 				else if(!strcmp(pressure, "ideal"))
@@ -310,7 +306,6 @@ void SimpleWD::setup(){
 	printf("\the\t%lf\t%lf\t%lf\n", zy, by, my);
 	printf("\tc \t%lf\t%lf\t%lf\n", zc, bc, mc);
 	printf("\to \t%lf\t%lf\t%lf\n", zo, bo, mo);
-	fflush(stdout);
 }
 
 void SimpleWD::initFromChandrasekhar(){
@@ -337,7 +332,6 @@ void SimpleWD::initFromChandrasekhar(){
 		delete testStar;
 		testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
 		Mtry = testStar->Mass()/MSOLAR-Msolar;
-		fflush(stdout);
 	}
 	
 	Rstar = testStar->Radius();
@@ -359,7 +353,6 @@ void SimpleWD::initFromChandrasekhar(){
 	
 	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
 	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
-	fflush(stdout);
 	return;
 }
 
