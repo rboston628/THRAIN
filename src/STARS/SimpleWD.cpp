@@ -80,7 +80,7 @@ SimpleWD::SimpleWD(
 	setup();
 	//prepare a starting model from a ChandrasekharWD, to guess R, P0
 	initFromChandrasekhar();
-	
+
 	//
 	if(Ntot%2==0) Ntot = Ntot+1;
 	std::size_t Ntrue = Ntot;
@@ -269,7 +269,6 @@ void SimpleWD::setup(){
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
 	printf("%s", input_buffer);fflush(stdout);
 	while(c != nullptr){
-		printf("READING %c\n", c);
 		c = std::fgets(input_buffer, buffer_size, input_file);
 		if(c != nullptr) printf("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
@@ -999,9 +998,8 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 		logY[X][pres] = std::log(y[pres]);
 	}
 	
-	
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
-	
+
 	if(rho<0.0) rho = -rho;
 	if(std::isnan(rho)) printf("RHO IS NAN!\n");
 	if(std::isnan(log(rho))){
