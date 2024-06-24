@@ -730,7 +730,7 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 }
 
 int write_tidal_overlap(Calculation::OutputData& calcdata){
-	printf("Writing tidal overlap coefficients...\n");fflush(stdout);
+	printf("Writing tidal overlap coefficients...\t");fflush(stdout);
 	//open file to write output summary
 	std::string output_file_name = "./output/"+calcdata.calcname+"/tidal_overlap.txt";
 	FILE* output_file;
@@ -761,7 +761,6 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	std::unordered_map<int, ModeBase*> fmode;
 	for(auto lt = l_list.begin(); lt!=l_list.end(); lt++){
 		if(*lt<2){
-			printf("\tl=%d\tno tidal response at this order\n", *lt);
 			continue;
 		}
 		for(int i=0; i<calcdata.mode_done; i++){
@@ -772,7 +771,6 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 		}
 	}
 
-	printf("\tcalculating overlap and c0...\t");
 	fprintf(output_file, "#l,k \tmodeid\tomega^2 (GM/r^3)  \tdimensionless overlap \tc0\n");
 	for(int j=0; j<WIDTH; j++) fprintf(output_file, "#");
 	fprintf(output_file, "\n");
@@ -797,11 +795,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 		fflush(output_file);
 	}
 	fclose(output_file);
-	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
-		fmode[*lt] = nullptr;
-	}
-	printf("\tdone\n");
-	printf("done!\n");
+	printf("done\n");
 	return 0;
 }
 

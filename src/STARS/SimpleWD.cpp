@@ -80,7 +80,6 @@ SimpleWD::SimpleWD(
 	setup();
 	//prepare a starting model from a ChandrasekharWD, to guess R, P0
 	initFromChandrasekhar();
-	
 	//
 	if(Ntot%2==0) Ntot = Ntot+1;
 	std::size_t Ntrue = Ntot;
@@ -354,7 +353,6 @@ void SimpleWD::initFromChandrasekhar(){
 	
 	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
 	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
-
 	return;
 }
 
@@ -998,9 +996,8 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 		logY[X][pres] = std::log(y[pres]);
 	}
 	
-	
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
-	
+
 	if(rho<0.0) rho = -rho;
 	if(std::isnan(rho)) printf("RHO IS NAN!\n");
 	if(std::isnan(log(rho))){
@@ -1500,8 +1497,8 @@ void SimpleWD::printChem(const char *const c){
 	double H,He;
 	double MM = logY[Ntot-1][mass];
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
-	for(std::size_t X=Ntot-1; X >= 0; X--){
-		fprintf(fp, "%lu", X);									//col 1
+	for(int X=Ntot-1; X >= 0; X--){
+		fprintf(fp, "%d", X);									//col 1
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
 		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3
 		fprintf(fp, "\t%0.16le", exp(logY[X][mass]));			//col 4
@@ -1928,7 +1925,6 @@ void SimpleWD::printBigASCII(const char *const c){
 	fclose(fp);
 }
 void SimpleWD::writeStar(const char *const c){
-	printf("PRINTING STAR\n");
 	//create names for files to be opened
 	std::string filename, txtname, outname;
 	if(c==NULL)	filename = "./out." + name;

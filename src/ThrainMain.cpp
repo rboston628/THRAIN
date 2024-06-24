@@ -46,5 +46,6 @@ int main(int argc, char* argv[]){
 	io::write_mode_output(calcdataOut);
 	if(calcdataOut.regime==regime::PN0 && calcdataOut.modetype==modetype::nonradial)
 		io::write_tidal_overlap(calcdataOut);
+	printf("THRAIN done\n");
 	return 0;
 }
