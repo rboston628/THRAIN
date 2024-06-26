@@ -94,11 +94,14 @@ int mode_finder(Calculation::OutputData &data){
 		
 // STEP 2:  perform first run with rough guesses 
 // STEP 2a: fill in all easy modes from simple guesses based on K
-		printf("\tinitial calculation of modes...\t"); fflush(stdout);
+		printf("\tinitial calculation of modes...\n");
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
+			printf("\t\t%d,%d:\t", ltarget, *kt); fflush(stdout);
 			modetry = new MODE(*kt, ltarget, 0, data.driver);
+			printf("done\n");
 			mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 		}
+		printf("\tdone");
 		std::size_t found=0, total=0;
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
 			total++;

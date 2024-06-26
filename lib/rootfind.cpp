@@ -167,6 +167,15 @@ int rootfind::bisection_find_brackets_newton(
 	double x1=x0, x2=x0;
 	double xdx, ydx;
 	double ymax, ymin;
+	
+	// happy path: x0 is already a zero
+	if (y1 == 0.0 ) {
+		xmin = 0.99*x0;
+		xmax = 1.01*x0;
+		y1 = func(xmin);
+		y2 = func(xmax);
+	}
+
 	//while the two ys are on same side of axis, keep reposition until zero is bound
 	//we use Newton's method to the nearest zero
 	while(y1*y2 >= 0.0){
@@ -178,7 +187,8 @@ int rootfind::bisection_find_brackets_newton(
 		//In such a case, slightly broaden the bracket to get to other side of zero
 		if( xdx == x2 ) {
 			if(xdx>x1) xdx *= 1.01;
-			if(xdx<x1) xdx *= 0.99;
+			else if(xdx<x1) xdx *= 0.99;
+			else xdx = pseudo_unif(0.0, 2.0) * x1;
 		}
 		//limit amount of change allowed in single step
 		if(xdx > 1.1*x2) xdx = 1.1*x2;	//if we increased, don't increase too much
@@ -256,7 +266,7 @@ double rootfind::bisection_search(
 	// now begin bisection search
 	while( fabs(y)>0.0 || std::isnan(y) ){	
 		// continue trying new brackts until they move
-		while ( (xnew == xold) && !std::isnan(y) ) {
+		while ( (xnew == xold) || std::isnan(y) ) {
 			y = func(x);
 			if ( y*ymax > 0.0 ) {
 				xmax = x;
