@@ -61,57 +61,6 @@ void print_matrix(const T (&m)[N][M], int k=0){
 	}
 }
 
-namespace matrix{
-
-template <size_t N, size_t M, class T>
-void swap_rows(T (&m)[N][M], size_t i, size_t j){
-	assert(0<=i && i<N);
-	assert(0<=j && j<N);
-	T temp;
-	for(size_t k=0; k<M; k++){
-		temp = m[i][k];
-		m[i][k] = m[j][k];
-		m[j][k] = temp;
-	}
-}
-
-template <size_t N, class T>
-void swap_rows(T (&m)[N], size_t i, size_t j){
-	assert(0<=i && i<N);
-	assert(0<=j && j<N);
-	T temp = m[i];
-	m[i] = m[j];
-	m[j] = temp;
-}
-
-template <size_t N, size_t M, class T>
-void add_rows(T (&m)[N][M], size_t i, size_t j, T coeff=1.0){
-	assert(0<=i && i<N);
-	assert(0<=j && j<N);
-	for(size_t k=0; k<M; k++){
-		m[i][k] = m[i][k] + coeff*m[j][k];
-	}
-}
-
-template <size_t N, class T>
-void add_rows(T (&m)[N], size_t i, size_t j, T coeff=1.0){
-	assert(0<=i && i<N);
-	assert(0<=j && j<N);
-		m[i] = m[i] + coeff*m[j];
-}
-
-template <size_t N, size_t M, class T>
-void print_matrix(const T (&m)[N][M], int k=0){
-	printf("MATRIX %d\n", k);
-	for(size_t i=0; i<N; i++){
-		printf("\t[");
-		for(size_t j=0; j<M; j++){
-			printf("\t%lf,", m[i][j]);
-		}
-		printf("]\n");
-	}
-}
-
 //calculate the determinant of an NxN matrix
 //uses LU decomposition, based on GSL function
 //will destroy the matrix m

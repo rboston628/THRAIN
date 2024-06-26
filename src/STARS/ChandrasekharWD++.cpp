@@ -139,20 +139,6 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 //    1. testing results against tables with old values of A,B
 //    2. implementing non-electron degenerate gasesous spheres (neutron stars)
 //  This will use a constant value of mu_e throughout
-ChandrasekharWD::ChandrasekharWD(
-	double Y0, int L, 
-	double mu, double AN, double BN
-)
-	: Y0(Y0), len(L), 
-	A0(AN), B0(BN),
-	mu0(mu), k(0), acore(1.0), aswap(0)
-{
-	basic_setup();
-	printf("A0: %le\n", A0);
-	printf("B0: %le\n", B0);
-	printf("Rn: %le\n", Rn);
-
-//initalize white dwarf from central value of y and length
 ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, double const B0)
 	: Y0(Y0), len(L), 
 	chemical_gradient(Chandrasekhar::constant_mu{1.0}),
