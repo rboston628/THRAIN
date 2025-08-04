@@ -93,18 +93,16 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-          - {
-            name: "windows msvc",
-            os: windows-latest,
-            artifact: "windows_mingw.7z",
-            build_type: "Release",
-            cc: "cl",
-            cxx: "cl",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-
-        # TODO setup windows runners
+        - {
+          name: "windows msvc",
+          os: windows-latest,
+          artifact: "windows_mingw.7z",
+          build_type: "Release",
+          cc: "cl",
+          cxx: "cl",
+          archiver: "7z a",
+          generators: "Ninja"
+        }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
