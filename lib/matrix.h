@@ -6,6 +6,7 @@
 #include <cmath>
 #include <stdio.h>
 #include <assert.h>
+#include "logger.h"
 
 #ifndef MATRIX
 #define MATRIX
@@ -50,14 +51,14 @@ void add_rows(T (&m)[N], std::size_t i, std::size_t j, T coeff=1.0){
 }
 
 template <std::size_t N, std::size_t M, class T>
-void print_matrix(const T (&m)[N][M], int k=0){
-	printf("MATRIX %d\n", k);
+void print_matrix(const T (&m)[N][M], int k=0, ThrainLogger::LogLevel level = ThrainLogger::LogLevel::DEBUG){
+	ThrainLogger::log(level, "MATRIX %d\n", k);
 	for(std::size_t i=0; i<N; i++){
-		printf("\t[");
+		ThrainLogger::log(level, "\t[");
 		for(std::size_t j=0; j<M; j++){
-			printf("\t%lf,", m[i][j]);
+			ThrainLogger::log(level, "\t%lf,", m[i][j]);
 		}
-		printf("]\n");
+		ThrainLogger::log(level, "]\n");
 	}
 }
 
@@ -174,7 +175,7 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 	for(int i=0; i<N; i++){
 		if( (x[i]-x[i]) != T(0) ) produced_nan = true;
 	}
-	if(produced_nan){printf("ERROR in invertMatrix: NaNs produced\n"); return 1;}
+	if(produced_nan){ThrainLogger::error("ERROR in invertMatrix: NaNs produced\n"); return 1;}
 	return 0;
 }
 

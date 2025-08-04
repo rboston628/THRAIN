@@ -16,7 +16,7 @@ int create_classical_SWD(Calculation::OutputData &);
 
 //will select the correct creation fuction from above based on user input
 int create_star(Calculation::OutputData &data_out){
-	printf("Creating star...\n");
+	ThrainLogger::info("Creating star...\n");
 	switch(data_out.model) {
 		case model::polytrope:
 			create_classical_polytrope(data_out);
@@ -43,7 +43,7 @@ int create_classical_polytrope(Calculation::OutputData& data){
 
 	//calculate error estimate for this model
 	data.star_SSR = data.star->SSR();
-	printf("SSR = %le\n", data.star_SSR);
+	ThrainLogger::info("SSR = %le\n", data.star_SSR);
 	
 	return 0;
 }
@@ -74,7 +74,7 @@ int create_classical_CHWD(Calculation::OutputData& data){
 
 	//calculate error estimate for this model
 	data.star_SSR = data.star->SSR();
-	printf("SSR = %le\n", data.star_SSR);
+	ThrainLogger::info("SSR = %le\n", data.star_SSR);
 	
 	return 0;
 }
@@ -94,15 +94,15 @@ int create_classical_MESA(Calculation::OutputData& data){
 	
 	//calculate error estimate for this MESA model
 	data.star_SSR = data.star->SSR();
-	printf("SSR = %le\n", data.star_SSR);
+	ThrainLogger::info("SSR = %le\n", data.star_SSR);
 	
 	return 0;
 }
 
 //create a classical SimpleWD
 int create_classical_SWD(Calculation::OutputData& data){
-	printf("mass %lf\n", data.mass);
-	printf("teff %lf\n", data.teff);
+	ThrainLogger::info("mass %lf\n", data.mass);
+	ThrainLogger::info("teff %lf\n", data.teff);
 	data.star = new SimpleWD(
 		data.mass, 
 		data.teff,
@@ -119,7 +119,7 @@ int create_classical_SWD(Calculation::OutputData& data){
 
 	//calculate error estimate for this model
 	data.star_SSR = data.star->SSR();
-	printf("SSR = %le\n", data.star_SSR);
+	ThrainLogger::info("SSR = %le\n", data.star_SSR);
 	
 	return 0;
 }

@@ -21,11 +21,11 @@ int main(int argc, char* argv[]){
 	if(argc == 2) {
 		//the calculation filename is sent as command-line argument
 		//call the read_input routine on the given filename (see GRPulseIO.h)
-		if(!io::read_input(argv[1], calcdataIn)) printf("file read\n");
+		if(!io::read_input(argv[1], calcdataIn)) ThrainLogger::info("file read\n");
 		else return 1;
 	}
 	else {
-		printf("Usage is thrain.out <input file>\n");
+		ThrainLogger::error("Usage is thrain.out <input file>\n");
 		return 1;
 	}
 	
@@ -46,6 +46,6 @@ int main(int argc, char* argv[]){
 	io::write_mode_output(calcdataOut);
 	if(calcdataOut.regime==regime::PN0 && calcdataOut.modetype==modetype::nonradial)
 		io::write_tidal_overlap(calcdataOut);
-	printf("THRAIN done\n");
+	ThrainLogger::info("THRAIN done\n");
 	return 0;
 }

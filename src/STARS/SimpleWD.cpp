@@ -105,15 +105,15 @@ SimpleWD::SimpleWD(
 	Xtot  = massFraction();
 	Xmass = Xtot;
 	
-	printf("star  :\t M=%le\tR=%le\tL=%le\n", Msolar, Rsolar, Lsolar);
+	ThrainLogger::info("star  :\t M=%le\tR=%le\tL=%le\n", Msolar, Rsolar, Lsolar);
 	name = strmakef("WD_M%0.2f_L%0.2f_X%0.2f_Y%0.2f", Msolar, Rsolar, Xtot[0], Xtot[1]);
 	// find relevant scales for re-dimensionalizing the quantities
 	Dscale = Mstar*pow(Rstar,-3)/(4.*m_pi);
 	Pscale = G_CGS*pow(Mstar,2)*pow(Rstar,-4)/(4.*m_pi);
 	Tscale = Xtot.mean_A()*proton.mass_CGS/boltzmann_k*G_CGS*Mstar/Rstar;
-	printf("scales:\t M=%le\tR=%le\tL=%le\n", Mstar, Rstar, Lstar);
-	printf("scales:\t D=%le\tP=%le\tT=%le\n", Dscale, Pscale, Tscale);
-	printf("Xtot  :\t %0.8lf %0.8lf %0.8lf %0.8lf\n", Xtot[0],Xtot[1],Xtot[2],Xtot[3]);
+	ThrainLogger::debug("scales:\t M=%le\tR=%le\tL=%le\n", Mstar, Rstar, Lstar);
+	ThrainLogger::debug("scales:\t D=%le\tP=%le\tT=%le\n", Dscale, Pscale, Tscale);
+	ThrainLogger::debug("Xtot  :\t %0.8lf %0.8lf %0.8lf %0.8lf\n", Xtot[0],Xtot[1],Xtot[2],Xtot[3]);
 	
 	Yscale = StellarVar(Dscale,Rstar,Pscale,Mstar,Tscale,Lstar);
 	logYscale = log(Yscale);
@@ -121,7 +121,7 @@ SimpleWD::SimpleWD(
 	Ystar  = StellarVar(  0.0 , Rstar,  0.0 , Mstar,  0.0 , Lstar );
 			
 	//begin the calculation to find values for P0, T0, and Rstar = (1+qs)*R
-	printf("Converging model to P0, T0, R\n");
+	ThrainLogger::info("Converging model to P0, T0, R\n");
 	double P0 = Ystart0[pres]/Pscale;//dimensionless
 	double T0 = 1.e3*Teff/Tscale; //dimensionless
 	double qs = 1.e-3;
@@ -136,12 +136,16 @@ SimpleWD::SimpleWD(
 	int count=1;
 	double maxDF = 1.0;
 	while( maxDF > 1.0e-10 ){
-		printf("ITERATION: %d\n", count++);
+		ThrainLogger::info("ITERATION: %d\n", count++);
 		//recompute difference, and Jacobian matrix
 		joinAtCenter(x, f, F);
-		printf("\tX1:\t"); for(int i=0; i<numv; i++) printf("%le ", x[i]); printf("\n");
-		printf("\tf1:\t"); for(int i=0; i<numv; i++) printf("%le ", f[i]); printf("\n");
-		printf("\tF1:\t%le\n", F);
+		ThrainLogger::debug("\tX1:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x[i]);
+		ThrainLogger::debug("\n");
+		ThrainLogger::debug("\tf1:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::info("%le ", f[i]);
+		ThrainLogger::debug("\n");
+		ThrainLogger::debug("\tF1:\t%le\n", F);
 		
 		//calculate a Jacobian matrix by varying each variable
 		for(int i=0; i<numv; i++) varied[i] = 1.01*x[i];
@@ -162,7 +166,7 @@ SimpleWD::SimpleWD(
 		if(matrix::invertMatrix(dfdx,f2, dx)){
 			//if the matrix is singular or otherwise fails
 			// then just do something to try to recover
-			printf("ERROR: Matrix inversion failed!\n");
+			ThrainLogger::error("ERROR: Matrix inversion failed!\n");
 			//use the last gradient
 			for(int i=0; i<numv; i++) dx[i] = dxsave[i];
 		}
@@ -173,7 +177,7 @@ SimpleWD::SimpleWD(
 		bool allzero = true;
 		for(int i=0; i<numv; i++) allzero &= (dx[i] == 0.0);
 		if(allzero) for(int i=0; i<numv; i++) {
-			printf("all zero:\t%le %le\n", dx[0], dx[1]);
+			ThrainLogger::error("all zero:\t%le %le\n", dx[0], dx[1]);
 			dx[i] = 0.1*x[i];
 		}
 	
@@ -184,7 +188,9 @@ SimpleWD::SimpleWD(
 		while(negative){
 			for(int i=0; i<numv; i++) dx[i] *= 0.1;
 			for(int i=0; i<numv; i++) x2[i] = x[i]+dx[i];
-			printf("\tX2:\t"); for(int i=0; i<numv; i++) printf("%le ", x2[i]); printf("\n");
+			ThrainLogger::debug("\tX2:\t");
+			for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x2[i]);
+			ThrainLogger::debug("\n");
 			negative = false;
 			for(int i=0; i<numv; i++) if(x2[i]<z[i]) negative=true;	
 		}
@@ -197,22 +203,28 @@ SimpleWD::SimpleWD(
 			for(int i=0; i<numv; i++) x2[i] = x[i] + L*dx[i];
 			joinAtCenter(x2, f2, F2);
 		}
-		printf("\tdx:\t"); for(int i=0; i<numv; i++) printf("%le ", L*dx[i]); printf("\n");
+		ThrainLogger::debug("\tdx:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", L*dx[i]);
+		ThrainLogger::debug("\n");
 		F = F2;
 		for(int i=0; i<numv; i++) f[i] = f2[i];
 		for(int i=0; i<numv; i++) x[i] = x2[i];
 		
-		printf("\tX2:\t"); for(int i=0; i<numv; i++) printf("%le ", x[i]); printf("\n");
-		printf("\tf2:\t"); for(int i=0; i<numv; i++) printf("%le ", f[i]); printf("\n");
-		printf("\tF2:\t%le\n", F);
+		ThrainLogger::debug("\tX2:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x[i]);
+		ThrainLogger::debug("\n");
+		ThrainLogger::debug("\tf2:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", f[i]);
+		ThrainLogger::debug("\n");
+		ThrainLogger::debug("\tF2:\t%le\n", F);
 				
 		// determine the max size of the differences
 		maxDF = -1.0;
 		for(int i=0; i<numv; i++) if(fabs(f[i]) > maxDF) maxDF = fabs(f[i]);		
-		printf("MAX DIF = %le\n", maxDF);
+		ThrainLogger::info("MAX DIF = %le\n", maxDF);
 	}
 	
-	printf("MODEL CONVERGED!\n");
+	ThrainLogger::info("MODEL CONVERGED!\n");
 	joinAtCenter(x,f,F);
 	
 	//all done!  begin post-production
@@ -224,8 +236,8 @@ SimpleWD::SimpleWD(
 	if(Ncore%2==1) Ncore = Ncore - 1;
 	indexFit = (Ncore)/2;
 	
-	printf("Teff=%le\tTsurf=%le\n", Teff, Tscale*exp(logY[Ntot-1][temp]));
-	printf("Xtot :\t%0.8lf %0.8lf %0.8lf %0.8lf\n", Xtot.H1 , Xtot.He4 , Xtot.C12 , Xtot.O16);
+	ThrainLogger::info("Teff=%le\tTsurf=%le\n", Teff, Tscale*exp(logY[Ntot-1][temp]));
+	ThrainLogger::info("Xtot :\t%0.8lf %0.8lf %0.8lf %0.8lf\n", Xtot.H1 , Xtot.He4 , Xtot.C12 , Xtot.O16);
 		
 	setupCenter();
 	setupSurface();
@@ -250,7 +262,7 @@ SimpleWD::~SimpleWD(){
 void SimpleWD::setup(){
 	FILE *input_file;
 	if(!(input_file=fopen("swd.txt", "r"))){
-		printf("ERROR: EOS file not found... using a default\n");
+		ThrainLogger::warning("ERROR: EOS file not found... using a default\n");
 		//do something
 		std::vector<PartialPressure> corePres{deg_zero, rad_gas, ideal, coul};
 		std::vector<PartialPressure> atmPres{rad_gas, ideal};
@@ -266,17 +278,17 @@ void SimpleWD::setup(){
 	std::string instring;
 	EOS *pres = NULL;
 	char *c = std::fgets(input_buffer, buffer_size, input_file);
-	printf("%s", input_buffer);fflush(stdout);
+	ThrainLogger::debug("%s", input_buffer);
 	while(c != nullptr){
 		c = std::fgets(input_buffer, buffer_size, input_file);
-		if(c != nullptr) printf("%s", input_buffer);
+		if(c != nullptr) ThrainLogger::debug("%s", input_buffer);
 		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
 		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
 		if(pres!=NULL){
 			std::fgets(input_buffer, buffer_size, input_file);
 			pressure = strtok(input_buffer, " \t\n");
 			while(pressure != NULL){
-				printf("\t%s", pressure);
+				ThrainLogger::debug("\t%s", pressure);
 				if(     !strcmp(pressure, "rad"))
 					pres->push_back(rad_gas);
 				else if(!strcmp(pressure, "ideal"))
@@ -291,10 +303,10 @@ void SimpleWD::setup(){
 					pres->push_back(deg_finite);
 				else if(!strcmp(pressure, "deg_trap"))
 					pres->push_back(deg_trap);
-				else printf("ERROR: partial pressure term unrecognized!\n");
+				else ThrainLogger::error("ERROR: partial pressure term unrecognized!\n");
 				pressure = strtok(NULL, " \t\n");
 			}
-			printf("\n");
+			ThrainLogger::debug("\n");
 		}
 		if(!strcmp(input_buffer, "# chemical parameters\n")) {
 			fscanf(input_file, "%*[^0123456789] %lf %lf %lf\n", &zy, &by, &my);
@@ -303,13 +315,13 @@ void SimpleWD::setup(){
 		}
 		pres = NULL;
 	}
-	printf("\the\t%lf\t%lf\t%lf\n", zy, by, my);
-	printf("\tc \t%lf\t%lf\t%lf\n", zc, bc, mc);
-	printf("\to \t%lf\t%lf\t%lf\n", zo, bo, mo);
+	ThrainLogger::debug("\the\t%lf\t%lf\t%lf\n", zy, by, my);
+	ThrainLogger::debug("\tc \t%lf\t%lf\t%lf\n", zc, bc, mc);
+	ThrainLogger::debug("\to \t%lf\t%lf\t%lf\n", zo, bo, mo);
 }
 
 void SimpleWD::initFromChandrasekhar(){
-	printf("Preparing starting values from Chandrasekhar model\n");
+	ThrainLogger::info("Preparing starting values from Chandrasekhar model\n");
 	Mstar = Msolar*MSOLAR;
 	std::size_t Ntest = 500;
 	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
@@ -348,11 +360,11 @@ void SimpleWD::initFromChandrasekhar(){
 	YstartS[dens] = testStar->rho(Ntest-2);
 	YstartS[pres] = testStar->P(Ntest-2);
 	
-	printf("Radius in CM: %le\n", Rstar);
-	printf("Radius in RE: %le\n", Rsolar);
+	ThrainLogger::info("Radius in CM: %le\n", Rstar);
+	ThrainLogger::info("Radius in RE: %le\n", Rsolar);
 	
-	printf("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
-	printf("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
+	ThrainLogger::info("Core guess: %le \t %le\n", Ystart0[pres], Ystart0[dens]);
+	ThrainLogger::info("Surf guess: %le \t %le\n", YstartS[pres], YstartS[dens]);
 	return;
 }
 
@@ -989,8 +1001,8 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 	double Prad, rho=0.0;
 	Prad = radiation_a/3.*pow(y[temp],4);
 	if(Prad > y[pres]) {
-		printf("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
-		printf("X %d:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
+		ThrainLogger::error("\nERROR: RADIATION PRESSURE TOO HIGH!\n");
+		ThrainLogger::error("X %d:\tr=%le m=%le P=%le T=%le\n", X, exp(logy[radi]), exp(logy[mass]), exp(logy[pres]), exp(logy[temp]));
 		//do something to try to recover
 		y[pres] += Prad;
 		logY[X][pres] = std::log(y[pres]);
@@ -999,9 +1011,9 @@ double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, 
 	rho = getEOS(y, chem)->invert(rho_last, y[pres], y[temp], chem);
 
 	if(rho<0.0) rho = -rho;
-	if(std::isnan(rho)) printf("RHO IS NAN!\n");
+	if(std::isnan(rho)) ThrainLogger::error("RHO IS NAN!\n");
 	if(std::isnan(log(rho))){
-		printf("%le %le %le %le %le %le\n", exp(logy[radi]), y[pres], y[temp], rho, rho/Dscale, log(rho/Dscale));
+		ThrainLogger::error("%le %le %le %le %le %le\n", exp(logy[radi]), y[pres], y[temp], rho, rho/Dscale, log(rho/Dscale));
 	}
 	
 	//save the density	
@@ -1230,14 +1242,14 @@ void SimpleWD::setupCenter(){
 	pc[0] = exp(logY[0][pres]);
 	tc[0] = exp(logY[0][temp]);
 	double del = nabla[0];
-	printf("Establishing center:\n");
-	printf("x^0:\t%le %le %le %le\n", dc[0], pc[0], tc[0], del);
+	ThrainLogger::debug("Establishing center:\n");
+	ThrainLogger::debug("x^0:\t%le %le %le %le\n", dc[0], pc[0], tc[0], del);
 	
 	//terms x^2
 	tc[1] = -del*tc[0]*dc[0]*dc[0]/6./pc[0];
 	pc[1] = -dc[0]*dc[0]/6.;
 	dc[1] = (pc[1] - tc[1]*dPdt)/dPdd;
-	printf("x^2:\t%le %le %le\n", dc[1], pc[1], tc[1]);
+	ThrainLogger::debug("x^2:\t%le %le %le\n", dc[1], pc[1], tc[1]);
 	
 	//terms x^4
 	tc[2] = (5.*pc[1]*tc[0]*dc[0]*dc[0]-5.*pc[0]*tc[1]*dc[0]*dc[0]-8.*pc[0]*tc[0]*dc[0]*dc[1]);
@@ -1245,7 +1257,7 @@ void SimpleWD::setupCenter(){
 	pc[2] = -dc[0]*dc[1]*2./15.;
 	dc[2] = (2.*pc[2]-2.*tc[2]*dPdt
 			-tc[1]*tc[1]*dPdtt-2.*tc[1]*dc[1]*dPddt-dc[1]*dc[1]*dPddd)/(2.*dPdd);
-	printf("x^4:\t%le %le %le\n", dc[2], pc[2], tc[2]);
+	ThrainLogger::debug("x^4:\t%le %le %le\n", dc[2], pc[2], tc[2]);
 	
 	//now make the actual terms
 	// c
@@ -1938,7 +1950,7 @@ void SimpleWD::writeStar(const char *const c){
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
 		system( ("mkdir -p " + filename).c_str() );
-		if(!(fp = fopen(filename.c_str(), "w"))) printf("big trouble, boss\n");		
+		if(!(fp = fopen(filename.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
 	}
 	
 	//print results to text file

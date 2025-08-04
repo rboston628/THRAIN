@@ -15,7 +15,7 @@
 #include "../lib/Splinor.h"
 #include "../lib/matrix.h"
 #include "../lib/string.h"
-// #include <time.h> //might use later to put a time stamp
+#include "../lib/logger.h"
 
 //constants and dependencies
 #ifndef CONSTANTS

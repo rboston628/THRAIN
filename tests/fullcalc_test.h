@@ -78,6 +78,7 @@ public:
     /* test uniform density (n=0) polytrope */
     void test_full_calculation_uniform() {
         printf("\nTEST CALCULATION UNIFORM STAR");
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::ERROR);
         system("mkdir -p ./output/../tests/uniform/../tests");
         system("touch ./output/../tests/uniform/../tests/uniform.txt");
         Calculation::InputData in = make_input_data_pmodes("../tests/uniform");
@@ -96,6 +97,7 @@ public:
             }
             printf("\n");
         }
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
     }
 
 //     /* test n=1 polytrope */

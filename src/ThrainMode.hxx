@@ -45,7 +45,7 @@ int mode_finder(Calculation::OutputData &data){
 	static_assert((std::is_base_of<ModeBase,MODE>::value), "first class must be mode");
 	static_assert((MODE::num_var==MODEDRIVER::num_var), "incompatible mode, mode class");
 
-	printf("num_var = %d\n", MODE::num_var);
+	ThrainLogger::debug("num_var = %d\n", MODE::num_var);
 	
 	//information on the nodes that need to be found
 	int num = data.mode_num;
@@ -79,7 +79,7 @@ int mode_finder(Calculation::OutputData &data){
 	int nextmode = 0;
 	for(auto lt=l_list.begin(); lt!=l_list.end(); lt++){
 		const int ltarget = *lt;
-		printf("L=%d\n", ltarget);
+		ThrainLogger::info("L=%d\n", ltarget);
 
 		std::set<int> kl = kl_lists[ltarget];
 		//these will be filled as we discover modes
@@ -94,20 +94,20 @@ int mode_finder(Calculation::OutputData &data){
 		
 // STEP 2:  perform first run with rough guesses 
 // STEP 2a: fill in all easy modes from simple guesses based on K
-		printf("\tinitial calculation of modes...\n");
+		ThrainLogger::info("\tinitial calculation of modes...\n");
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
-			printf("\t\t%d,%d:\t", ltarget, *kt); fflush(stdout);
+			ThrainLogger::debug("\t\t%d,%d:\t", ltarget, *kt);
 			modetry = new MODE(*kt, ltarget, 0, data.driver);
-			printf("done\n");
+			ThrainLogger::debug("done\n");
 			mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 		}
-		printf("\tdone");
+		ThrainLogger::info("\tdone\n");
 		std::size_t found=0, total=0;
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
 			total++;
 			found += kfilled.count(*kt);
 		}
-		printf("found %lu/%lu!\n", found, total);
+		ThrainLogger::info("found %lu/%lu!\n", found, total);
 
 		// save values for the min,max values of K in list
 		int klo=*(kl.begin()), khi=*(kl.rbegin());
@@ -124,24 +124,24 @@ int mode_finder(Calculation::OutputData &data){
 
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){	
 			int ktarget = *kt;
-			printf("%d\tK=%d\t", ltarget, ktarget); fflush(stdout);
+			ThrainLogger::info("%d\tK=%d\t", ltarget, ktarget);
 
 // STEP 2b:  check if we have already been filled from earlier
 			if(kfilled.count(ktarget)){
 				//if we have then continue to next
-				printf("k=%d\talready found!\n", ktarget);
+				ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "k=%d\talready found!\n", ktarget);
 				continue;
 			}
 		
 // STEP 3: set brackets
 // STEP 3a: search within discovered modes to see if brackets exist	
-			printf("finding brackets.\n");
+			ThrainLogger::info("finding brackets.\n");
 			ktry = klo-1;
 			double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0;
 			int kmax=klo-1, kmin=khi+1;
 			mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 			mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
-			printf("\t\t(%d,%d) first fit\n", kmin, kmax);
+			ThrainLogger::info("\t\t(%d,%d) first fit\n", kmin, kmax);
 
 // STEP 3b: if one or both brackets do not exist, look for brackets
 			bool nomax = (kmax==klo-1), nomin = (kmin==khi+1); 
@@ -152,7 +152,7 @@ int mode_finder(Calculation::OutputData &data){
 				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				//if this is the one we want, continue to next mode
 				if(kfilled.count(ktarget)){
-					printf("\tFOUND k=%d, w2=%lf\n", ktry,w2try);
+					ThrainLogger::info("\tFOUND k=%d, w2=%lf\n", ktry,w2try);
 					continue;
 				}
 // STEP 3c: if no min bracket, try to use current, or else use absolute min
@@ -189,7 +189,7 @@ int mode_finder(Calculation::OutputData &data){
 							modeMaxQuest = new MODE(w2max, ltarget, 0,data.driver);
 							kmax = modeMaxQuest->modeOrder();
 							w2max = modeMaxQuest->getOmega2();
-							printf("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
+							ThrainLogger::info("\t\t(%d,%d) in (%f,%f)\n",kmin, kmax, w2min, w2max);
 							if( std::isnan(w2max) ) return 1;
 							// add this mode to discovered lists
 							mode::save_mode<MODE>(modeMaxQuest, kfilled, w2filled, modefilled);
@@ -199,11 +199,11 @@ int mode_finder(Calculation::OutputData &data){
 							}
 							// if we exceeded bounds, stop		
 							if(w2max > 1e6) {
-								printf("TOO LARGE\n");
+								ThrainLogger::info("TOO LARGE\n");
 								incr = 0.5;
 							}
 							if(w2max < 1e-6){
-								printf("No Dice\n");
+								ThrainLogger::info("No Dice\n");
 								break;
 							}
 							mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
@@ -215,10 +215,10 @@ int mode_finder(Calculation::OutputData &data){
 		
 // STEP 3c: if we could not find a max bracket, go on to next mode
 			if(kmax < ktarget){
-				printf("\t\tunable to find max bracket\n");
+				ThrainLogger::info("\t\tunable to find max bracket\n");
 				continue;
 			}
-			printf("\t\tbracketed (%d,%d) in (%f,%f)\n", kmin, kmax, w2min, w2max);
+			ThrainLogger::info("\t\tbracketed (%d,%d) in (%f,%f)\n", kmin, kmax, w2min, w2max);
 
 // STEP 4:  now we have brackets -- these SHOULD put bounds in frequency
 // for w2 in (w2min, w2max), will produce k in (kmin, kmax)
@@ -234,13 +234,13 @@ int mode_finder(Calculation::OutputData &data){
 				ktry = modetry->modeOrder();
 				w2try = modetry->getOmega2();
 				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
-				printf("%d\t\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
+				ThrainLogger::info("%d\t\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
 						ltarget,kmin, kmax, w2min, w2max, *kt, ktry, w2in, w2try);
 
 //STEP 4c: compare the trial mode to desired mode
 //if we found it, move on to next
 				if(ktry==ktarget) {
-					printf("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
+					ThrainLogger::info("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
 					break;
 				}
 
@@ -261,7 +261,7 @@ int mode_finder(Calculation::OutputData &data){
 					modetry = new MODE(w2min, w2max, ltarget,0,data.driver);
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
-					printf("%d\t\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
+					ThrainLogger::info("%d\t\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
 						ltarget,kmin, kmax, w2min, w2max, *kt, ktry, w2in, w2try);
 					// add this to the lists
 					mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
@@ -280,7 +280,7 @@ int mode_finder(Calculation::OutputData &data){
 					ktry = modetry->modeOrder();
 					w2try = modetry->getOmega2();
 					mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
-					printf("\tR\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
+					ThrainLogger::info("\tR\t(%d,%d) in (%f,%f)\t %d\t %d %lf-->%lf\n",
 							kmin, kmax, w2minT, w2maxT, ktarget, ktry, w2in, w2try);
 					//check if we found mode, or if we can move brackets
 					if(ktry==ktarget) break;
@@ -313,13 +313,13 @@ int mode_finder(Calculation::OutputData &data){
 
 				// if we found it, say so
 				if(ktry == ktarget) {
-					printf("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
+					ThrainLogger::info("%d\tK=%d\tk=%d FOUND\n", ltarget, ktarget, ktry);
 					break;
 				}
 
 				//if we are just unable to find the mode, say so
 				if(ktry!=ktarget && fabs(w2max-w2min) < 1e-2*w2min){
-					printf("too close\t%le\n", fabs((w2max-w2min)/w2max) );
+					ThrainLogger::info("too close\t%le\n", fabs((w2max-w2min)/w2max) );
 					break;
 				}
 				
@@ -332,7 +332,7 @@ int mode_finder(Calculation::OutputData &data){
 // STEP 5: return through list to pick up any missed modes
 		// this calculation follows same steps as STEP 3 but because more
 		// modes have been filled, we are more likely to have good brackets
-		printf("L=%d\tpicking up stragglers...\n", ltarget);
+		ThrainLogger::info("L=%d\tpicking up stragglers...\n", ltarget);
 		for(auto kt= kl.begin(); kt!=kl.end(); kt++){
 			const int ktarget = *kt;
 			//STEP 5a:  check if we have already been filled from earlier
@@ -343,7 +343,7 @@ int mode_finder(Calculation::OutputData &data){
 			else {
 				//STEP 5b (i): find brackets to use in bisection by scanning list of modes
 				//  this pass through, we are more likely to have bracketing modes
-				printf("\t\t%d\t", *kt); fflush(stdout);
+				ThrainLogger::info("\t\t%d\t", *kt);
 				ktry = klo-1;
 				double w2min=0.0, w2max=0.0, dw2=0.0, w2in=0.0;
 				const int khi=*(kfilled.rbegin()), klo=*(kfilled.begin());
@@ -360,8 +360,8 @@ int mode_finder(Calculation::OutputData &data){
 					kmin = -1000000000;
 				}
 				//if we don't have a higher bound from calculated list, just leave
-				if(kmax > khi) { printf("no brackets\n"); continue;}
-				printf("(%d,%d)\t", kmin,kmax);fflush(stdout);
+				if(kmax > khi) { ThrainLogger::info("no brackets\n"); continue;}
+				ThrainLogger::info("(%d,%d)\t", kmin,kmax);
 				
 				//STEP 5b (ii): now bisect the brackets until correct mode is found
 				double prevmin=w2min, prevmax=w2max; //value of previous frequency
@@ -435,14 +435,14 @@ int mode_finder(Calculation::OutputData &data){
 					}
 				}
 				//if we found it, say so
-				if(kfilled.count(ktarget)) printf("found\n");
-				else printf("not found\n");
+				if(kfilled.count(ktarget)) ThrainLogger::info("found\n");
+				else ThrainLogger::info("not found\n");
 			}
 		}
-		printf("\tdone\n");
+		ThrainLogger::info("\tdone\n");
 
 //STEP 6: organize the data lists
-		printf("preparing output...\t"); fflush(stdout);
+		ThrainLogger::info("preparing output...\t");
 		int enext = data.mode_done;
 		for(auto kt=kl.begin(); kt!=kl.end(); kt++){
 			const int ktarget = *kt;
@@ -470,10 +470,10 @@ int mode_finder(Calculation::OutputData &data){
 			nextmode++;
 			data.mode_done++;
 		}
-		printf("done\n");
+		ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	
 //STEP 7: calculate desired errors
-		printf("calculating errors...\t"); fflush(stdout);
+		ThrainLogger::info("calculating errors...\t");
 		int e=0;
 		//STEP 7a: for simple models, use RMSR to indicate numerical error
 		if(data.error[error::isRMSR]){
@@ -528,8 +528,8 @@ int mode_finder(Calculation::OutputData &data){
 			}
 			e++;
 		}
-		if(e!=data.i_err) printf("Error in mode error listing...\n");
-		printf("done\n");
+		if(e!=data.i_err) ThrainLogger::info("Error in mode error listing...\n");
+		ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 
 //STEP 8: at the end of each L, print all data to the output file 
 		io::write_mode_output(data);
