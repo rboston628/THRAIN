@@ -76,7 +76,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		calcdata.input_params.reserve(1);
 		fscanf(input_file, "%s ", input_buffer);    //read in the filename
 		calcdata.str_input_param=std::string(input_buffer);
-		printf("source=%s.dat\n", calcdata.str_input_param.c_str());
+		ThrainLogger::info("source=%s.dat\n", calcdata.str_input_param.c_str());
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
 	}
@@ -86,7 +86,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		calcdata.input_params.resize(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
-		printf("Ngrid=%lu\n", calcdata.Ngrid);
+		ThrainLogger::info("Ngrid=%lu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
 		FILE *swd = fopen("swd.txt", "w");
@@ -100,7 +100,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		fscanf(input_file, "\tatm\t%[^\n]\n", input_buffer);
 		fprintf(swd, "atm:\n\t%s\n\n", input_buffer);
 		calcdata.str_input_param += std::string(input_buffer);
-		printf("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
+		ThrainLogger::info("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
 		
 		//on a new line, specify chemical paramters
 		fscanf(input_file, "chemical parameters:\n");  //skip a line of formatting
@@ -124,8 +124,8 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		//save value in appropriate slot use bit-masking to keep track of variables
 		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
 		else {
-			printf("ERROR IN INPUT: first parameter to SimpleWD must be mass\n");
-			printf("This error is fatal.  Quitting.\n");
+			ThrainLogger::error("ERROR IN INPUT: first parameter to SimpleWD must be mass\n");
+			ThrainLogger::error("This error is fatal.  Quitting.\n");
 			return 1;
 		}
 		//read in second physical parameters -- name as string, value as double
@@ -134,21 +134,21 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
 		if(!instring.compare("teff")){ calcdata.teff = temp; calcdata.params|=units::ParamType::pteff;}
 		else {
-			printf("ERROR IN INPUT: second parameter to SimpleWD must be teff\n");
-			printf("This error is recoverable.  Using teff = 12 000 K\n");
+			ThrainLogger::warning("ERROR IN INPUT: second parameter to SimpleWD must be teff\n");
+			ThrainLogger::warning("This error is recoverable.  Using teff = 12 000 K\n");
 			calcdata.teff = 12000.0;
 			calcdata.params|=units::ParamType::pteff;
 		}
 		//double check we have both mass and effective temperature
 		char tempparam = units::ParamType::pmass|units::ParamType::pteff;
 		if(calcdata.params != tempparam){
-			printf("ERROR IN INPUT: a SimpleWD needs both mass and teff\n");
-			printf("This error is fatal.  Quitting.\n");
+			ThrainLogger::error("ERROR IN INPUT: a SimpleWD needs both mass and teff\n");
+			ThrainLogger::error("This error is fatal.  Quitting.\n");
 			return 1;	
 		}
-		printf("Making SimpleWD model with:\n");
-		printf("\tM=%le\n", calcdata.mass);
-		printf("\tTeff=%le\n", calcdata.teff);		
+		ThrainLogger::info("Making SimpleWD model with:\n");
+		ThrainLogger::info("\tM=%le\n", calcdata.mass);
+		ThrainLogger::info("\tTeff=%le\n", calcdata.teff);		
 	}
 		
 	//read the units to be used in calculation
@@ -166,9 +166,9 @@ int read_calcname(FILE* input_file, Calculation::InputData& calcdata){
 	char calculation_name[128];	//a label for this calculation
 	int filled = fscanf(input_file, "Name: %s\n", calculation_name);
 	calcdata.calcname = std::string(calculation_name);
-	printf("calculation name: %s\n", calcdata.calcname.c_str());
+	ThrainLogger::info("calculation name: %s\n", calcdata.calcname.c_str());
 	if(!filled || filled==EOF) {
-		printf("ERROR IN INPUT: no calculation name given.\n");
+		ThrainLogger::error("ERROR IN INPUT: no calculation name given.\n");
 		return 1;
 	}
 	else return 0;
@@ -182,24 +182,24 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 	instring = std::string(input_buffer);
 	if(!instring.compare("newtonian")) calcdata.regime = regime::PN0;
 	else{
-		printf("ERROR IN INPUT: THRAIN only knows Newtonian physics!\n");
-		printf("This error is recoverable!  Setting to proper regime.\n");
+		ThrainLogger::warning("ERROR IN INPUT: THRAIN only knows Newtonian physics!\n");
+		ThrainLogger::warning("This error is recoverable!  Setting to proper regime.\n");
 		calcdata.regime = regime::PN0;
 	}
 	//read the background stellar model to be used in calculation
 	fscanf(input_file, "%s\t", input_buffer);
-	printf("MAKING A ");
+	ThrainLogger::debug("MAKING A ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
 	else if(!instring.compare("CHWD")) calcdata.model = model::CHWD;
 	else if(!instring.compare("MESA")) calcdata.model = model::MESA;
 	else if(!instring.compare("SWD"))  calcdata.model = model::SWD;
 	else {
-		printf("ERROR IN INPUT: THRAIN can only work with polytrope, CHWD, MESA, or SWD\n");
-		printf("This error is fatal.  Quitting.\n");
+		ThrainLogger::error("ERROR IN INPUT: THRAIN can only work with polytrope, CHWD, MESA, or SWD\n");
+		ThrainLogger::error("This error is fatal.  Quitting.\n");
 		return 1;
 	}
-	printf("%s\n", input_buffer);
+	ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "%s\n", input_buffer);
 
 	return 0;
 }
@@ -209,20 +209,20 @@ int read_units(FILE* input_file, Calculation::InputData& calcdata){
 	std::string instring;		//for more read-in from file
 
 	fscanf(input_file, "Units: %s\n", input_buffer);
-	printf("USING UNITS: ");
+	ThrainLogger::debug("USING UNITS: ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
 	else if(!instring.compare("geo")) calcdata.units = units::Units::geo;
 	else if(!instring.compare("SI"))  calcdata.units = units::Units::SI;
 	else if(!instring.compare("CGS")) calcdata.units = units::Units::CGS;
 	else{
-		printf("ERROR IN INPUT: units incorrectly written...\n");
-		printf("units: %s\n", input_buffer);
-		printf("units: %s\n", instring.c_str());
-		printf("This error is fatal.  Quitting.\n");
+		ThrainLogger::error("ERROR IN INPUT: units incorrectly written...\n");
+		ThrainLogger::error("units: %s\n", input_buffer);
+		ThrainLogger::error("units: %s\n", instring.c_str());
+		ThrainLogger::error("This error is fatal.  Quitting.\n");
 		return 1;
 	}
-	printf("%s\n", input_buffer);
+	ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "%s\n", input_buffer);
 	return 0;
 }
 
@@ -236,8 +236,8 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 	else if(!instring.compare("nonradial"))   calcdata.modetype = modetype::nonradial;
 	else if(!instring.compare("cowling"))     calcdata.modetype = modetype::cowling;
 	else{
-		printf("ERROR IN INPUT: THRAIN can only compute nonradial modes.\n");
-		printf("This error is recoverable.  Changing mode type.");
+		ThrainLogger::warning("ERROR IN INPUT: THRAIN can only compute nonradial modes.\n");
+		ThrainLogger::warning("This error is recoverable.  Changing mode type.");
 		calcdata.modetype = modetype::nonradial;
 	}
 	//read in the adiabatic index for the mode calculation
@@ -258,7 +258,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 		fscanf(input_file, "%s\n", input_buffer);
 		calcdata.mode_num++;
 	}
-	printf("Number of frequencies: %lu\n", calcdata.mode_num);
+	ThrainLogger::error("Number of frequencies: %lu\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
 	//now read in the L,K as specified 
 	for(int j=0; j<calcdata.mode_num; j++){
@@ -287,7 +287,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 
 //this function will print back the input file, so the same calculation can be run again
 int echo_input(Calculation::InputData &calcdata){
-	printf("Copying input file...\t"); fflush(stdout);
+	ThrainLogger::info("Copying input file...\t");
 	//open file to write output summary
 	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
 	FILE* output_file;
@@ -297,7 +297,7 @@ int echo_input(Calculation::InputData &calcdata){
 		//if an error occurs, try making the folder needed
 		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			printf("output file not found.\n");
+			ThrainLogger::error("output file not found.\n");
 			return 1;
 		}
 	}
@@ -390,18 +390,18 @@ int echo_input(Calculation::InputData &calcdata){
 		}
 	}
 	if(checkcount != calcdata.mode_num){
-		printf("non-matching numbers of modes");
+		ThrainLogger::error("non-matching numbers of modes");
 		return 1;
 	}
 	
-	printf("done\n");
+	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	fflush(output_file);
 	fclose(output_file);
 	return 0;
 }
 
 int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_out){
-	printf("Preparing calculation data...\n"); fflush(stdout);
+	ThrainLogger::info("Preparing calculation data...\n");
 	//read in the basic properties for the calculation
 	data_out.calcname = data_in.calcname;
 	data_out.regime = data_in.regime;
@@ -421,9 +421,9 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	data_out.teff = data_in.teff;
 	data_out.params = data_in.params;
 	//formatting units may need to be re-performed after calculation, depending on star
-	printf("MASS = %le\n", data_out.mass);
+	ThrainLogger::info("MASS = %le\n", data_out.mass);
 	units::format_units(data_out);
-	printf("MASS = %le\n", data_out.mass);
+	ThrainLogger::info("MASS = %le\n", data_out.mass);
 	
 	//now prepare the modes
 	data_out.mode_num = data_in.mode_num;
@@ -467,7 +467,7 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	//create the error columns
 	data_out.err = new double*[data_out.i_err];
 	for(int e=0; e<data_out.i_err; e++) data_out.err[e] = new double[data_out.mode_num];
-	printf("done\n");
+	ThrainLogger::info("done\n");
 	return 0;
 }
 
@@ -496,18 +496,18 @@ char dwarf[12][27] = {
 
 int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
-	printf("Writing stellar data to file...\t");fflush(stdout);
+	ThrainLogger::info("Writing stellar data to file...\t");
 	//open file to write output summary
 	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
-		printf("creating file..."); fflush(stdout);
+		ThrainLogger::info("creating file...");
 		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
 		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			printf("output file not found.\n");
+			ThrainLogger::info("output file not found.\n");
 			return 1;
 		}
 	}
@@ -594,7 +594,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	fprintf(output_file,"%s  \n", dwarf[d++]);
 	
 
-	//printf the background model data
+	//print the background model data
 	switch(calcdata.model){
 		case model::polytrope:
 			fprintf(output_file, "%s  index n = %.2lf\n", dwarf[d++], calcdata.input_params[0]);
@@ -630,25 +630,25 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	std::string outname = "./output/"+calcdata.calcname;
 	calcdata.star->writeStar(outname.c_str());
 	
-	printf("done\n");
+	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	return 0;
 }
 
 int write_mode_output(Calculation::OutputData& calcdata){
-	printf("Writing mode data to file...\t"); fflush(stdout);
+	ThrainLogger::info("writing mode data to file...\t");
 	//open file to write output summary
 	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
-		printf("the file doesn't exist\n");
+		ThrainLogger::error("the file doesn't exist\n");
 		return 1;
 	}
 		
 	int WIDTH = 86;
 	if(calcdata.mode_writ==0){
 		fprintf(output_file, "#  Stellar Pulsation Results  \n");
-		//Printf the adiabatic index used in calculation -- 5/3, 4/3 special cases
+		//Print the adiabatic index used in calculation -- 5/3, 4/3 special cases
 		fprintf(output_file, "#  Adiabatic exponent (Gamma1) ");
 		double a = calcdata.adiabatic_index*3.0;
 		if(fabs(a-5.0)<1e-10) fprintf(output_file, "= 5/3\n");
@@ -712,7 +712,7 @@ int write_mode_output(Calculation::OutputData& calcdata){
 	}
 
 	fclose(output_file);
-	printf("done\n");
+	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	return 0;
 }
 
@@ -730,17 +730,17 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 }
 
 int write_tidal_overlap(Calculation::OutputData& calcdata){
-	printf("Writing tidal overlap coefficients...\t");fflush(stdout);
+	ThrainLogger::info("Writing tidal overlap coefficients...\t");
 	//open file to write output summary
 	std::string output_file_name = "./output/"+calcdata.calcname+"/tidal_overlap.txt";
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
-		printf("creating file...\n"); fflush(stdout);
+		ThrainLogger::info("creating file...\n");
 		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			printf("output file not found.\n");
+			ThrainLogger::error("output file not found.\n");
 			return 1;
 		}
 	}
@@ -795,7 +795,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 		fflush(output_file);
 	}
 	fclose(output_file);
-	printf("done\n");
+	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	return 0;
 }
 

@@ -22,7 +22,7 @@ struct Abundance {
 	int e;
 	double mean_A() const {
 		using namespace chemical;
-	//	printf("\tmuA:\t%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
+		ThrainLogger::debug("\tmuA:\t%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
 		return 1./(H1 + He4/chemical::A[he] + C12/chemical::A[c] + O16/chemical::A[o]);
 	}
 	double mean_Z() const {
@@ -45,7 +45,7 @@ struct Abundance {
 			+ O16*pow(chemical::Z[ o],2)*pow(chemical::A[ o],-1./3.) ;
 	}
 	void print() const {
-		printf("%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
+		ThrainLogger::info("%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
 	}
 	Abundance() :H1(0), He4(0), C12(0), O16(0), e(0) {};
 	Abundance(double x1, double x2, double x3, double x4) 

@@ -123,12 +123,12 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
-	printf("  indexFit  = %lu\n", indexFit);
-	printf("r[indexFit] = %0.32le\n", rad(indexFit));
+	ThrainLogger::debug("  indexFit  = %lu\n", indexFit);
+	ThrainLogger::debug("r[indexFit] = %0.32le\n", rad(indexFit));
 	
 	setupCenter();
 	setupSurface();
-	printf("%0.2lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
+	ThrainLogger::info("%0.2lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
 }
 
 //initalize white dwarf from central value of y and length
@@ -168,7 +168,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, double const A0, dou
 	indexFit /= 2;
 	setupCenter();
 	setupSurface();
-	printf("%0.8lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
+	ThrainLogger::info("%0.8lf\t%le\t%le\n", 1./Y02, mr(len-1)/MSOLAR, rad(len-1));
 }
 
 ChandrasekharWD::~ChandrasekharWD(){
@@ -553,15 +553,15 @@ int ChandrasekharWD::read_star_input(FILE* input_file, Calculation::InputData& c
 	
 	calcdata.input_params.resize(3);
 	fscanf(input_file, " %lf", &calcdata.input_params[0]);	//read in the central y value
-	printf("y0=%lf\n", calcdata.input_params[0]);
+	ThrainLogger::debug("y0=%lf\n", calcdata.input_params[0]);
 	//read in an integer designating the chemical composition to use for mu
 	fscanf(input_file, " %lf", &calcdata.input_params[1]);
 	switch((int) calcdata.input_params[1]){
 		case 0:
-			printf("standard Chandrasekhar WD\n");
+			ThrainLogger::info("standard Chandrasekhar WD\n");
 			break;
 		case 1:
-			printf("using logistic composition\n");
+			ThrainLogger::info("using logistic composition\n");
 			break;
 	}
 	fscanf(input_file, "%lf\n", &calcdata.input_params[2]);	//read in the grid size

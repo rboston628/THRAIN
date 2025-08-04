@@ -81,13 +81,13 @@ int format_units(Calculation::OutputData& data){
 			break;
 	}
 	
-	printf("\tmass=%lg\n", data.mass);
-	printf("\tradius=%lg\n", data.radius);
-	printf("\tzsurf=%lg\n\tlogg=%lg\n", data.zsurf, data.logg);
+	ThrainLogger::debug("\tmass=%lg\n", data.mass);
+	ThrainLogger::debug("\tradius=%lg\n", data.radius);
+	ThrainLogger::debug("\tzsurf=%lg\n\tlogg=%lg\n", data.zsurf, data.logg);
 	double mass_CGS = data.mass*data.unitset.base_mass;
 	double radius_CGS = data.radius*data.unitset.base_length;
 	data.freq0 = sqrt(G_CGS*mass_CGS*pow(radius_CGS,-3));
-	printf("\tfrequency scale = %lf\n", data.freq0);
+	ThrainLogger::debug("\tfrequency scale = %lf\n", data.freq0);
 	
 	return 0;
 }

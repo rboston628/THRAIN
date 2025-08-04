@@ -2,6 +2,7 @@
 #define ROOTFINDHXX
 
 #include "matrix.h"
+#include "logger.h"
 
 // *************************************************************************************
 //					NEWTON METHODS
@@ -80,7 +81,7 @@ void rootfind::newton_search(
 		if(matrix::invertMatrix(dfdx, f2, dx)){
 			//if the matrix is singular or otherwise fails
 			// then do something to try to recover
-			printf("ERROR: Matrix inversion failed!\nTrying to recover with past value.\n");
+			ThrainLogger::error("ERROR: Matrix inversion failed!\nTrying to recover with past value.\n");
 			//use the last gradient
 			double scale = rootfind::pseudo_unif();
 			for(int i=0; i<np; i++) dx[i] = scale*dxsave[i];

@@ -21,7 +21,7 @@ void Polytrope::basic_setup(){
 	//if index is out of range, fail
 	if( n > 5.0 || n < 0.0 ){
 		n = nan(""); len = 0;
-		printf("\nInvalid polytropic index.  Polytrope not initialized.\n");
+		ThrainLogger::error("\nInvalid polytropic index.  Polytrope not initialized.\n");
 		exit(EXIT_FAILURE);
 	}
 	//name this polytrope for files
@@ -163,9 +163,9 @@ Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	
 	init_arrays();
 	indexFit = 256*round(double(len)/1024.0);
-	printf("  indexFit  = %lu\n", indexFit);
-	printf("r[indexFit] = %0.32le\t", rad(indexFit));
-	printf("y[indexFit] = %0.32le\n", Y[indexFit][y]);
+	ThrainLogger::debug("  indexFit  = %lu\n", indexFit);
+	ThrainLogger::debug("r[indexFit] = %0.32le\t", rad(indexFit));
+	ThrainLogger::debug("y[indexFit] = %0.32le\n", Y[indexFit][y]);
 	setupCenter();
 	setupSurface();
 }
@@ -483,7 +483,7 @@ int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdat
 	fscanf(input_file, " %lf\n", &grid_size);	//read in the grid size
 	calcdata.input_params.push_back(index);
 	calcdata.input_params.push_back(grid_size);
-	printf("n=%1.3lf\n", calcdata.input_params[0]);
+	ThrainLogger::info("n=%1.3lf\n", calcdata.input_params[0]);
 	calcdata.Ngrid = std::size_t(calcdata.input_params[1]);
 	
 	//now read in desired physical properties of star -- specify two at a time
@@ -507,26 +507,26 @@ int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdat
 	else if(instring == "zsurf")  {calcdata.zsurf =temp; calcdata.params|=units::ParamType::pzsurf;}
 	else if(instring == "logg")   {calcdata.logg  =temp; calcdata.params|=units::ParamType::plogg;}
 	else {
-		printf("ERROR IN INPUT: invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
-		printf("This error is fatal.  Quitting.\n");
+		ThrainLogger::error("ERROR IN INPUT: invalid parameter to polytope:\n allowed mass, radius, zsurf, or logg\n");
+		ThrainLogger::error("This error is fatal.  Quitting.\n");
 		return 1;
 	}
 	//make sure we did not specify the same parameter twice
 	if(calcdata.params == tempparam){
-		printf("ERROR IN INPUT: double specification of stellar parameters, star underdefined\n");
-		printf("This error is fatal.  Quitting.\n");
+		ThrainLogger::error("ERROR IN INPUT: double specification of stellar parameters, star underdefined\n");
+		ThrainLogger::error("This error is fatal.  Quitting.\n");
 		switch(units::ParamType(calcdata.params)){
-			case units::ParamType::pmass:   printf("\tmass given twice\n"); break;
-			case units::ParamType::pradius: printf("\tradius given twice\n"); break;
-			case units::ParamType::pzsurf:  printf("\tzsurf given twice\n"); break;
-			case units::ParamType::plogg:   printf("\tlog g given twice\n"); break;
-			case units::ParamType::pteff:   printf("\tteff given twice\n"); break;
+			case units::ParamType::pmass:   ThrainLogger::error("\tmass given twice\n"); break;
+			case units::ParamType::pradius: ThrainLogger::error("\tradius given twice\n"); break;
+			case units::ParamType::pzsurf:  ThrainLogger::error("\tzsurf given twice\n"); break;
+			case units::ParamType::plogg:   ThrainLogger::error("\tlog g given twice\n"); break;
+			case units::ParamType::pteff:   ThrainLogger::error("\tteff given twice\n"); break;
 		}
 		return 1;
 	}	
 	if((calcdata.params&units::ParamType::pteff)){
-		printf("ERROR IN INPUT: polytropes cannot be assigned temperature\n");
-		printf("This error is fatal.  Quitting.\n");
+		ThrainLogger::error("ERROR IN INPUT: polytropes cannot be assigned temperature\n");
+		ThrainLogger::error("This error is fatal.  Quitting.\n");
 		return 1;
 	}
 

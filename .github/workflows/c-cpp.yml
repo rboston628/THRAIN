@@ -93,8 +93,16 @@ jobs:
             archiver: "7z a",
             generators: "Ninja"
           }
-
-        # TODO setup windows runners
+        - {
+          name: "windows msvc",
+          os: windows-latest,
+          artifact: "windows_mingw.7z",
+          build_type: "Release",
+          cc: "cl",
+          cxx: "cl",
+          archiver: "7z a",
+          generators: "Ninja"
+        }
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -133,7 +141,12 @@ jobs:
         run: |
           brew install cxxtest 
           sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
-    
+
+      - name: Install dependencies on windows
+        if: ${{ matrix.config.cc == 'cl' }}
+        # need to configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Build library
         shell: bash
         run: make library

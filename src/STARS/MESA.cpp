@@ -18,19 +18,19 @@
 #include "MESA.h"
 
 MESA::MESA(const char* filename, std::size_t L) : len(L) {
-	printf("Beginning read-in of MESA data.\n");
+	ThrainLogger::info("Beginning read-in of MESA data.\n");
 	FILE *infile;
 	if( !(infile = fopen(filename, "r")) ) {
-		printf("No such file %s\n", filename);
-		printf("In directory: ");fflush(stdout);
+		ThrainLogger::error("No such file %s\n", filename);
+		ThrainLogger::error("In directory: ");
 		system("pwd");
-		printf("Available files:\n");fflush(stdout);
+		ThrainLogger::error("Available files:\n");
 		system("ls");
 		exit(1);
 	}  
 	fscanf(infile, "  %lu    %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
-	printf("\tMass = %0.2lg\tRadis = %0.2lg\tLuminosity = %0.2lg\n", Mstar, Rstar, Lstar);
-	printf("Number of grid points in MESA calculation %lu\n", Ntot);
+	ThrainLogger::info("\tMass = %0.2lg\tRadis = %0.2lg\tLuminosity = %0.2lg\n", Mstar, Rstar, Lstar);
+	ThrainLogger::info("Number of grid points in MESA calculation %lu\n", Ntot);
 	name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", Mstar, Rstar, Lstar);
 			
 	//read through file once to get the max values of R,M
@@ -73,7 +73,7 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	double Tscale = 2.*proton.mass_CGS/boltzmann_k*G_CGS*Mtot/Rtot;
 	ts[0] /= Tscale;
 	
-	printf("Done reading in data!\n");
+	ThrainLogger::info("Done reading in data!\n");
 	fclose(infile);
 	
 	//divide intervals up into binary fractions
@@ -82,7 +82,7 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	if(n < 1) n = 1; //must at least divide each interval in half
 	len = pow(2,int(n))*(Ntot-1) + 1;
 	subgrid = pow(2,int(n));
-	printf("number of grid points to be used %lu\n", len);
+	ThrainLogger::info("number of grid points to be used %lu\n", len);
 			
 	radi = new double[len];
 	std::size_t kk=0;
@@ -169,14 +169,14 @@ double MESA::Gee()   {return G_CGS;} //Newton's constant in appropriate units
 double MESA::rad(std::size_t X){
 	if(X>=0 & X<len) return Rtot*radi[X];
 	else {
-		printf("\nradius out of range\n");	
+		ThrainLogger::error("\nradius out of range\n");	
 		return nan("");
 	}
 }
 double MESA::rho(std::size_t X){
 	if(X>=0 & X<len) return Dscale*dens->interp(radi[X]);
 	else {
-		printf("\nrho out of range\n");	
+		ThrainLogger::error("\nrho out of range\n");	
 		return nan("");
 	}
 }
@@ -184,14 +184,14 @@ double MESA::drhodr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Dscale/Rtot*dens->deriv(radi[X]);
 	else {
-		printf("\ndrhodr out of range\n");	
+		ThrainLogger::error("\ndrhodr out of range\n");	
 		return nan("");
 	}
 }
 double MESA::P(std::size_t X){
 	if(X>=0 & X<len) return Pscale*pres->interp(radi[X]);
 	else {
-		printf("\nP out of range\n");	
+		ThrainLogger::error("\nP out of range\n");	
 		return nan("");
 	}
 }
@@ -199,7 +199,7 @@ double MESA::dPdr(std::size_t X){
 	if(X==0) return 0.0;
 	else if(X>0 & X<len) return Pscale/Rtot*pres->deriv(radi[X]);
 	else {
-		printf("\ndPdr out of range\n");	
+		ThrainLogger::error("\ndPdr out of range\n");	
 		return nan("");
 	}
 }
@@ -707,7 +707,7 @@ void MESA::writeStar(const char *const c){
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
 		system( ("mkdir -p " + filename).c_str() );
 		if(!(fp = fopen(txtname.c_str(), "w"))) 
-			printf("big trouble, boss\n");		
+			ThrainLogger::error("big trouble, boss\n");		
 	}
 	//print results to text file
 	// radius rho pressure gravity

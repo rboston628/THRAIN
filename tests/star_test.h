@@ -62,12 +62,12 @@ static void destroySuite(StarTest *suite) {
 }
 
 void setUp() {
-    freopen("tests/artifacts/startest_log.txt", "w", stdout);
-    printf("BEGIN STAR TESTS\n");
+    ThrainLogger::setOutputFile("tests/tests/startest_log.txt", "w");
+    ThrainLogger::info("BEGIN STAR TESTS\n");
 }
 
 void tearDown() {
-    freopen("/dev/tty", "w", stdout);
+    ThrainLogger::unsetOutputFile();
 }
 
 /***** basic tests of the SSR function *****/
