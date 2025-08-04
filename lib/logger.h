@@ -144,7 +144,7 @@ private:
   std::string currentDateTime() {
     std::time_t now = std::time(nullptr);
     std::tm tm_info;
-#if defined(_MSC_VER)
+#if defined(_WIN32)
     localtime_s(&tm_info, &now);
 #else
     localtime_r(&now, &tm_info);
