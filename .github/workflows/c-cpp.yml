@@ -36,7 +36,6 @@ jobs:
     # The type of runner that the job will run on
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
-    if: ${{ matrix.config.enabled == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,16 +80,16 @@ jobs:
           ar: "ar"
           archiver: "7z a"
           generators: "Ninja"
-        - name: "windows msvc"
-          enabled: "false"
-          os: windows-latest
-          artifact: "windows_mingw.7z"
-          build_type: "Release"
-          cc: "cl"
-          cxx: "cl"
-          ar: "lib"
-          archiver: "7z a"
-          generators: "Ninja"
+        # - name: "windows msvc"
+        #   enabled: "false"
+        #   os: windows-latest
+        #   artifact: "windows_mingw.7z"
+        #   build_type: "Release"
+        #   cc: "cl"
+        #   cxx: "cl"
+        #   ar: "lib"
+        #   archiver: "7z a"
+        #   generators: "Ninja"
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE so your job can access it
