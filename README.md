@@ -26,4 +26,23 @@ If you adapt parts of this code, do not remove the attributions in the source.
 
 If you borrow parts of this code, in addition to citing the above in publication, include attribution `borrowed from THRAIN, Reece Boston 2022` in your source code.
 
+## Development environment (Pixi)
+
+This repo includes a minimal `pixi.toml` to set up a reproducible toolchain (C++14 compiler, `gnuplot`, and the unit-test framework dependencies).
+
+From the repo root:
+
+```sh
+pixi install
+pixi run build
+pixi run thrain sampleinput6.txt
+```
+
+For development, you can run the unit tests and static analyzer with:
+
+```sh
+pixi run test
+pixi run cppcheck
+```
+
 ![image](https://github.com/rboston628/THRAIN/blob/main/documentation/thrain.png)

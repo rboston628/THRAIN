@@ -23,16 +23,13 @@ jobs:
     name: cpp-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: install cppcheck
-        run: |
-           sudo apt-get install -y cppcheck
-      - name: cppcheck lib
-        run: |
-          cppcheck lib/ --error-exitcode=1 --std=c++14
-      - name: cppcheck src
-        run: |
-          cppcheck src/ --error-exitcode=1 --std=c++14
+    - uses: actions/checkout@v6
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0
+    - name: Pixi install
+      run: pixi install
+    - name: Run cppcheck
+      run: pixi run cppcheck
 
   # build and test the code
   build-and-test:
@@ -43,133 +40,110 @@ jobs:
       fail-fast: false
       matrix:
         config: 
-        - {
-            name: "ubuntu latest",
-            os: ubuntu-latest,
-            artifact: "ubuntu_gcc.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-        - {
-            name: "ubuntu gcc9",
-            os: ubuntu-latest,
-            artifact: "ubuntu_gcc9.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-        - {
-            name: "macOS gcc",
-            os: macos-latest,
-            artifact: "macos_gcc.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7za a",
-            generators: "Ninja"
-          }
-        - {
-            name: "macOS clang",
-            os: macos-latest,
-            artifact: "macos_clang.7z",
-            build_type: "Release",
-            cc: "clang",
-            cxx: "clang++",
-            archiver: "7za a",
-            generators: "Ninja"
-          }
-        - {
-            name: "windows gcc",
-            os: windows-latest,
-            artifact: "windows_mingw.7z",
-            build_type: "Release",
-            cc: "gcc",
-            cxx: "g++",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-        - {
-          name: "windows msvc",
-          os: windows-latest,
-          artifact: "windows_mingw.7z",
-          build_type: "Release",
-          cc: "cl",
-          cxx: "cl",
-          archiver: "7z a",
+        - name: "ubuntu latest"
+          os: ubuntu-latest
+          artifact: "ubuntu_gcc.7z"
+          build_type: "Release"
+          cc: "gcc"
+          cxx: "g++"
+          ar: "ar"
+          archiver: "7z a"
           generators: "Ninja"
-        }
+        - name: "macOS gcc"
+          os: macos-13
+          artifact: "macos_gcc.7z"
+          build_type: "Release"
+          cc: "gcc"
+          cxx: "g++"
+          ar: "ar"
+          archiver: "7za a"
+          generators: "Ninja"
+        - name: "macOS clang"
+          os: macos-13
+          artifact: "macos_clang.7z"
+          build_type: "Release"
+          cc: "clang"
+          cxx: "clang++"
+          ar: "ar"
+          archiver: "7za a"
+          generators: "Ninja"
+        - name: "windows gcc"
+          os: windows-latest
+          artifact: "windows_mingw.7z"
+          build_type: "Release"
+          cc: x86_64-w64-mingw32-gcc
+          cxx: x86_64-w64-mingw32-g++
+          ar: x86_64-w64-mingw32-ar
+          archiver: "7z a"
+          generators: "Ninja"
+        - name: "windows msvc"
+          os: windows-latest
+          artifact: "windows_mingw.7z"
+          build_type: "Release"
+          cc: "cl"
+          cxx: "cl"
+          ar: x86_64-w64-mingw32-ar
+          archiver: "7z a"
+          generators: "Ninja"
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+    # Checks-out your repository under $GITHUB_WORKSPACE so your job can access it
+    - uses: actions/checkout@v6
 
-      - name: Print env
-        run: |
-          echo github.event.action: ${{ github.event.action }}
-          echo github.event_name: ${{ github.event_name }}
+    - name: Print env
+      run: |
+        echo github.event.action: ${{ github.event.action }}
+        echo github.event_name: ${{ github.event_name }}
 
-      - name: Install dependencies on ubuntu
-        if: startsWith(matrix.config.name, 'ubuntu latest')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cxxtest
-          sudo apt-get install -y gnuplot
-          gcc --version
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0
 
-      - name: Install dependencies on ubuntu w/ gcc9
-        if: startsWith(matrix.config.name, 'ubuntu gcc9')
-        run: |
-          echo Update gcc-9 =======================================================================
-          echo gcc version before
-          gcc --version
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install cxxtest gcc-9 g++-9
-          sudo apt-get install -y gnuplot
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
-          echo gcc version after
-          gcc --version
+    - name: Pixi install
+      shell: bash
+      run: pixi install
 
-      - name: Install dependencies on macos
-        if: startsWith(matrix.config.os, 'macos')
-        # the last line will replace gcc with clang inside makefile
-        run: |
-          brew install cxxtest 
-          sed 's/CC=g++/CC=${{ matrix.config.cxx }}/' makefile > changed.txt && mv changed.txt makefile
+    - name: Build
+      shell: bash
+      env:
+        CC: ${{ matrix.config.cc }}
+        CXX: ${{ matrix.config.cxx }}
+        AR: ${{ matrix.config.ar }}
+      run: pixi run build
 
-      - name: Install dependencies on windows
-        if: ${{ matrix.config.cc == 'cl' }}
-        # need to configure MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+    - name: Run THRAIN
+      shell: bash
+      run: pixi run thrain sampleinput6.txt
 
-      - name: Build library
-        shell: bash
-        run: make library
+    - name: Run tests
+      if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
+      run: pixi run test
 
-      - name: Build THRAIN
-        shell: bash
-        run: make
+  # GCC 9 compatibility lane (backwards-compatibility)
+  gcc9:
+    name: build-and-test ubuntu gcc9
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v6
 
-      - name: Run THRAIN
-        # on all systems, run sampleinput6.txt to build a white dwarf
-        shell: bash
-        run: ./thrain sampleinput6.txt
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cxxtest gnuplot gcc-9 g++-9
 
-      # there is no cxxtest support in windows or macos, so can only run tests on ubuntu
-      # running on macos was possible, but new errors finding TestListener.h (Apr 30, 2024)
-      # see CxxTest Issue #160 and #158
+    - name: Build library (GCC 9)
+      shell: bash
+      run: make library CXX=g++-9
 
-      - name: Build THRAIN tests
-        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
-        shell: bash
-        run: make tests
+    - name: Build THRAIN (GCC 9)
+      shell: bash
+      run: make thrain CXX=g++-9
 
-      - name: Run THRAIN tests
-        if: startsWith(matrix.config.os, 'ubuntu') # || startsWith(matrix.config.os, 'macos')
-        shell: bash
-        run: ./tests/tests.out
+    - name: Run THRAIN (GCC 9)
+      shell: bash
+      run: ./thrain sampleinput6.txt
+
+    - name: Run tests (GCC 9)
+      shell: bash
+      run: |
+        make -B tests CXX=g++-9
+        ./tests/tests.out

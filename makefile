@@ -7,8 +7,16 @@ ODIR=obj
 .SUFFIXES:
 .SUFFIXES: .cpp .o
 
-CC=g++ --std=c++14
+CXX ?= c++
+CXXSTD ?= -std=c++14
+CC=$(CXX) $(CXXSTD)
 CFLAGS=-I$(IDIR) -Wuninitialized -Weffc++ --pedantic-errors
+
+# If we're in a conda-like environment (pixi/conda/mamba), allow it to provide
+# headers (e.g., cxxtest) without hard-coding paths.
+ifneq ($(CONDA_PREFIX),)
+	CFLAGS += -I$(CONDA_PREFIX)/include
+endif
 
 ## files needed to compile stellar models
 #  dependencies

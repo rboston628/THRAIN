@@ -7,6 +7,8 @@
 !README.md
 !LICENSE
 !makefile
+!pixi.toml
+!pixi.lock
 !.github/
 !.github/workflows/
 !.github/workflows/c-cpp.yml

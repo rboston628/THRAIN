@@ -1,0 +1,63 @@
+[project]
+name = "thrain"
+version = "0.0.0"
+description = "THRAIN: a parametric white dwarf asteroseismology code"
+channels = ["conda-forge"]
+platforms = ["osx-64", "linux-64", "win-64"]
+
+[dependencies]
+
+[target.osx-64.dependencies]
+# Toolchain / build
+cxx-compiler = "*"
+make = "*"
+
+# Linting
+python = "3.9.*"
+cppcheck = "==2.6.1"
+
+# Runtime tools
+gnuplot = "*"
+
+# Test frameworks
+cxxtest = "*"
+doctest = "*"
+
+[target.linux-64.dependencies]
+# Toolchain / build
+cxx-compiler = "*"
+make = "*"
+
+# Linting
+python = "3.9.*"
+cppcheck = "==2.6.1"
+
+# Runtime tools
+gnuplot = "*"
+
+# Test frameworks
+cxxtest = "*"
+doctest = "*"
+
+[target.win-64.dependencies]
+# Build toolchain (MinGW) + Unix tools needed by the makefiles (rm/mkdir)
+m2w64-toolchain = "*"
+m2-make = "*"
+m2-coreutils = "*"
+
+[target.win-64.tasks]
+thrain = "thrain.exe"
+
+[tasks]
+# Builds the static library and main executable
+build = "make library && make thrain"
+
+# Run the main program (use: `pixi run thrain <inputfile>`)
+thrain = "./thrain"
+
+cppcheck = "make cppcheck"
+
+# Builds and runs the CxxTest test runner
+test = "make library && make -B tests && ./tests/tests.out"
+
+clean = "make clean"
