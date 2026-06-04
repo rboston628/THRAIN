@@ -50,7 +50,7 @@ jobs:
           archiver: "7z a"
           generators: "Ninja"
         - name: "macOS gcc"
-          os: macos-13
+          os: macos-latest
           artifact: "macos_gcc.7z"
           build_type: "Release"
           cc: "gcc"
@@ -59,7 +59,7 @@ jobs:
           archiver: "7za a"
           generators: "Ninja"
         - name: "macOS clang"
-          os: macos-13
+          os: macos-latest
           artifact: "macos_clang.7z"
           build_type: "Release"
           cc: "clang"
