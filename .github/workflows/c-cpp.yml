@@ -71,9 +71,9 @@ jobs:
           os: windows-latest
           artifact: "windows_mingw.7z"
           build_type: "Release"
-          cc: x86_64-w64-mingw32-gcc
-          cxx: x86_64-w64-mingw32-g++
-          ar: x86_64-w64-mingw32-ar
+          cc: "x86_64-w64-mingw32-gcc"
+          cxx: "x86_64-w64-mingw32-g++"
+          ar: "ar"
           archiver: "7z a"
           generators: "Ninja"
         - name: "windows msvc"
@@ -82,7 +82,7 @@ jobs:
           build_type: "Release"
           cc: "cl"
           cxx: "cl"
-          ar: x86_64-w64-mingw32-ar
+          ar: "lib"
           archiver: "7z a"
           generators: "Ninja"
 
@@ -102,6 +102,11 @@ jobs:
       shell: bash
       run: pixi install
 
+    - name: Ensure /tmp exists (Windows bash)
+      if: startsWith(matrix.config.os, 'windows')
+      shell: bash
+      run: mkdir -p /tmp
+
     - name: Build
       shell: bash
       env:
@@ -120,7 +125,7 @@ jobs:
 
   # GCC 9 compatibility lane (backwards-compatibility)
   gcc9:
-    name: build-and-test ubuntu gcc9
+    name: ubuntu gcc9
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v6

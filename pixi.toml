@@ -42,6 +42,7 @@ doctest = "*"
 [target.win-64.dependencies]
 # Build toolchain (MinGW) + Unix tools needed by the makefiles (rm/mkdir)
 m2w64-toolchain = "*"
+m2w64-binutils = "*"
 m2-make = "*"
 m2-coreutils = "*"
 
