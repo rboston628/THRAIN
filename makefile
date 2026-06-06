@@ -151,10 +151,10 @@ cppcheck:
 		--library=std.cfg \
 		--suppress=missingIncludeSystem \
 		--suppress=virtualCallInConstructor \
+		--error-exitcode=1  \
 		-I$(IDIR) -I$(SDIR) -I$(LDIR) \
 		src/ lib/ \
-		2> cppcheck/cppcheck_report.xml \
-		1> cppcheck/cppcheck_run.log
+		2> cppcheck/cppcheck_report.xml
 
 .PHONY: clean pull library cppcheck
 
