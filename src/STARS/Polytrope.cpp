@@ -311,6 +311,8 @@ void Polytrope::setupCenter(){
 }
 
 void Polytrope::getAstarCenter(double *AC, int& maxPow, double g){
+	double notused = 0.0;
+	notused = notused;
 	double Gam1 = (g==0.0 ? Gamma1(0) : g);
 	// for polytrope, A* = (const) * Vg
 	double AV = (n*Gam1)/(n+1.) - 1.;
