@@ -48,7 +48,7 @@ binutils = "*"
 m2-coreutils = "*"
 
 [target.win-64.tasks]
-thrain = "thrain.exe"
+thrain = "./thrain.exe"
 
 [tasks]
 # Builds the static library and main executable
