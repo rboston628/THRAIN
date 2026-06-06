@@ -13,7 +13,7 @@
 
 //constructor
 NonradialModeDriver::NonradialModeDriver(Star *star, double Gamma1)
-	 : ModeDriver(num_var, star), adiabatic_index(Gamma1)
+	 : ModeDriver(star), adiabatic_index(Gamma1)
 {	
 	len_star = star->length();
 	len = (len_star%2==1? (len_star+1)/2 : len_star/2+1);

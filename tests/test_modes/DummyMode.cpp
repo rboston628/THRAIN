@@ -64,7 +64,7 @@ std::vector<int> ControlledMode::klist({});
 //							DummyModeDriver Class
 //  	A mostly empty mode driver, only because dummy modes needs them
 //**************************************************************************************
-DummyModeDriver::DummyModeDriver(Star* s, double x) : ModeDriver(num_var, s) {}
+DummyModeDriver::DummyModeDriver(Star* s, double x) : ModeDriver(s) {}
 std::size_t DummyModeDriver::length() { return 0; }
 double DummyModeDriver::Gamma1() { return 0; }
 double DummyModeDriver::rad(std::size_t x) { return 0; }

@@ -46,10 +46,11 @@ public:
 //**************************************************************************************
 class ModeDriver {
 public:
-	const std::size_t num_var;
 	//constructor
-	ModeDriver(int nv, Star *s) : num_var(nv), star(s)  {};
+	ModeDriver(Star *s) : star(s), central_bc_order(0), surface_bc_order(0) {};
 	virtual ~ModeDriver(){};
+	ModeDriver(ModeDriver const&) = delete;
+	ModeDriver& operator=(ModeDriver const&) = delete;
 	virtual std::size_t length() =0;
 	virtual double Gamma1() =0;
 	virtual double rad(std::size_t) =0;

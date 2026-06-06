@@ -26,7 +26,7 @@ public:
 
 	static int read_star_input(FILE* input_file, Calculation::InputData&);
 
-	std::string graph_title() override {
+	std::string graph_title() override final {
 		return strmakef("Chandrasekhar WD with y_0=%1.2f", Y0);
 	}
 	
@@ -37,25 +37,29 @@ public:
 	ChandrasekharWD(double, std::size_t, double const A0, double const B0);
 
 	virtual ~ChandrasekharWD();   //destructor
-	std::size_t length() override {return len;}
+	std::size_t length() override final {return len;}
 	//these three functions specify units
-	double Radius() override;	//total radius
-	double Mass() override;//total mass
-	double Gee() override; //{return G_CGS;};
+	double Radius() override final;	//total radius
+	double Mass() override final;//total mass
+	double Gee() override final; //{return G_CGS;};
 	
-	double rad(std::size_t) override;
-	double rho(std::size_t) override, drhodr(std::size_t) override;
-	double   P(std::size_t) override,   dPdr(std::size_t) override;
-	double Phi(std::size_t) override, dPhidr(std::size_t) override;
-	double mr(std::size_t) override;
+	double rad(std::size_t) override final;
+	double rho(std::size_t) override final;
+	double   P(std::size_t) override final;
+	double Phi(std::size_t) override final;
+	double  mr(std::size_t) override final;
+	// derivs
+	double drhodr(std::size_t) override final;
+	double   dPdr(std::size_t) override final;
+	double dPhidr(std::size_t) override final;
 	
-	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
-	double getAstar(std::size_t, double GamPert=0.0) override;
-	double getVg(std::size_t, double GamPert=0.0) override;
-	double getU(std::size_t) override;
-	double getC(std::size_t) override;
-	double Gamma1(std::size_t) override;
-	double sound_speed2(std::size_t, double GamPert=0.0) override;
+	double Schwarzschild_A(std::size_t, double GamPert=0.0) override final;
+	double getAstar(std::size_t, double GamPert=0.0) override final;
+	double getVg(std::size_t, double GamPert=0.0) override final;
+	double getU(std::size_t) override final;
+	double getC(std::size_t) override final;
+	double Gamma1(std::size_t) override final;
+	double sound_speed2(std::size_t, double GamPert=0.0) override final;
 	double Ledoux(std::size_t, double GamPert=0.0);
 	
 private:
@@ -97,17 +101,17 @@ private:
 	void setupSurface();	//prepare values near surface
 public:
 	//methods to find central, surface power series expansions of key variables in pulsation
-	void getAstarCenter(double *, int&, double g=0) override;
-	void getUCenter(double*, int&) override;
-	void getVgCenter(double*, int&, double g=0) override;
-	void getC1Center(double*, int&) override;
-	void getAstarSurface(double *, int&, double g=0) override;
-	void getUSurface(double*, int&) override;
-	void getVgSurface(double*, int&, double g=0) override;
-	void getC1Surface(double*, int&) override;
+	void getAstarCenter(double *, int&, double g=0) override final;
+	void getUCenter(double*, int&) override final;
+	void getVgCenter(double*, int&, double g=0) override final;
+	void getC1Center(double*, int&) override final;
+	void getAstarSurface(double *, int&, double g=0) override final;
+	void getUSurface(double*, int&) override final;
+	void getVgSurface(double*, int&, double g=0) override final;
+	void getC1Surface(double*, int&) override final;
 
 	//a particular output generation for this model of white dwarf
-	void writeStar(char const *const c=NULL) override;
+	void writeStar(char const *const c=NULL) override final;
 	void printDeg(char const *const c);
 	void printChem(char const *const c);
 };

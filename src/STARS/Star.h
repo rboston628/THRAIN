@@ -50,7 +50,10 @@ public:
 	virtual double sound_speed2(std::size_t, double g=0.0) =0;
 	
 	//destructor
-	virtual ~Star(){};
+	Star() = default;
+	virtual ~Star() = default;
+	Star(Star const&) = delete;
+	Star& operator=(Star const&) = delete;
 	//return length of star
 	virtual std::size_t length() =0;
 	//dimensionfull quantities of interest

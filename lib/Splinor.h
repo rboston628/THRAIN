@@ -9,9 +9,9 @@
 
 class Interpolator {
 	public:
-	virtual double interp(double const) = 0;
-	virtual double operator()(double const) = 0;
-	virtual double deriv(double const) = 0;
+	virtual double interp(double const) const = 0;
+	virtual double operator()(double const) const = 0;
+	virtual double deriv(double const) const = 0;
 	virtual ~Interpolator(){};
 };
 
@@ -22,23 +22,26 @@ class Splinor : public Interpolator {
 	Splinor(
 		double const *const x, 
 		double const *const y, 
-		int const L,
+		std::size_t const L,
 		bc const bc_type = bc::NATURAL,
 		double const yprime0 = 0.0, // derivative at xa -- default natural spline
 		double const yprimeN = 0.0  // derivative at xb -- default natural spline
 	);
 	~Splinor();
-	double interp(double const) override;
-	double operator()(double const) override;
-	double deriv(double const) override;
-	std::tuple<double,double,double,double> getCoefficients(std::size_t const);
+	Splinor(Splinor const&) = delete;
+	Splinor& operator=(Splinor const&) = delete;
+	double interp(double const) const override;
+	double operator()(double const) const override;
+	double deriv(double const) const override;
+	std::tuple<double,double,double,double> getCoefficients(std::size_t const) const;
 	
 	private:
-	std::size_t len, xlast;
+	std::size_t len;
+	std::size_t mutable ilast;
 	bc const bc_type;
 	double xa, xb; //boundaries
 	double yprimea, yprimeb; // derivatives at boundaries
-	std::size_t findPosition(double const);
+	std::size_t findPosition(double const) const;
 	void calculateSplineCoefficients(double const *const, double const *const, bc const);
 	void makeNaturalSpline(double const *const, double const *const);
 	void makeClampedSpline(double const *const, double const *const);

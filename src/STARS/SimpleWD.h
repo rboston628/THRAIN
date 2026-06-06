@@ -39,10 +39,14 @@ public:
 	double Gee() override;
 	
 	double rad(std::size_t) override;
-	double rho(std::size_t) override, drhodr(std::size_t) override;
-	double   P(std::size_t) override,   dPdr(std::size_t) override;
-	double Phi(std::size_t) override, dPhidr(std::size_t) override;
+	double rho(std::size_t) override;
+	double   P(std::size_t) override;
+	double Phi(std::size_t) override;
 	double  mr(std::size_t) override;
+	// derivs
+	double drhodr(std::size_t) override;
+	double   dPdr(std::size_t) override;
+	double dPhidr(std::size_t) override;
 	
 	double Schwarzschild_A(std::size_t, double GamPert=0.0) override;
 	double getAstar(std::size_t, double GamPert=0.0) override;

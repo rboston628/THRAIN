@@ -4,6 +4,8 @@
 #include "stellar.h"
 #include "rootfind.h"
 
+double Abundance::nothing{0.0};
+
 double chemical::partial_mean_A(elem i, Abundance const& X){
 	return -pow(X.mean_A(),2)*
 			(1./chemical::A[i] - 1./chemical::A[X.e]);

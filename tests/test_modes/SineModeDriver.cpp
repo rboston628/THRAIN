@@ -17,7 +17,7 @@
 #include "SineModeDriver.h"
 
 //constructor
-SineModeDriver::SineModeDriver(Star *st) : ModeDriver(num_var, st)
+SineModeDriver::SineModeDriver(Star *st) : ModeDriver(st)
 {	
 	// set lengths
 	len_star = star->length();

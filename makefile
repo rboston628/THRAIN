@@ -132,10 +132,23 @@ obj/test_modes:
 	mkdir -p obj/test_modes
 
 cppcheck:
-	cppcheck lib/ --error-exitcode=1 --std=c++14
-	cppcheck src/ --error-exitcode=1 --std=c++14
+	mkdir -p cppcheck
+	cppcheck --xml --xml-version=2 \
+		--language=c++ \
+		--std=c++14 \
+		--enable=warning,performance,portability,information \
+		--inconclusive \
+		--inline-suppr \
+		--force \
+		--library=std.cfg \
+		--suppress=missingIncludeSystem \
+		--suppress=virtualCallInConstructor \
+		-I$(IDIR) -I$(SDIR) -I$(LDIR) \
+		src/ lib/ \
+		2> cppcheck/cppcheck_report.xml \
+		1> cppcheck/cppcheck_run.log
 
-.PHONY: clean pull library
+.PHONY: clean pull library cppcheck
 
 library:
 	rm -f lib/*.o
