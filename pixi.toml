@@ -40,10 +40,11 @@ cxxtest = "*"
 doctest = "*"
 
 [target.win-64.dependencies]
-# Build toolchain (MinGW) + Unix tools needed by the makefiles (rm/mkdir)
-m2w64-toolchain = "*"
-m2w64-binutils = "*"
-m2-make = "*"
+# Modern win-64 GCC toolchain + Unix tools needed by the makefiles (rm/mkdir)
+gcc = "15.*"
+gxx = "15.*"
+make = "*"
+binutils = "*"
 m2-coreutils = "*"
 
 [target.win-64.tasks]
