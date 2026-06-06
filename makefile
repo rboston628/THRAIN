@@ -7,8 +7,16 @@ ODIR=obj
 .SUFFIXES:
 .SUFFIXES: .cpp .o
 
-CC=g++ --std=c++14
+CXX ?= c++
+CXXSTD ?= -std=c++14
+CC=$(CXX) $(CXXSTD)
 CFLAGS=-I$(IDIR) -Wuninitialized -Weffc++ --pedantic-errors
+
+# If we're in a conda-like environment (pixi/conda/mamba), allow it to provide
+# headers (e.g., cxxtest) without hard-coding paths.
+ifneq ($(CONDA_PREFIX),)
+	CFLAGS += -I$(CONDA_PREFIX)/include
+endif
 
 ## files needed to compile stellar models
 #  dependencies
@@ -143,10 +151,10 @@ cppcheck:
 		--library=std.cfg \
 		--suppress=missingIncludeSystem \
 		--suppress=virtualCallInConstructor \
+		--error-exitcode=1  \
 		-I$(IDIR) -I$(SDIR) -I$(LDIR) \
 		src/ lib/ \
-		2> cppcheck/cppcheck_report.xml \
-		1> cppcheck/cppcheck_run.log
+		2> cppcheck/cppcheck_report.xml
 
 .PHONY: clean pull library cppcheck
 

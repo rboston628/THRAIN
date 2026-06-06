@@ -4,7 +4,10 @@
 .SUFFIXES:
 .SUFFIXES: .cpp .o
 
-CC=g++ --std=c++14
+CXX ?= c++
+CXXSTD ?= -std=c++14
+CC=$(CXX) $(CXXSTD)
+AR ?= ar
 
 ## files needed to compile stellar models
 #  dependencies
@@ -17,7 +20,7 @@ LIBOBJ = $(patsubst %.cpp, %.o, $(LIBSRC))
 
 # link all objects of library together
 library: $(LIBOBJ)
-	ar rcs mylib.a $(LIBOBJ)
+	$(AR) rcs mylib.a $(LIBOBJ)
 
 # for each library object needed above, compile from the source
 $(LIBOBJ): %.o: %.cpp
