@@ -115,7 +115,7 @@ jobs:
     - name: Install cl (Windows MSVC)
       if: ${{ matrix.config.cxx == 'cl' }}
       shell: bash
-      run: pixi add vs2022_win-64
+      run: pixi add vs2019_win-64
 
     - name: Build
       shell: bash
