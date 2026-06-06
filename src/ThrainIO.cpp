@@ -74,7 +74,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 	//MESA INPUT
 	else if(calcdata.model==model::MESA){
 		calcdata.input_params.reserve(1);
-		fscanf(input_file, "%s ", input_buffer);    //read in the filename
+		fscanf(input_file, "%127s ", input_buffer);    //read in the filename
 		calcdata.str_input_param=std::string(input_buffer);
 		ThrainLogger::info("source=%s.dat\n", calcdata.str_input_param.c_str());
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
@@ -86,18 +86,18 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		calcdata.input_params.resize(10);
 		fscanf(input_file, "%lf\n", &calcdata.input_params[0]);	//read in the grid size
 		calcdata.Ngrid = int(calcdata.input_params[0]);
-		ThrainLogger::info("Ngrid=%lu\n", calcdata.Ngrid);
+		ThrainLogger::info("Ngrid=%zu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
 		FILE *swd = fopen("swd.txt", "w");
 		fscanf(input_file, "EOS:\n");
 		fprintf(swd, "# equation of state\n");
 		//read the EOS specification
-		fscanf(input_file, "\tcore\t%[^\n]\n", input_buffer);
+		fscanf(input_file, "\tcore\t%127[^\n]\n", input_buffer);
 		fprintf(swd, "core:\n\t%s\n", input_buffer);
 		calcdata.str_input_param = std::string(input_buffer);
 		calcdata.str_input_param += std::string("\n");
-		fscanf(input_file, "\tatm\t%[^\n]\n", input_buffer);
+		fscanf(input_file, "\tatm\t%127[^\n]\n", input_buffer);
 		fprintf(swd, "atm:\n\t%s\n\n", input_buffer);
 		calcdata.str_input_param += std::string(input_buffer);
 		ThrainLogger::info("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
@@ -119,7 +119,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 		//MUST be specified as mass, then effective temperature
 		double temp;
 		//read in first physical parameter -- name as string, value as double
-		fscanf(input_file, "Params: %s %lf ", input_buffer, &temp);
+		fscanf(input_file, "Params: %127s %lf ", input_buffer, &temp);
 		instring=std::string(input_buffer);
 		//save value in appropriate slot use bit-masking to keep track of variables
 		if(!instring.compare("mass")){ calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
@@ -129,7 +129,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 			return 1;
 		}
 		//read in second physical parameters -- name as string, value as double
-		fscanf(input_file, "%s %lf\n", input_buffer, &temp);
+		fscanf(input_file, "%127s %lf\n", input_buffer, &temp);
 		instring=std::string(input_buffer);
 		//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
 		if(!instring.compare("teff")){ calcdata.teff = temp; calcdata.params|=units::ParamType::pteff;}
@@ -164,7 +164,7 @@ int read_input(const char input_file_name[128], Calculation::InputData &calcdata
 
 int read_calcname(FILE* input_file, Calculation::InputData& calcdata){
 	char calculation_name[128];	//a label for this calculation
-	int filled = fscanf(input_file, "Name: %s\n", calculation_name);
+	int filled = fscanf(input_file, "Name: %127s\n", calculation_name);
 	calcdata.calcname = std::string(calculation_name);
 	ThrainLogger::info("calculation name: %s\n", calcdata.calcname.c_str());
 	if(!filled || filled==EOF) {
@@ -178,7 +178,7 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 	char input_buffer[128];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 	
-	int filled = fscanf(input_file, "Model: %s\t", input_buffer);
+	int filled = fscanf(input_file, "Model: %127s\t", input_buffer);
 	instring = std::string(input_buffer);
 	if(!instring.compare("newtonian")) calcdata.regime = regime::PN0;
 	else{
@@ -187,7 +187,7 @@ int read_model(FILE* input_file, Calculation::InputData& calcdata){
 		calcdata.regime = regime::PN0;
 	}
 	//read the background stellar model to be used in calculation
-	fscanf(input_file, "%s\t", input_buffer);
+	fscanf(input_file, "%127s\t", input_buffer);
 	ThrainLogger::debug("MAKING A ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("polytrope")) calcdata.model = model::polytrope;
@@ -208,7 +208,7 @@ int read_units(FILE* input_file, Calculation::InputData& calcdata){
 	char input_buffer[256];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 
-	fscanf(input_file, "Units: %s\n", input_buffer);
+	fscanf(input_file, "Units: %255s\n", input_buffer);
 	ThrainLogger::debug("USING UNITS: ");
 	instring = std::string(input_buffer);
 	if(!instring.compare("astro"))    calcdata.units = units::Units::astro;
@@ -230,7 +230,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 	char input_buffer[128];		//for read-in from file and text processing
 	std::string instring;		//for more read-in from file
 	
-	fscanf(input_file, "Frequencies: %s", input_buffer);
+	fscanf(input_file, "Frequencies: %127s", input_buffer);
 	instring = std::string(input_buffer);
 	if(!instring.compare("radial"))           calcdata.modetype = modetype::radial;
 	else if(!instring.compare("nonradial"))   calcdata.modetype = modetype::nonradial;
@@ -241,7 +241,7 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 		calcdata.modetype = modetype::nonradial;
 	}
 	//read in the adiabatic index for the mode calculation
-	int fill = fscanf(input_file, "%s\n", input_buffer);
+	int fill = fscanf(input_file, "%127s\n", input_buffer);
 	if(fill != 1) {
 		calcdata.adiabatic_index = nan("no value");
 		return 1;
@@ -255,10 +255,10 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 	int startoflist = ftell(input_file);	//save location at start of list
 	calcdata.mode_num = 0;					//count the number of modes to include
 	while(!feof(input_file)){
-		fscanf(input_file, "%s\n", input_buffer);
+		fscanf(input_file, "%127s\n", input_buffer);
 		calcdata.mode_num++;
 	}
-	ThrainLogger::error("Number of frequencies: %lu\n", calcdata.mode_num);
+	ThrainLogger::error("Number of frequencies: %zu\n", calcdata.mode_num);
 	fseek(input_file, startoflist, SEEK_SET); //return to start of list
 	//now read in the L,K as specified 
 	for(int j=0; j<calcdata.mode_num; j++){
@@ -321,7 +321,7 @@ int echo_input(Calculation::InputData &calcdata){
 		case model::SWD:
 			fprintf(output_file, "SWD ");
 	}
-	fprintf(output_file, "%lu\n", calcdata.Ngrid);
+	fprintf(output_file, "%zu\n", calcdata.Ngrid);
 	
 	switch(calcdata.model){
 		case model::polytrope:
@@ -334,7 +334,7 @@ int echo_input(Calculation::InputData &calcdata){
 		case model::SWD:
 			fprintf(output_file, "EOS:\n");
 			char line1[258], line2[258];
-			sscanf(calcdata.str_input_param.c_str(), "%[^\n]\n%[^\n]", line1, line2); 
+			sscanf(calcdata.str_input_param.c_str(), "%257[^\n]\n%257[^\n]", line1, line2); 
 			//fprintf(output_file, "%s\n", calcdata.str_input_param.c_str());
 			fprintf(output_file, "\tcore\t%s\n\tatm\t%s\n", line1, line2);
 			fprintf(output_file, "chemical parameters:\n");
@@ -619,7 +619,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 			break;
 	}
 	fprintf(output_file, "%s  \n", dwarf[d++]);
-	fprintf(output_file, "%s  Number of grid points : %lu\n", dwarf[d++], calcdata.Ngrid);
+	fprintf(output_file, "%s  Number of grid points : %zu\n", dwarf[d++], calcdata.Ngrid);
 	fprintf(output_file, "%s  Fractional RMS error  : %1.3le\n", dwarf[d++], calcdata.star_SSR);
 	//bottom bar
 	fprintf(output_file, "#");

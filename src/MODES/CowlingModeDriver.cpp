@@ -13,7 +13,7 @@
 
 //constructor
 CowlingModeDriver::CowlingModeDriver(Star *star, double Gamma1)
-	 : ModeDriver(num_var, star), adiabatic_index(Gamma1)
+	 : ModeDriver(star), adiabatic_index(Gamma1)
 {	
 	len_star = star->length();
 	len = (len_star%2==1? (len_star+1)/2 : len_star/2+1);
@@ -136,8 +136,6 @@ void CowlingModeDriver::setupBoundaries() {
 }
 
 std::size_t CowlingModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){
-	//int central_bc_order = 4;
-		
 	double yy[num_var][BC_C/2+1];//0,2,4
 	//the zero-order terms are simple
 	yy[y1][0] = y0[y1];

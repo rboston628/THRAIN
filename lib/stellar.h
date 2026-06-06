@@ -94,7 +94,7 @@ struct Abundance {
 		O16/= tot;
 	}
 	private:
-		double nothing;
+		static double nothing;
 };
 
 enum VarName {dens=0, radi, pres, mass, temp, lumi, num_var};
@@ -112,10 +112,10 @@ public:
 	StellarVar(const double x[num_var]){
 		for(int j=0; j<num_var; j++) var[j] = x[j];
 	};
-	StellarVar(const double& x1, const double& x2, const double& x3, const double& x4, const double& x5, const double& x6){
+	StellarVar(double x1, double x2, double x3, double x4, double x5, double x6){
 		var[dens]=x1; var[radi]=x2; var[pres]=x3; var[mass]=x4; var[temp]=x5; var[lumi]=x6;
 	};
-	StellarVar(const double& x2, const double& x3, const double& x4, const double& x5, const double& x6){
+	StellarVar(double x2, double x3, double x4, double x5, double x6){
 		var[dens]=0.; var[radi]=x2; var[pres]=x3; var[mass]=x4; var[temp]=x5; var[lumi]=x6;
 	}
 	StellarVar() {
@@ -155,11 +155,13 @@ public:
 	}
 		
 	//assignment
-	void operator=(const double x[num_var]){
+	StellarVar& operator=(double const x[num_var]){
 		for(int j=0; j<num_var; j++) var[j] = x[j];
+		return *this;
 	}
-	void operator=(const StellarVar& x){
+	StellarVar& operator=(StellarVar const& x){
 		for(int j=0; j<num_var; j++) var[j] = x[j];
+		return *this;
 	}
 };
 
@@ -184,7 +186,7 @@ struct PartialPressure {
 class EOS {
 public:
 	EOS() = default;
-	EOS(const std::vector<PartialPressure> p) : pressure(p) {};
+	EOS(std::vector<PartialPressure> const& p) : pressure(p) {};
 	double invert(double rho_last, double P, double T, Abundance const& chem);
 	double invertNewton(double rho_last, double P, double T, Abundance const& chem);
 	double operator()(double rho, double T, Abundance const& chem){

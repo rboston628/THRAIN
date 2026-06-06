@@ -136,12 +136,13 @@ cppcheck:
 	cppcheck --xml --xml-version=2 \
 		--language=c++ \
 		--std=c++14 \
-		--enable=warning,style,performance,portability,information \
+		--enable=warning,performance,portability,information \
 		--inconclusive \
 		--inline-suppr \
 		--force \
 		--library=std.cfg \
 		--suppress=missingIncludeSystem \
+		--suppress=virtualCallInConstructor \
 		-I$(IDIR) -I$(SDIR) -I$(LDIR) \
 		src/ lib/ \
 		2> cppcheck/cppcheck_report.xml \

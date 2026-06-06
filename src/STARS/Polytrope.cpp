@@ -57,7 +57,7 @@ void Polytrope::init_arrays(){
 
 //initalize polytrope from index and length, fit to mass M, radius R
 Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
-	: n(n), len(L), Gamma(1.0+1.0/n), GG(G_CGS)
+	: Star(), n(n), len(L), Gamma(1.0+1.0/n), GG(G_CGS)
 {
 	basic_setup();
 
@@ -100,7 +100,7 @@ Polytrope::Polytrope(double BigM, double BigR, double n, std::size_t L)
 }
 
 Polytrope::Polytrope(double n, std::size_t L)
-	: n(n), len(L), Gamma(1.0+1.0/n)
+	: Star(), n(n), len(L), Gamma(1.0+1.0/n), GG(1.0)
 {
 	basic_setup();
 	
@@ -126,7 +126,6 @@ Polytrope::Polytrope(double n, std::size_t L)
 	// set initial density, pressure
 	// specifying K, rho0 not necessary, just rescales the solutions
 	// the physical units can be included through homology
-	GG = 1.0;
 	rho0 = 1.0;
 	P0 = 1.0;
 	Rn = sqrt( (n+1.)/(4.*m_pi) );
@@ -147,7 +146,7 @@ Polytrope::Polytrope(double n, std::size_t L)
 //initalize polytrope from index, length, and dx
 //this method is intended only for use in testing scaling relations
 Polytrope::Polytrope(double n, std::size_t L, const double dx)
-	: n(n), len(L), Gamma(1.0+1.0/n)
+	: Star(), n(n), len(L), Gamma(1.0+1.0/n), GG(1.0)
 {
 	//if n=5 is sought for testing, 
 	basic_setup();
@@ -163,7 +162,7 @@ Polytrope::Polytrope(double n, std::size_t L, const double dx)
 	
 	init_arrays();
 	indexFit = 256*round(double(len)/1024.0);
-	ThrainLogger::debug("  indexFit  = %lu\n", indexFit);
+	ThrainLogger::debug("  indexFit  = %zu\n", indexFit);
 	ThrainLogger::debug("r[indexFit] = %0.32le\t", rad(indexFit));
 	ThrainLogger::debug("y[indexFit] = %0.32le\n", Y[indexFit][y]);
 	setupCenter();
@@ -490,7 +489,7 @@ int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdat
 	//for a polytrope, can specify two of mass, radius, logg, or surface z
 	double temp;
 	//read in first physical parameter -- name as string, value as double
-	fscanf(input_file, "Params: %s %lf\t", input_buffer, &temp);
+	fscanf(input_file, "Params: %511s %lf\t", input_buffer, &temp);
 	instring=std::string(input_buffer);
 	//save value in appropriate slot use bit-masking to keep track of variables
 	if(     instring == "mass")   {calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}
@@ -499,7 +498,7 @@ int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdat
 	else if(instring == "logg")   {calcdata.logg  =temp; calcdata.params|=units::ParamType::plogg;}
 	char tempparam = calcdata.params;	//value after first read-in, for comparison later
 	//read in second physical parameters -- name as string, value as double
-	fscanf(input_file, "%s %lf\n", input_buffer, &temp);
+	fscanf(input_file, "%511s %lf\n", input_buffer, &temp);
 	instring=std::string(input_buffer);
 	//save valeu in appropriate slot, again use bit-masking so that binary value of params indicates which were used
 	if(     instring == "mass")   {calcdata.mass = temp; calcdata.params|=units::ParamType::pmass;}

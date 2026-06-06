@@ -58,7 +58,7 @@ void Star::printStar(const char *const outputdir){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Profile for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -264,7 +264,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	//fprintf(gnuplot, "set xlabel 'log_{10} r/R'\n");

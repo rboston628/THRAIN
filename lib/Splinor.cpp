@@ -9,12 +9,12 @@
 Splinor::Splinor(
 	double const *const x, 
 	double const *const y, 
-	int const L,
+	std::size_t const L,
 	bc bc_type, // default natural
 	double const yprime0, // default zero
 	double const yprimeN  // default zero
 ) :
-	len(L), xlast(0), xa(x[0]), xb(x[L-1]), bc_type(bc_type), yprimea(yprime0), yprimeb(yprimeN)
+	len(L), ilast(0), bc_type(bc_type), xa(x[0]), xb(x[L-1]), yprimea(yprime0), yprimeb(yprimeN)
 {	
 	//the coefficient and interpolation methods assume that x is strictly increasing
 	//if x is decreasing, then read it in backwards.
@@ -37,7 +37,7 @@ Splinor::Splinor(
 	}
 	// solve for the coefficients
 	S = new double[len];
-	calculateSplineCoefficients(x, y, bc_type);
+	calculateSplineCoefficients(xarr, yarr, bc_type);
 }
 
 Splinor::~Splinor(){
@@ -46,14 +46,14 @@ Splinor::~Splinor(){
 	delete[] yarr;
 }
 
-std::size_t Splinor::findPosition(double const xpos){
-	std::size_t xind = xlast;	//begin at position we last checked
+std::size_t Splinor::findPosition(double const xpos) const {
+	std::size_t xind = ilast;	//begin at position we last checked
 	// two happy paths -- position is at beginning or end
 	if      (xpos >= xb) xind = len-2;	//if at the end, give the end
 	else if (xpos <= xa) xind = 0;		//if at beginning, give beginning
 	// two happy paths -- index is the last one, or one past the last one
-	else if (xarr[xlast  ] <= xpos && xpos < xarr[xlast+1]) xind = xlast;
-	else if (xarr[xlast+1] <= xpos && xpos < xarr[xlast+2]) xind = xlast+1; 
+	else if (xarr[ilast  ] <= xpos && xpos < xarr[ilast+1]) xind = ilast;
+	else if (xarr[ilast+1] <= xpos && xpos < xarr[ilast+2]) xind = ilast+1; 
 	// otherwise perform a search for it
 	else {
 		std::size_t imin = 0, imax = len-2;
@@ -73,11 +73,11 @@ std::size_t Splinor::findPosition(double const xpos){
 		assert(xarr[xind] <= xpos);
 		assert(xpos < xarr[xind+1]);
 	}
-	xlast = xind; //remember position for next time we look - normally fit in order
+	ilast = xind; //remember position for next time we look - normally fit in order
 	return xind;
 }
 
-std::tuple<double,double,double,double> Splinor::getCoefficients(std::size_t const xind){
+std::tuple<double,double,double,double> Splinor::getCoefficients(std::size_t const xind) const {
 	double a, b, c, d, h1;
 	h1 = xarr[xind+1]-xarr[xind  ];
 	a = (S[xind+1]-S[xind])/(6.*h1);
@@ -87,11 +87,11 @@ std::tuple<double,double,double,double> Splinor::getCoefficients(std::size_t con
 	return std::make_tuple(a, b, c, d);
 }
 
-double Splinor::operator()(double const xpos){
+double Splinor::operator()(double const xpos) const {
 	return interp(xpos);
 }
 
-double Splinor::interp(double const xpos){
+double Splinor::interp(double const xpos) const {
 	std::size_t xind = findPosition(xpos);
 	double a, b, c, d;
 	std::tie(a, b, c, d) = getCoefficients(xind);
@@ -99,7 +99,7 @@ double Splinor::interp(double const xpos){
 	return t * ( t * (a * t + b) + c ) + d;
 }
 
-double Splinor::deriv(double const xpos){
+double Splinor::deriv(double const xpos) const{
 	std::size_t xind = findPosition(xpos);
 	double a, b, c, d;
 	std::tie(a, b, c, d) = getCoefficients(xind);
@@ -110,7 +110,7 @@ double Splinor::deriv(double const xpos){
 void Splinor::makeNaturalSpline(
 	double const *const x,
 	double const *const y
-){
+) {
 	// natural splines form an (N-2)X(N-2) system
 	// with y'' = 0 at both ends
 	S[0] = S[len-1] = 0.0;

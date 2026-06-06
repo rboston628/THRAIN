@@ -28,9 +28,9 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 		system("ls");
 		exit(1);
 	}  
-	fscanf(infile, "  %lu    %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
+	fscanf(infile, "  %zu    %le     %le     %le     %*d\n", &Ntot, &Mstar, &Rstar, &Lstar);
 	ThrainLogger::info("\tMass = %0.2lg\tRadis = %0.2lg\tLuminosity = %0.2lg\n", Mstar, Rstar, Lstar);
-	ThrainLogger::info("Number of grid points in MESA calculation %lu\n", Ntot);
+	ThrainLogger::info("Number of grid points in MESA calculation %zu\n", Ntot);
 	name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", Mstar, Rstar, Lstar);
 			
 	//read through file once to get the max values of R,M
@@ -82,7 +82,7 @@ MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	if(n < 1) n = 1; //must at least divide each interval in half
 	len = pow(2,int(n))*(Ntot-1) + 1;
 	subgrid = pow(2,int(n));
-	ThrainLogger::info("number of grid points to be used %lu\n", len);
+	ThrainLogger::info("number of grid points to be used %zu\n", len);
 			
 	radi = new double[len];
 	std::size_t kk=0;
@@ -356,7 +356,7 @@ void MESA::setupSurface(){
 	double const Cideal = N_Avogadro*boltzmann_k*Dscale*Tscale/Pscale;
 	double const Crad   = radiation_a/3.*pow(Tscale,4)/Pscale;
 	//the x^0 part
-	ts[0] = ts[0]; // redundant, but for consistency
+	// ts[0], temp at the surface, is already set
 	ps[0] = pres->interp(1.0);
 	ds[0] = dens->interp(1.0);
 	// the x^1 part
@@ -521,7 +521,7 @@ void MESA::printBV(const char *const c, double const g){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 800,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Brunt-Vaisala for %s'\n", title.c_str());
 	fprintf(gnuplot, "set logscale x\n");
@@ -635,7 +635,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");

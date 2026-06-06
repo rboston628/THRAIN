@@ -123,7 +123,7 @@ ChandrasekharWD::ChandrasekharWD( double Y0, std::size_t L, const double dxi, Ch
 
 	indexFit = 512*round(double(len)/1024.0);
 	indexFit /= 2;
-	ThrainLogger::debug("  indexFit  = %lu\n", indexFit);
+	ThrainLogger::debug("  indexFit  = %zu\n", indexFit);
 	ThrainLogger::debug("r[indexFit] = %0.32le\n", rad(indexFit));
 	
 	setupCenter();
@@ -491,7 +491,7 @@ void ChandrasekharWD::printDeg(char const *const outputdir){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1600,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Degenerate functions for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'xi'\n");
@@ -530,7 +530,7 @@ void ChandrasekharWD::printChem(char const *const outputdir){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set logscale x 10\n");

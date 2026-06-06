@@ -236,10 +236,9 @@ SimpleWD::SimpleWD(
 	if(Ncore%2==1) Ncore = Ncore - 1;
 	indexFit = (Ncore)/2;
 	
-	ThrainLogger::info("Teff=%le\tTsurf=%le\n", Teff, Tscale*exp(logY[Ntot-1][temp]));
+	ThrainLogger::info("Teff=%le\tTsurf=%le\n", Teff, Tscale*std::exp(logY[Ntot-1][temp]));
 	ThrainLogger::info("Xtot :\t%0.8lf %0.8lf %0.8lf %0.8lf\n", Xtot.H1 , Xtot.He4 , Xtot.C12 , Xtot.O16);
-		
-	setupCenter();
+  setupCenter();
 	setupSurface();
 }
 
@@ -462,7 +461,7 @@ void SimpleWD::expandGrid(std::size_t Ntrue){
 	static const double B[4] = {0.5, 0.5, 1.0, 0.0};
 	//begin at the center
 	//setting the initial step size
-	dr = 0.5*exp(logY[2][radi]);//
+	dr = 0.5*std::exp(logY[2][radi]);//
 	//now begin integrations
 	for(std::size_t x = 0; x<1; x++){
 		YC = Y[x];
@@ -491,15 +490,15 @@ void SimpleWD::expandGrid(std::size_t Ntrue){
 		dlogY[x+1][dens] = (logY[x+2][dens]-logY[x][dens])/(logY[x+2][radi]-logY[x][radi]);
 	}
 	for(std::size_t x=3; x<Ntrue-3; x+=2){
-		r = exp(logY[x-1][radi]);
-		dr = (exp(logY[x+1][radi])-exp(logY[x-1][radi]));		//linear midpoint
+		r = std::exp(logY[x-1][radi]);
+		dr = (std::exp(logY[x+1][radi])-std::exp(logY[x-1][radi]));		//linear midpoint
 		//integrate forward from x-1
 		dlogr = log(1. + 0.5*dr/r);		//logairthmic midpoint from x-1
 		nabla = energyTransport(logY[x-1], Xelem[x-1]);
 		logy1 = logY[x-1] + dlogYdlogR(logY[x-1],nabla)*dlogr; 
 		logy1[dens] = equationOfState(logy1, Xelem[x-1], rholast);
 		//integrate backward from x+1
-		r = exp(logY[x+1][radi]);
+		r = std::exp(logY[x+1][radi]);
 		dlogr =-log(1. - 0.5*dr/r);		//logarithmic midpoint from x+1
 		nabla = energyTransport(logY[x+1], Xelem[x+1]);
 		logy2 = logY[x+1] - dlogYdlogR(logY[x+1],nabla)*dlogr;
@@ -788,7 +787,7 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	lys = log(Ysurf);
 	double ks = radiative_opacity(lys, Xsurf);
 		
-	mf = exp(logQ[Ntot-1]);
+	mf = std::exp(logQ[Ntot-1]);
 	tauf = kp/(4.*m_pi)*exp(lys[mass]-2.*lyp[radi])*(1.-mf);
 	StellarVar Y1, Y2, dYdt, ly1;
 	double tau1, tau2, dtau;
@@ -851,7 +850,7 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	for(std::size_t X = first; X > start; X--){
 		YC = Y[Ntot-1-X];
 		chemC = Xelem[X];
-		dQ = exp(logQ[X-1]) - exp(logQ[X]);
+		dQ = std::exp(logQ[X-1]) - std::exp(logQ[X]);
 		for(int a = 0; a<4; a++){
 			nabla = energyTransport(log(YC), chemC);
 			//now from these, calculate next shift
@@ -867,7 +866,7 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 		logY[X-1] = log(Y[Ntot-X]);
 		Xelem[X-1] = findAbundance(logY[X-1][mass], logY[X-1][radi], dXelem[X-1]);
 		logY[X-1][dens] = equationOfState(logY[X-1], Xelem[X-1], rholast);
-		Y[Ntot-X][dens] = exp(logY[X-1][dens]);
+		Y[Ntot-X][dens] = std::exp(logY[X-1][dens]);
 		//calculate the derivatives at this location
 		nabla = energyTransport(logY[X-1], Xelem[X-1]);
 		dlogY[X-1] = dlogYdlogR(logY[X-1], nabla);
@@ -1075,7 +1074,7 @@ Abundance SimpleWD::findAbundance(
 	dX.H1  =-dX.He4 - dX.C12 - dX.O16;
 	dX.He4 = dX.He4 - dX.C12;
 	dX.C12 = dX.C12 - dX.O16;
-	dX.O16 = dX.O16;
+	// dX.O16 = dX.O16;
 	
 	XX.enforce();
 	XX.e = chemical::h; //must use H to eliminate, since it is determined by constraint
@@ -1088,12 +1087,12 @@ Abundance SimpleWD::massFraction(){
 	Abundance Xint1=Xelem[0], Xint2=Xelem[1];
 	
 	//first integrate the core
-	massTot = massTot + (Xint1+Xint2)*(exp(logQ[1]))*0.5;
-	Xint2 = Xelem[1]*exp(logQ[1]);
+	massTot = massTot + (Xint1+Xint2)*(std::exp(logQ[1]))*0.5;
+	Xint2 = Xelem[1]*std::exp(logQ[1]);
 	for(std::size_t x=1; x<Ntot-1; x++){
-		if(exp(logQ[x+1]) >1.0) break;
+		if(std::exp(logQ[x+1]) >1.0) break;
 		Xint1 = Xint2;
-		Xint2 = Xelem[x+1]*exp(logQ[x+1]);
+		Xint2 = Xelem[x+1]*std::exp(logQ[x+1]);
 		massTot = massTot + (Xint1+Xint2)*(logQ[x+1]-logQ[x])*0.5;
 	}
 	massTot.enforce();
@@ -1105,39 +1104,39 @@ Abundance SimpleWD::massFraction(){
 //    Here we define functions to access radius, pressure, etc.
 //**************************************************************************************/
 double SimpleWD::rad(std::size_t X){
-	return Rstar*exp(logY[X][radi]);
+	return Rstar*std::exp(logY[X][radi]);
 }
 double SimpleWD::rho(std::size_t X){
-	return Dscale*exp(logY[X][dens]);
+	return Dscale*std::exp(logY[X][dens]);
 }
 double SimpleWD::drhodr(std::size_t X){
 	 // dlogD/dlogr = dD/dr*r/D --> dD/dr = D/r * dlogD/dlogr
-	return Dscale/Rstar*exp(logY[X][dens]-logY[X][radi])*dlogY[X][dens];
+	return Dscale/Rstar*std::exp(logY[X][dens]-logY[X][radi])*dlogY[X][dens];
 }
 double SimpleWD::P(std::size_t X){
-	return Pscale*exp(logY[X][pres]);
+	return Pscale*std::exp(logY[X][pres]);
 }
 double SimpleWD::dPdr(std::size_t X){
-	return Pscale/Rstar*exp(logY[X][pres]-logY[X][radi])*dlogY[X][pres];
+	return Pscale/Rstar*std::exp(logY[X][pres]-logY[X][radi])*dlogY[X][pres];
 }
 double SimpleWD::Phi(std::size_t X){
 	//zeroed to join exterior solution at surface, where Phi->0 at infty
 	return 0.0;
 }
 double SimpleWD::dPhidr(std::size_t X){
-	return G_CGS*Mstar*pow(Rstar,-2)*exp(logY[X][mass] - 2.*logY[X][radi]);
+	return G_CGS*Mstar*pow(Rstar,-2)*std::exp(logY[X][mass] - 2.*logY[X][radi]);
 }
 double SimpleWD::mr(std::size_t X){
-	return Mstar*exp(logY[X][mass]);
+	return Mstar*std::exp(logY[X][mass]);
 }
 
 double SimpleWD::Schwarzschild_A(std::size_t X, double GamPert){
-	if(GamPert==0.0) return -brunt_vaisala[X]*exp(2.*logY[X][radi]-logY[X][mass])/Rstar;
-	else        	 return (dlogY[X][dens] - dlogY[X][pres]/GamPert)*exp(-logY[X][radi])/Rstar;
+	if(GamPert==0.0) return -brunt_vaisala[X]*std::exp(2.*logY[X][radi]-logY[X][mass])/Rstar;
+	else        	 return (dlogY[X][dens] - dlogY[X][pres]/GamPert)*std::exp(-logY[X][radi])/Rstar;
 }
 
 double SimpleWD::getAstar(std::size_t X, double GamPert){
-	if(GamPert==0.0) return brunt_vaisala[X]*exp(3.*logY[X][radi]-logY[X][mass]);
+	if(GamPert==0.0) return brunt_vaisala[X]*std::exp(3.*logY[X][radi]-logY[X][mass]);
 	else        	 return (dlogY[X][pres]/GamPert - dlogY[X][dens]);
 }
 
@@ -1159,7 +1158,7 @@ double SimpleWD::getVg(std::size_t X, double GamPert){
 
 double SimpleWD::getC(std::size_t X){
 	if(X==0) return 3.*exp(-logY[0][dens]);
-	else     return exp(3.*logY[X][radi] - logY[X][mass]);
+	else     return std::exp(3.*logY[X][radi] - logY[X][mass]);
 }
 
 double SimpleWD::Gamma1(std::size_t X){
@@ -1167,8 +1166,8 @@ double SimpleWD::Gamma1(std::size_t X){
 }
 
 double SimpleWD::sound_speed2(std::size_t X, double GamPert){
-	if(GamPert == 0.0) return Gamma1(X) * exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
-	else               return GamPert   * exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
+	if(GamPert == 0.0) return Gamma1(X) * std::exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
+	else               return GamPert   * std::exp(logY[X][pres]-logY[X][dens])*Pscale/Dscale;
 }
 
 void SimpleWD::populateBruntVaisala(){
@@ -1203,7 +1202,7 @@ void SimpleWD::populateBruntVaisala(){
 		chir           = myEOS->chiRho(  YY[dens],YY[temp],Xelem[X]);
 		if(nabla_ad[X] < nabla[X]) nabla[X] = nabla_ad[X];
 		if(std::isnan(ledoux[X])) ledoux[X]=0.0;
-		brunt_vaisala[X] = exp(2.*logY[X][mass]-4.*logY[X][radi]+logY[X][dens]-logY[X][pres])
+		brunt_vaisala[X] = std::exp(2.*logY[X][mass]-4.*logY[X][radi]+logY[X][dens]-logY[X][pres])
 				*chiT/chir*(nabla_ad[X]-nabla[X]+ledoux[X]);
 	}
 }
@@ -1219,14 +1218,14 @@ double SimpleWD::Gee(){   return G_CGS;}
 //	The expansion coefficients must be in powers of x=r/R
 void SimpleWD::setupCenter(){
 	nc = 1./(Gamma1(1)-1.);
-	double rho0 = Dscale*exp(logY[0][dens]);
-	double P0   = Pscale*exp(logY[0][pres]);
-	double T0   = Tscale*exp(logY[0][temp]);
+	double rho0 = Dscale*std::exp(logY[0][dens]);
+	double P0   = Pscale*std::exp(logY[0][pres]);
+	double T0   = Tscale*std::exp(logY[0][temp]);
 	double dPdd = core_pressure.partialRho(rho0,T0,Xelem[0])*Dscale/Pscale;
 	double dPdt = core_pressure.partialT(  rho0,T0,Xelem[0])*Tscale/Pscale;
 	//second derivative terms required for x^4 part... just ignore for now
 	// in future, EOS can be modified to also return these derivatives, if needed
-	double dPddd = Gamma1(1)*(Gamma1(1)-1.)*exp(logY[0][pres]-2.*logY[0][dens]); //second partial rho
+	double dPddd = Gamma1(1)*(Gamma1(1)-1.)*std::exp(logY[0][pres]-2.*logY[0][dens]); //second partial rho
 	double dPdtt = 0.0; //second partial T
 	double dPddt = (Gamma1(1)-1.)*dPdt*exp(-logY[0][dens]); //the mixed partial derivative
 		
@@ -1238,9 +1237,9 @@ void SimpleWD::setupCenter(){
 	ac[1] = ac[3] = ac[5] = ac[7] = 0.0;
 	
 	//terms x^0
-	dc[0] = exp(logY[0][dens]);
-	pc[0] = exp(logY[0][pres]);
-	tc[0] = exp(logY[0][temp]);
+	dc[0] = std::exp(logY[0][dens]);
+	pc[0] = std::exp(logY[0][pres]);
+	tc[0] = std::exp(logY[0][temp]);
 	double del = nabla[0];
 	ThrainLogger::debug("Establishing center:\n");
 	ThrainLogger::debug("x^0:\t%le %le %le %le\n", dc[0], pc[0], tc[0], del);
@@ -1327,9 +1326,9 @@ void SimpleWD::setupSurface(){
 	double Crad   = radiation_a/3.*pow(Tscale,4)/Pscale;
 	
 	// the x^0 part
-	ds[0] = exp(logY[Ntot-1][dens]);
-	ts[0] = exp(logY[Ntot-1][temp]);
-	ps[0] = exp(logY[Ntot-1][pres]);
+	ds[0] = std::exp(logY[Ntot-1][dens]);
+	ts[0] = std::exp(logY[Ntot-1][temp]);
+	ps[0] = std::exp(logY[Ntot-1][pres]);
 	double del = nabla[Ntot-2];
 
 	// the x^1 part
@@ -1511,9 +1510,9 @@ void SimpleWD::printChem(const char *const c){
 	fprintf(fp, "num\t1-r\t1-m\tm\tH\tHe\tC\tO\n");
 	for(int X=Ntot-1; X >= 0; X--){
 		fprintf(fp, "%d", X);									//col 1
-		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][radi])));	//col 2
-		fprintf(fp, "\t%0.24le", (1.-exp(logY[X][mass])));	//col 3
-		fprintf(fp, "\t%0.16le", exp(logY[X][mass]));			//col 4
+		fprintf(fp, "\t%0.24le", (1.-std::exp(logY[X][radi])));	//col 2
+		fprintf(fp, "\t%0.24le", (1.-std::exp(logY[X][mass])));	//col 3
+		fprintf(fp, "\t%0.16le", std::exp(logY[X][mass]));			//col 4
 		fprintf(fp, "\t%0.16le\t%0.16le\t%0.16le\t%0.16le",
 			Xelem[X].H1, Xelem[X].He4, Xelem[X].C12, Xelem[X].O16);	//col 5-8
 		fprintf(fp, "\t%d\n", Xelem[X].e);
@@ -1523,7 +1522,7 @@ void SimpleWD::printChem(const char *const c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
@@ -1567,9 +1566,9 @@ void SimpleWD::printBV(const char *const c, const double g){
 	for(std::size_t X=0; X< Ntot; X++){
 		N2 = brunt_vaisala[X]*f0;
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\n",
-			(1.-exp(logY[X][mass])),
+			(1.-std::exp(logY[X][mass])),
 			N2,
-			2.*sound_speed2(X,0.)*exp(-2.*logY[X][radi])*pow(Rstar,-2));
+			2.*sound_speed2(X,0.)*std::exp(-2.*logY[X][radi])*pow(Rstar,-2));
 	}
 	fclose(fp);	
 	//plot file in png in gnuplot
@@ -1606,7 +1605,7 @@ void SimpleWD::printOpacity(const char *const c){
 	for(std::size_t x=0; x < Ntot; x++){
 		X  = Xelem[x];
 		ly = logY[x];
-		fprintf(fp, "%0.24le\t%0.16le", (1.-exp(ly[mass])), exp(ly[temp]-logT));	//col1, col2
+		fprintf(fp, "%0.24le\t%0.16le", (1.-std::exp(ly[mass])), std::exp(ly[temp]-logT));	//col1, col2
 		//get the layer, for using in energyTransport()
 		fprintf(fp, "\t%0.16le\t%0.16le", nabla[x], nabla_ad[x]); //col3, col4
 		//form the approximation for opacity
@@ -1622,7 +1621,7 @@ void SimpleWD::printOpacity(const char *const c){
 	FILE* gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'opacity, temperature for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log(1-m/M)'\n");
@@ -1686,16 +1685,16 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	gam1 = adiabatic_1[0];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
 	for(std::size_t X=0; X<NC; X++){
-		x2 = exp(2.*logY[X][radi]);
+		x2 = std::exp(2.*logY[X][radi]);
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
-			exp(logY[X][radi]),
-			exp(logY[X][dens]),
+			std::exp(logY[X][radi]),
+			std::exp(logY[X][dens]),
 			dc[0]+dc[1]*x2+dc[2]*x2*x2,
-			exp(logY[X][pres]),
+			std::exp(logY[X][pres]),
 			pc[0]+pc[1]*x2+pc[2]*x2*x2,
-			exp(logY[X][temp]),
+			std::exp(logY[X][temp]),
 			tc[0]+tc[1]*x2+tc[2]*x2*x2,
-			brunt_vaisala[X]*exp(3.*logY[X][radi]-logY[X][mass]),
+			brunt_vaisala[X]*std::exp(3.*logY[X][radi]-logY[X][mass]),
 			(A0[0]-V0[0]/gam1) + (A0[1]-V0[1]/gam1)*x2 + (A0[2]-V0[2]/gam1)*x2*x2,
 			getU(X),
 			U0[0] + U0[1]*x2 + U0[2]*x2*x2,
@@ -1708,26 +1707,26 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fclose(fp);
 	txtname = filename + "/surfacefit.txt";
 	fp = fopen(txtname.c_str(), "w");
-	double t = 1.-exp(logY[0][radi]);
+	double t = 1.-std::exp(logY[0][radi]);
 	gam1 = adiabatic_1[Ntot-1];
 	fprintf(fp, "x\trho\trho_fit\tP\tP_fit\tT\tT_fit\tA*\tA*_fit\tU\tU_fit\tVg\tVg_fit\tc1\tc1_fit\n");
 	for(std::size_t X=Ntot-1; X>=Ntot-NS-1; X--){
-		t = 1. - exp(logY[X][radi]);
+		t = 1. - std::exp(logY[X][radi]);
 		fprintf(fp, "%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\t%le\n",
-			exp(logY[X][radi]),
-			exp(logY[X][dens]),
+			std::exp(logY[X][radi]),
+			std::exp(logY[X][dens]),
 			ds[0]+ds[1]*t+ds[2]*t*t+ds[3]*t*t*t+ds[4]*t*t*t*t,
-			exp(logY[X][pres]),
+			std::exp(logY[X][pres]),
 			ps[0]+ps[1]*t+ps[2]*t*t+ps[3]*t*t*t+ps[4]*t*t*t*t,
-			exp(logY[X][temp]),
+			std::exp(logY[X][temp]),
 			ts[0]+ts[1]*t+ts[2]*t*t+ts[3]*t*t*t+ts[4]*t*t*t*t,
-			brunt_vaisala[X]*exp(3.*logY[X][radi]-logY[X][mass]),
+			brunt_vaisala[X]*std::exp(3.*logY[X][radi]-logY[X][mass]),
 			(A1[0])/t + (A1[1]) + (A1[2])*t + (A1[3])*t*t + (A1[4])*t*t*t,
 			dlogY[X][mass],
 			U1[0] + U1[1]*t + U1[2]*t*t + U1[3]*t*t*t + U1[4]*t*t*t*t,
 			-dlogY[X][pres]/gam1,
 			(V1[0]/gam1)/t + (V1[1]/gam1) + (V1[2]/gam1)*t + (V1[3]/gam1)*t*t + (V1[4]/gam1)*t*t*t,
-			exp(3.*logY[X][radi]-logY[X][mass]),
+			std::exp(3.*logY[X][radi]-logY[X][mass]),
 			c1[0] + c1[1]*t + c1[2]*t*t + c1[3]*t*t*t + c1[4]*t*t*t*t
 		);
 	}
@@ -1740,8 +1739,8 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
 	for(std::size_t X=0; X<Ntot; X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
-			exp(logQ[X]),
-			-exp(logY[X][radi])*Schwarzschild_A(X, 0.)*Rstar,
+			std::exp(logQ[X]),
+			-std::exp(logY[X][radi])*Schwarzschild_A(X, 0.)*Rstar,
 			getU(X),
 			getVg(X, 0.),
 			getC(X)
@@ -1752,7 +1751,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Pulsation Coefficients for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -1779,7 +1778,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "set xrange [0:%le]\n", 1.01*exp(logY[NC][radi]));
+	fprintf(gnuplot, "set xrange [0:%le]\n", 1.01*std::exp(logY[NC][radi]));
 	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname.c_str());
@@ -1797,7 +1796,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(gnuplot, "set logscale y\n");
 	fprintf(gnuplot, "set ytics 100\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
-	fprintf(gnuplot, "set xrange [%le:1]\n", exp(logY[Ntot-NS-1][radi]));
+	fprintf(gnuplot, "set xrange [%le:1]\n", std::exp(logY[Ntot-NS-1][radi]));
 	fprintf(gnuplot, "plot '%s' u 1:(abs($2-$3)/abs($2)) w lp t 'rho'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($4-$5)/abs($4)) w lp t 'P'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'T'", txtname.c_str());
@@ -1866,13 +1865,13 @@ void SimpleWD::printBigASCII(const char *const c){
 	fprintf(fp, "chi_O        \n");
 	double log10e = log10(exp(1.0));
 	for(std::size_t X=0; X<Ntot; X++){
-		fprintf(fp, "%6lu\t", X+1);
+		fprintf(fp, "%6zu\t", X+1);
 		//the independent variables
 		fprintf(fp, "%+13le\t%+13le\t%+13le\t%+13le\t", 
-			log10(1.-exp(logY[X][mass])), 
-			log10(1.-exp(logY[X][radi])),
-			Mstar*exp(logY[X][mass]), 
-			Rstar*exp(logY[X][radi])
+			log10(1.-std::exp(logY[X][mass])), 
+			log10(1.-std::exp(logY[X][radi])),
+			Mstar*std::exp(logY[X][mass]), 
+			Rstar*std::exp(logY[X][radi])
 		);
 		//gravitational field
 		if(X==0) fprintf(fp, "%+13le\t", 0.0);
@@ -1885,7 +1884,7 @@ void SimpleWD::printBigASCII(const char *const c){
 		//logs of all partial pressures
 		EOS* eos = getEOS(exp(logY[X]+logYscale),Xelem[X]);
 		bool incore = &core_pressure==eos;
-		double rho=Dscale*exp(logY[X][dens]), T=Tscale*exp(logY[X][temp]);
+		double rho=Dscale*std::exp(logY[X][dens]), T=Tscale*std::exp(logY[X][temp]);
 		fprintf(fp, "%+13le\t%+13le\t%+13le\t%+13le\t%+13le\t", (logY[X][pres]+logYscale[pres])*log10e, 
 			log10(pressure_ideal(rho,T, Xelem[X])),
 			log10(pressure_rad(rho,T, Xelem[X])),
@@ -1955,30 +1954,30 @@ void SimpleWD::writeStar(const char *const c){
 	
 	//print results to text file
 	// radius rho pressure gravity
-	double T0 = exp(logY[0][temp]);
-	double RS = exp(logY[Ntot-1][radi])*Rstar;
+	double T0 = std::exp(logY[0][temp]);
+	double RS = std::exp(logY[Ntot-1][radi])*Rstar;
 	double logT = logY[0][temp];
 	double logL = logY[Ntot-1][lumi];
 	double logM = logY[Ntot-1][mass];
 	double logR = logY[Ntot-1][radi];
 	fprintf(fp, "num\tq\trho\tradius\tP\tm\tT\tL\tm\n");
 	for(std::size_t X=0; X< Ntot; X++){
-		fprintf(fp, "%6lu\t", X);
-		fprintf(fp, "%22.16le\t", (1.-exp(logQ[X])));	//col 2
-		fprintf(fp, "%22.16le\t", exp(logY[X][dens]));	//col 3
-		fprintf(fp, "%22.16le\t", exp(logY[X][radi]));	//col 4
-		fprintf(fp, "%22.16le\t", exp(logY[X][pres]));	//col 5
-		fprintf(fp, "%22.16le\t", exp(logY[X][mass]));	//col 6
-		fprintf(fp, "%22.16le\t", exp(logY[X][temp]));	//col 7
-		fprintf(fp, "%22.16le\t", exp(logY[X][lumi]));	//col 8
-		fprintf(fp, "%22.16le\n", exp(logQ[X]));		//col 9
+		fprintf(fp, "%6zu\t", X);
+		fprintf(fp, "%22.16le\t", (1.-std::exp(logQ[X])));	//col 2
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][dens]));	//col 3
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][radi]));	//col 4
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][pres]));	//col 5
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][mass]));	//col 6
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][temp]));	//col 7
+		fprintf(fp, "%22.16le\t", std::exp(logY[X][lumi]));	//col 8
+		fprintf(fp, "%22.16le\n", std::exp(logQ[X]));		//col 9
 	}
 	fclose(fp);	
 	//plot file in png in gnuplot, and open png
 	FILE *gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	fprintf(gnuplot, "set samples %lu\n", length());
+	fprintf(gnuplot, "set samples %zu\n", length());
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Profile for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
