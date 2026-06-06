@@ -112,6 +112,11 @@ jobs:
       shell: bash
       run: mkdir -p /tmp
 
+    - name: Install cl (Windows MSVC)
+      if: ${{ matrix.config.cxx == 'cl' }}
+      shell: bash
+      run: pixi install cl
+
     - name: Build
       shell: bash
       env:
