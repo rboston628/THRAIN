@@ -4,6 +4,7 @@
 // **************************************************************************************
 
 #include <cmath>
+#include <complex>
 #include <stdio.h>
 #include <assert.h>
 #include "logger.h"
@@ -119,16 +120,17 @@ T determinant(T (&m)[N][N]){
 template <std::size_t N, class T>
 int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 	//a flag, in case we are soving homoegenous problem
-	bool HOMOGENEOUS = true;
-	T dummy = 0.0;
-	for(std::size_t j=0; j<N; j++) HOMOGENEOUS &= (b[j]==0.0);
+	bool is_homogeneous = true;
+	for(std::size_t j=0; j<N; j++) is_homogeneous &= (b[j]==0.0);
 
 	T det=1.0, ajj=0.0, coeff=0.0;
 	double temp = 0.0, big = 0.0;
+	double constexpr EPS = 1e-15;
 	std::size_t i=0,j=0,k=0,ipiv=0;
 	for(j=0; j<N;j++){
 		//find the max in this column
 		big = 0.0;
+		ipiv = j;
 		for(i=j;i<N;i++){
 			temp = std::abs(m[i][j]);
 			if(temp>big){
@@ -136,44 +138,52 @@ int invertMatrix(T (&m)[N][N], T (&b)[N], T (&x)[N]){
 				ipiv=i;
 			}
 		}		
+
 		//if max is not on diagonal, swap rows
 		if(ipiv != j){
 			matrix::swap_rows(m, ipiv, j);
 			matrix::swap_rows(b, ipiv, j);
 		}
+
 		ajj = m[j][j];
-		if(ajj!=0.0){
+
+		if (ajj == 0.0) {
+			if (!is_homogeneous) {
+				ThrainLogger::error("ERROR in invertMatrix: matrix is singular (zero pivot)\n");
+				return 1;
+			}
+		} else {
 			// for each row below row j
 			for(i=j+1;i<N;i++){
 				coeff = -m[i][j]/ajj;	
 				add_rows(m, i, j, coeff);	
 				add_rows(b, i, j, coeff);		
 				m[i][j] = 0.0;
-			}	
+			}
+			T a = T(1.0)/m[j][j];
+			for(int i=0; i<N; i++){
+				m[j][i] *= a;
+			}
+			b[j] *= a;
 		}
-		T a = 1.0/m[j][j];
-		for(int i=0; i<N; i++){
-			m[j][i] *= a;
-		}
-		b[j] *= a;
 	}
 	//resubstitute
 	std::size_t L=0;
 	x[N-1] = b[N-1];
-	if(HOMOGENEOUS) x[N-1] = 1.0;
+	if(is_homogeneous) x[N-1] = 1.0;
 	for(int i=N-2;i>=0; i--){
 		L=0;
-		while(m[i][L]==T(0) && L<N){	
+		while(L<N && m[i][L]==T(0)){	
 			L++;
 		}
-		x[i] = (HOMOGENEOUS ? 0.0 : b[i]);
+		x[i] = (is_homogeneous ? 0.0 : b[i]);
 		for(std::size_t j=L+1; j<N; j++){
 			x[i] -= m[i][j]*x[j];
 		}
 	}
 	bool produced_nan = false;
 	for(int i=0; i<N; i++){
-		if( (x[i]-x[i]) != T(0) ) produced_nan = true;
+		if( x[i] != x[i] ) produced_nan = true;
 	}
 	if(produced_nan){ThrainLogger::error("ERROR in invertMatrix: NaNs produced\n"); return 1;}
 	return 0;

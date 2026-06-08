@@ -407,10 +407,10 @@ int mode_finder(Calculation::OutputData &data){
 						mode::get_min_from_set(kfilled, w2filled, ktarget, kmin, w2min);
 						mode::get_max_from_set(kfilled, w2filled, ktarget, kmax, w2max);
 						//accounts for fact multiple w2in lead to same k
-						if(w2in < w2maxT && ktry == kmax & w2in>0.0){
+						if(w2in < w2maxT && ktry == kmax && w2in>0.0){
 							w2maxT = w2in;
 						}
-						else if(w2in > w2minT && ktry == kmin & w2in>0.0){
+						else if(w2in > w2minT && ktry == kmin && w2in>0.0){
 							w2minT = w2in;
 						}
 						//sometimes zeros are inaccessible
@@ -491,7 +491,7 @@ int mode_finder(Calculation::OutputData &data){
 			int indexK = 0;
 			//check if we already have the test mode to compare against
 			for(int i=enext;i<data.mode_done;i++){
-				if((!containsK) & (data.k[i]==testK)) indexK=i;
+				if((!containsK) && (data.k[i]==testK)) indexK=i;
 				containsK |= (data.k[i]==testK);
 			}
 			//if so use it
@@ -522,7 +522,7 @@ int mode_finder(Calculation::OutputData &data){
 		if(data.error[error::isJCD]) {
 			double polytrope_index = data.input_params[0];
 			for(int i=enext;i<data.mode_done; i++){
-				if((data.l[i]==1 | data.l[i]==2 | data.l[i]==3) & (data.k[i]>0 & data.k[i]<36))
+				if((data.l[i]==1 || data.l[i]==2 || data.l[i]==3) && (data.k[i]>0 && data.k[i]<36))
 					data.err[e][i] = mode::compare_JCD(polytrope_index, data.l[i], data.k[i], data.w[i]);
 				else data.err[e][i] = nan("");
 			}

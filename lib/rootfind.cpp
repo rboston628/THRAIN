@@ -30,7 +30,7 @@ double rootfind::pseudo_unif(double xmin, double xmax){
 // this will find brackets using a simple expansion/movement search
 // one bracket is moved to one side until the function changes sign, to find brackets
 int rootfind::bisection_find_brackets_move(
-	std::function<double(double)>& func,    //the function to find zero of
+	std::function<double(double)> const& func,    //the function to find zero of
 	double const x0,                        //an initial guess for the zero
 	double &xmin,                           //the lower bracket -- will be returned
 	double &xmax                            //the upper bracket -- will be returned
@@ -68,7 +68,7 @@ int rootfind::bisection_find_brackets_move(
 	// either y1 < y < y2 (UP)
 	// or     y1 > y > y2 (DOWN)
 	// in non-ideal cases 
-	// could be y1 = y = y (FLAT)
+	// could be y1 = y = y2 (FLAT)
 	// could be y>y1 and y>y2, (CONCAVE)
 	// or       y<y1 and y<y2
 	enum class Slope {NONE, UP, DOWN, FLAT, CONCAVE_UP, CONCAVE_DOWN};
@@ -158,7 +158,7 @@ int rootfind::bisection_find_brackets_move(
 // why use one zero-finding method to prepare another zero-finding method? 
 //    because Newton's method can fail, but bisection searches can go to nearly arbitrary accuracy
 int rootfind::bisection_find_brackets_newton(
-	std::function<double(double)>& func, //the function to find zero of
+	std::function<double(double)> const& func, //the function to find zero of
 	double const x0,                     //an initial guess for the zero
 	double& xmin,                        //the lower bracket -- will be returned
 	double& xmax                         //the upper bracket -- will be returned
@@ -246,7 +246,7 @@ int rootfind::bisection_find_brackets_newton(
 //given brackets bounding a single zero, find the zero
 // the brackets xmin, xmax MUST bound a single zero
 double rootfind::bisection_search(
-	std::function<double(double)>& func, //the function to find zero of
+	std::function<double(double)> const& func, //the function to find zero of
 	double &x,                           //the location of zero -- will be returned
 	double &xmin,                        //the lower bracket
 	double &xmax                         //the upper bracket

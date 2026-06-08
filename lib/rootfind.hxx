@@ -13,7 +13,7 @@
 //intended to work with real-valued or complex-valued numbers
 template <typename T>
 T rootfind::newton_search(
-	std::function<T(T)>& func,	//the function to find zero of
+	std::function<T(T)> const& func,	//the function to find zero of
 	T &x,						//an initial guess for the zero
 	T dx,						//the step to use in numerical derivatives
 	double const tol,			//tolerance of search, to be this accurate
@@ -27,7 +27,7 @@ T rootfind::newton_search(
 //intended to work with real-valued or complex-valued numbers
 template <typename T>
 T rootfind::newton_search(
-	std::function<T(T)>& func,	//the function to match to target
+	std::function<T(T)> const& func,	//the function to match to target
 	T const target,				//the target to be matched to
 	T &x,						//an initial guess for x
 	T dx,						//the step to use in numerical derivatives
@@ -49,12 +49,12 @@ T rootfind::newton_search(
 
 template <size_t np>
 void rootfind::newton_search(
-	std::function<void(double f[np],double x[np])>& func,	//f=vector function to zero, x=input array
+	std::function<void(double f[np],double x[np])> const& func,	//f=vector function to zero, x=input array
 	double (&x1)[np],			//an initial guess for x
 	double (&dx)[np],			//the step to use in numerical derivatives
 	double const tol,			//tolerance of search, to be this accurate
 	std::size_t const max_iter,	//maximum number of iterations in search
-	std::function<bool(double[np])>& var_limit  //a function limiting values of x1
+	std::function<bool(double[np])> const& var_limit  //a function limiting values of x1
 ){
 	double x2[np], ddx[np], f1[np], f2[np], dfdx[np][np], dxsave[np];
 	func(f1,x1);
@@ -127,13 +127,13 @@ void rootfind::newton_search(
 
 template <size_t np>
 void rootfind::newton_search(
-	std::function<void(double f[np],double x[np])>& func,	//f=vector function, x=input array
+	std::function<void(double f[np],double x[np])> const& func,	//f=vector function, x=input array
 	double (&target)[np], 		//the target to be matched to
 	double (&x1)[np], 			//an initial guess for x
 	double (&dx)[np],			//the step to use in numerical derivatives
 	double const tol,			//tolerance of search, to be this accurate
 	std::size_t const max_iter,	//maximum number of iterations in search
-	std::function<bool(double[np])>& var_limit //a function limiting values of x1
+	std::function<bool(double[np])> const& var_limit //a function limiting values of x1
 ){
 	// make a new function with zero at the target
 	std::function<void(double f[np], double x[np])>& zero_func = [func,target](double f[np], double x[np]){

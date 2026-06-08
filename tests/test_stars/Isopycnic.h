@@ -3,9 +3,9 @@
 // Isopycnic.h
 //		A simple stellar object in Newtonian physics of uniform density
 //				rho = constant
-//		Thi exploits the known analytic solution to Lane-Emden for n=0
+//		This exploits the known analytic solution to Lane-Emden for n=0
 //				y = 1 - x^2/6
-//		Used as stellsr background for mode testing, to minimize background errors
+//		Used as stellar background for mode testing, to minimize background errors
 //		THIS IS NOT PART OF THRAIN -- ONLY FOR CERTAIN TESTS WITH NONRADIAL MODES
 //**************************************************************************************
 

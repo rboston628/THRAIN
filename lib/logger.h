@@ -27,7 +27,7 @@ private:
   }
 
   // private constructor, defaults to INFO level to stdout
-  ThrainLogger() : logToFile(false), fp(stdout), logLevel(LogLevel::INFO) {}
+  ThrainLogger() : logToFile(false), fp(stdout), logLevel(LogLevel::INFO), logMutex() {}
 
 public:
   // delete copy and move operations

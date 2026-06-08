@@ -2,7 +2,7 @@
 //							DUMMY STAR
 // DummyStar.cpp
 //		A simple object for use in testing.
-//		It is only there to be used when something requries a Star object
+//		It is only there to be used when something requires a Star object
 //		THIS IS NOT PART OF THRAIN -- ONLY FOR CERTAIN TESTS
 //**************************************************************************************
 

@@ -2,8 +2,8 @@
 //							DUMMY STAR
 // DummyStar.h
 //		A simple object for use in testing.
-//		It is only here to be used when something requries a Star object
-//      for initializatio, but not any of itrs properties.
+//		It is only here to be used when something requires a Star object
+//      for initialization, but not any of its properties.
 //		THIS IS NOT PART OF THRAIN -- ONLY FOR CERTAIN TESTS
 //**************************************************************************************
 

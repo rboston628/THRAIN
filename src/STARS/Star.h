@@ -49,8 +49,9 @@ public:
 	virtual double Gamma1(std::size_t) =0;
 	virtual double sound_speed2(std::size_t, double g=0.0) =0;
 	
+	// constructor
+	Star() : name(), indexFit(0) {};
 	//destructor
-	Star() = default;
 	virtual ~Star() = default;
 	Star(Star const&) = delete;
 	Star& operator=(Star const&) = delete;
