@@ -11,32 +11,32 @@
 
 namespace units{
 
-inline double GMR2FromLogg(const Calculation::OutputData& data){
+double GMR2FromLogg(const Calculation::OutputData& data){
 	// logg is a dimensioned quantity -- return GM/R^2 in indicated units
 	return pow(10.0,data.logg) * pow(data.unitset.base_length,2)/data.unitset.base_mass*data.unitset.G/G_CGS;
 }
 
-inline double getLoggFromRM (const Calculation::OutputData& data){
+double getLoggFromRM (const Calculation::OutputData& data){
 	// unfortunately this is a dimensioned quantity, and must be given in CGS units
 	return log10(G_CGS*data.mass*data.unitset.base_mass*pow(data.unitset.base_length*data.radius,-2));
 }
-inline double getZsurfFromRM(const Calculation::OutputData& data){
+double getZsurfFromRM(const Calculation::OutputData& data){
 	return 1./sqrt( 1. - 2.*data.unitset.G*data.mass/(data.radius*pow(data.unitset.C,2)) ) - 1.;
 }
 
-inline double getRadiusFromZM(const Calculation::OutputData& data){
+double getRadiusFromZM(const Calculation::OutputData& data){
 	return 2.*data.unitset.G*data.mass*pow(data.unitset.C,-2)/(1.-pow(1.+data.zsurf,-2));
 }
 
-inline double getRadiusFromLoggM(const Calculation::OutputData& data){
+double getRadiusFromLoggM(const Calculation::OutputData& data){
 	return sqrt(data.unitset.G*data.mass / GMR2FromLogg(data));
 }
 
-inline double getMassFromRZ(const Calculation::OutputData& data){
+double getMassFromRZ(const Calculation::OutputData& data){
 	return 0.5*pow(data.unitset.C,2)*data.radius/data.unitset.G*(1.-pow(1.+data.zsurf,-2));
 }
 
-inline double getMassFromRLogg(const Calculation::OutputData& data){
+double getMassFromRLogg(const Calculation::OutputData& data){
 	return pow(data.radius,2)*GMR2FromLogg(data)/data.unitset.G;
 }
 

@@ -112,11 +112,6 @@ jobs:
       shell: bash
       run: mkdir -p /tmp
 
-    - name: Install cl (Windows MSVC)
-      if: ${{ matrix.config.cxx == 'cl' }}
-      shell: bash
-      run: pixi add vs2019_win-64
-
     - name: Build
       shell: bash
       env:
@@ -129,9 +124,22 @@ jobs:
       shell: bash
       run: pixi run thrain sampleinput6.txt
 
-    - name: Run tests
+    - name: Build THRAIN tests
       if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
-      run: pixi run test
+      shell: bash
+      env:
+        CC: ${{ matrix.config.cc }}
+        CXX: ${{ matrix.config.cxx }}
+        AR: ${{ matrix.config.ar }}
+      run: |
+        pixi run build-tests
+
+    - name: Run CxxTest tests
+      if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
+      run: pixi run cxxtest
+
+    - name: Run doctest tests
+      run: pixi run doctest -tce="*slow*"
 
   # GCC 9 compatibility lane (backwards-compatibility)
   gcc9:
@@ -160,5 +168,27 @@ jobs:
     - name: Run tests (GCC 9)
       shell: bash
       run: |
-        make -B tests CXX=g++-9
-        ./tests/tests.out
+        make cleantests tests-cxxtest CXX=g++-9
+        ./tests/cxxtest.out
+        make cleantests tests-doctest CXX=g++-9
+        ./tests/doctest.out --force-colors=1 -tce="*slow*"
+
+  system-tests:
+    name: system tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0
+    - name: Pixi install
+      shell: bash
+      run: pixi install
+    - name: Build
+      shell: bash
+      env:
+        CC: ${{ matrix.config.cc }}
+        CXX: ${{ matrix.config.cxx }}
+        AR: ${{ matrix.config.ar }}
+      run: pixi run build
+    - name: Run doctest system tests
+      run: pixi run doctest -tc="*slow*"

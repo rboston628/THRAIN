@@ -1,6 +1,7 @@
 #ifndef DUMMYMODESC
 #define DUMMYMODESC
 
+#include "../src/constants.h"
 #include "DummyMode.h"
 
 //**************************************************************************************
@@ -84,7 +85,7 @@ void DummyModeDriver::varnames(std::string*){}	//names of variables to print out
 //  	Returns (sin wx, cos wx), where w = 2pi N, for N
 //      Intended for testing, comparing to results of SineModeDriver
 //**************************************************************************************
-SineMode::SineMode(int N, std::size_t len): N(N), len(len), freq(2. * M_PI * N) {}
+SineMode::SineMode(int N, std::size_t len): N(N), len(len), freq(2. * m_pi * N) {}
 SineMode::~SineMode(){}
 // to match results of SindeModeDriver, define Osaki-Scuflaire mode order = -2N
 int SineMode::modeOrder(){return -2 * N;}

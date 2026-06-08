@@ -43,7 +43,12 @@ lib/*.o
 
 # the test suite
 !tests/
+!tests/doctest.h
+!tests/test_main.cpp
 !tests/*.h
+!tests/*.cpp
+# but DO exclude the cxxtest runner
+tests/cxxtests.cpp
 # include test classes
 !tests/test_modes/
 !tests/test_modes/*

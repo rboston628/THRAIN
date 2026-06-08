@@ -1,0 +1,28 @@
+#include "doctest.h"
+#include <cstdio>
+#include <cstdlib>
+
+struct SetUp {
+  SetUp() {
+    printf("test of testing\n");
+    system("rm tests/artifacts/logio.txt");
+  }
+  ~SetUp() = default;
+};
+
+TEST_SUITE("basic") {
+
+TEST_CASE_FIXTURE(SetUp, "sanity") {
+  REQUIRE( true );
+  REQUIRE( !false );
+  REQUIRE( 1 == 1 );
+  REQUIRE( 1 != 2 );
+}
+
+TEST_CASE("addition") {
+  REQUIRE( 1 + 1 > 1 );
+  REQUIRE( 1 + 1 == 2 );
+  REQUIRE( 1 + 1 != 3 );
+}
+
+}
