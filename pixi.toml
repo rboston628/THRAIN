@@ -59,7 +59,13 @@ thrain = "./thrain"
 
 cppcheck = "make cppcheck"
 
-# Builds and runs the CxxTest test runner
-test = "make library && make -B tests && ./tests/tests.out"
+# Builds both CxxTest and doctest tests
+build-tests = "make cleantests tests-cxxtest tests-doctest"
 
-clean = "make clean"
+# Builds and runs the CxxTest test runner
+cxxtest = "make tests-cxxtest && ./tests/cxxtest.out"
+
+# Builds and rune the doctest test runner
+doctest = "make tests-doctest && ./tests/doctest.out --force-colors=1"
+
+clean = "make clean cleantests"

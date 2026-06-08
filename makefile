@@ -7,10 +7,26 @@ ODIR=obj
 .SUFFIXES:
 .SUFFIXES: .cpp .o
 
-CXX ?= c++
-CXXSTD ?= -std=c++14
-CC=$(CXX) $(CXXSTD)
+CXX      ?= g++
+CXXSTD   ?= -std=c++14
+CXXFLAGS +=
+CPPFLAGS += -I$(IDIR)
+LDFLAGS  +=
+LDLIBS   += -lm
 CFLAGS=-I$(IDIR) -Wuninitialized -Weffc++ --pedantic-errors
+
+# detect if using MSVC
+IS_MSVC := $(filter cl,$(notdir $(CXX)))
+ifeq ($(IS_MSVC),cl)
+# MSVC flags
+	CXXFLAGS += /std:c++14 /W4 /EHsc
+else
+# GCC/Clang flags
+	CXXFLAGS += -std=c++14 -Wuninitialized -Weffc++ --pedantic-errors
+endif
+
+# Auto dependency files
+CPPFLAGS += -MMD -MP
 
 # If we're in a conda-like environment (pixi/conda/mamba), allow it to provide
 # headers (e.g., cxxtest) without hard-coding paths.
@@ -52,7 +68,6 @@ MODEDEPS = $(patsubst %, $(IDIR)/%, $(_MODEDEPS))
 _MODESRC = MODES/Mode.cpp
 MODESRC  = $(patsubst %, $(SDIR)/%, $(_MODESRC))
 
-
 ## files needed to compile main program
 #  dependencies
 _MAINDEPS = constants.h ThrainMain.h ThrainIO.h ThrainUnits.h
@@ -61,51 +76,51 @@ MAINDEPS = $(patsubst %, $(IDIR)/%, $(_MAINDEPS)) $(STARDEPS) $(MODEDEPS) $(DRVD
 _MAINSRC = ThrainMain.cpp ThrainIO.cpp ThrainUnits.cpp ThrainStellar.cpp ThrainMode.cpp
 MAINSRC  = $(patsubst %, $(SDIR)/%, $(_MAINSRC))
 
-
 ## prepare object names
 STAROBJ = $(patsubst %, $(ODIR)/%.o, $(_STARTYPES))
 DRVOBJ  = $(patsubst %, $(ODIR)/%.o, $(_DRVTYPES))
 MODEOBJ = $(patsubst %.cpp, $(ODIR)/%.o, $(_MODESRC))
 MAINOBJ = $(patsubst %.cpp, $(ODIR)/%.o, $(_MAINSRC))
 
+# collect dep files
+DEPS = $(STAROBJ:.o=.d) $(DRVOBJ:.o=.d) $(MODEOBJ:.o=.d) $(MAINOBJ:.o=.d)
 
 ## Main rule for THRAIN program
-thrain:  $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ) # |library
-	$(CC) -o $@ $^ $(CFLAGS) $(LDIR)/mylib.a -lm
+thrain: $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDIR)/mylib.a $(LDLIBS)
 
-## Rules for each subsection -- only update if their dependencies change
-$(STAROBJ): $(ODIR)/%.o: $(SDIR)/%.cpp $(STARDEPS) |obj/STARS
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-$(DRVOBJ): $(ODIR)/%.o: $(SDIR)/%.cpp $(DRVDEPS) |obj/MODES
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-$(MODEOBJ): $(ODIR)/%.o: $(SDIR)/%.cpp $(MODEDEPS) |obj/MODES
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-$(MAINOBJ): $(ODIR)/%.o: $(SDIR)/%.cpp  $(MAINDEPS) |obj/
-	$(CC) -c -o $@ $< $(CFLAGS)
-
+$(ODIR)/%.o: $(SDIR)/%.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 mode: $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ)
-	touch $(SDIR)/MODES/Mode.h
-	rm $(ODIR)/MODES/Mode.o
-	$(CC) -c -o $(ODIR)/MODES/Mode.o $(IDIR)/MODES/Mode.cpp $(CFLAGS)
-	$(CC) -o $@ $^ $(CFLAGS) $(LDIR)/mylib.a
+	$(MAKE) -B $(ODIR)/MODES/Mode.o
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDIR)/mylib.a
 
-# these will create the necessary directories
-# see solution 4 here: 
-#    https://www.cmcrossroads.com/article/making-directories-gnu-make
-obj/:
-	mkdir -p obj
-obj/STARS:
-	mkdir -p obj/STARS
-obj/MODES:
-	mkdir -p obj/MODES
+# include autogen dependencies if present
+-include $(DEPS)
+
+# -------------------------------------------------------------
+# TESTS - mized doctest + cxxtest
+# -------------------------------------------------------------
+
+TDIR = tests
+
+# Tools for CxxTest generation
+CXXTESTGEN ?= cxxtestgen
+SED        ?= sed
+
+# Generated CxxTest runner
+CXXTEST_CPP  := $(TDIR)/cxxtests.cpp
+CXXTEST_OUT  := $(TDIR)/cxxtest.out
+DOCTEST_OUT  := $(TDIR)/doctest.out
+
+# Discover tests by extension
+DOCTEST_SRCS := $(filter-out $(CXXTEST_CPP),$(wildcard $(TDIR)/*.cpp))
+CXXTEST_HDRS := $(wildcard $(TDIR)/*.h)
 
 # define test dependencies
 # these are "mock" classes that are only useful for testing
-TDIR = tests
 _TESTSTARS = test_stars/Isopycnic test_stars/DummyStar
 _TESTSTARDEPS = constants.h STARS/Star.h STARS/Star.cpp
 _TESTMODES = test_modes/SineModeDriver test_modes/DummyMode
@@ -117,27 +132,52 @@ TESTMODESRC = $(patsubst %, $(TDIR)/%.cpp, $(_TESTMODES))
 TESTSTAROBJ = $(patsubst %, $(ODIR)/%.o, $(_TESTSTARS))
 TESTMODEOBJ = $(patsubst %, $(ODIR)/%.o, $(_TESTMODES))
 
-tests: thrain $(TDIR)/*.h $(TESTSTAROBJ) $(TESTMODEOBJ)
-	cxxtestgen --error-printer -o tests/tests.cpp tests/*.h
+TEST_CORE_OBJS := \
+	$(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(ODIR)/ThrainStellar.o \
+	$(MODEOBJ) $(STAROBJ) $(DRVOBJ) \
+	$(TESTMODEOBJ) $(TESTSTAROBJ)
+
+.PHONY: tests tests-doctest tests-cxxtest clean-cxxtest
+
+# Build both during migration
+tests: tests-doctest tests-cxxtest
+
+# DOCTEST BUILD
+tests-doctest: thrain $(DOCTEST_SRCS) $(TESTSTAROBJ) $(TESTMODEOBJ)
+	$(CXX) $(LDFLAGS) -o $(DOCTEST_OUT) \
+		$(TEST_CORE_OBJS) \
+		$(DOCTEST_SRCS) -I$(TDIR) $(CPPFLAGS) $(CXXFLAGS) \
+		$(LDIR)/mylib.a $(LDLIBS)
+
+# CXXTEST BUILD
+tests-cxxtest: thrain $(TESTSTAROBJ) $(TESTMODEOBJ)
+	$(CXXTESTGEN) --error-printer -o $(CXXTEST_CPP) $(CXXTEST_HDRS)
 #	this line makes cxxtest print to stderr so that stdout can be captured
 	sed 's/CxxTest::ErrorPrinter tmp;/CxxTest::ErrorPrinter tmp(std::cerr);/' \
-		$(TDIR)/tests.cpp > changed.cpp && mv changed.cpp $(TDIR)/tests.cpp
-	$(CC) -o $(TDIR)/tests.out \
-		$(ODIR)/ThrainUnits.o $(ODIR)/ThrainMode.o $(ODIR)/ThrainIO.o $(ODIR)/ThrainStellar.o \
-		$(MODEOBJ) $(STAROBJ) $(DRVOBJ) \
-		$(TESTMODEOBJ) $(TESTSTAROBJ) \
-		tests/tests.cpp $(CFLAGS) $(LDIR)/mylib.a
+		$(CXXTEST_CPP) > changed.cpp && mv changed.cpp $(CXXTEST_CPP)
+	$(CXX) $(LDFLAGS) -o $(CXXTEST_OUT) \
+		$(TEST_CORE_OBJS) \
+		$(CXXTEST_CPP) $(CPPFLAGS) $(CXXFLAGS) \
+		$(LDIR)/mylib.a $(LDLIBS)
 
-$(TESTSTAROBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTSTARDEPS) |obj/test_stars
-	$(CC) -c -o $@ $< $(CFLAGS)
+clean-cxxtest:
+	rm -f $(CXXTEST_CPP) $(CXXTEST_OUT)
 
-$(TESTMODEOBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTMODEDEPS) |obj/test_modes
-	$(CC) -c -o $@ $< $(CFLAGS)
+#TESTSRC := $(TDIR)/mode_test.cpp $(TDIR)/rootfind_test.cpp $(TDIR)/basic.cpp $(TDIR)/string_test.cpp $(TDIR)/logger_test.cpp $(TDIR)/fullcalc_test.cpp $(TDIR)/test_main.cpp $(TDIR)/matrix_test.cpp $(TDIR)/thrainunits_test.cpp
+#TESTSRC := $(wildcard $(TDIR)/*.cpp)
 
-obj/test_stars:
-	mkdir -p obj/test_stars
-obj/test_modes:
-	mkdir -p obj/test_modes
+# tests: thrain $(TESTSRC) $(TESTSTAROBJ) $(TESTMODEOBJ)
+# 	$(CXX) $(LDFLAGS) -o $(TDIR)/tests.out $(TEST_CORE_OBJS)
+# 		$(TESTSRC) -I$(TDIR) $(CPPFLAGS) $(CXXFLAGS) \
+# 		$(LDIR)/mylib.a $(LDLIBS)
+
+$(TESTSTAROBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTSTARDEPS)
+	@mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I$(TDIR) -c -o $@ $<
+
+$(TESTMODEOBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTMODEDEPS)
+	@mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I$(TDIR) -c -o $@ $<
 
 cppcheck:
 	mkdir -p cppcheck
@@ -156,7 +196,7 @@ cppcheck:
 		src/ lib/ \
 		2> cppcheck/cppcheck_report.xml
 
-.PHONY: clean pull library cppcheck
+.PHONY: clean cleantests pull library cppcheck
 
 library:
 	rm -f lib/*.o
@@ -168,6 +208,9 @@ library:
 pull:
 	$(MAKE) -f pull
 
-clean:
+clean: cleantests
 	rm -f $(ODIR)/*.o $(ODIR)/STARS/*.o $(ODIR)/MODES/*.o
 
+cleantests:
+	rm -f $(ODIR)/tests/*.o
+	rm -f $(ODIR)/test_stars/*.o $(ODIR)/test_modes/*.o
