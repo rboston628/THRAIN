@@ -87,10 +87,10 @@ void do_test_setUnits(units::Units unitType){
 
 struct SetUpTearDown {
   SetUpTearDown() {
-    freopen("tests/artifacts/logio.txt", "a", stdout);
+    // freopen("tests/artifacts/logio.txt", "a", stdout);
   }
   ~SetUpTearDown() {
-    freopen("/dev/tty", "w", stdout);
+    // freopen("/dev/tty", "w", stdout);
   }
 };
 } // namespace
