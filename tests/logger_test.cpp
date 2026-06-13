@@ -2,6 +2,7 @@
 
 #include "../src/constants.h"
 #include "../lib/string.h"
+#include "../lib/filelib.h"
 #include "doctest.h"
 
 // define this for the tests below to work
@@ -89,7 +90,8 @@ namespace {
 
 struct SetUpTearDown {
   SetUpTearDown() { 
-    system( "mkdir -p tests/tests" );
+    // filelib::makedir("tests");
+    filelib::makedir("tests/tests");
     ThrainLogger::setOutputFile(testfilename, "w");
   }
   ~SetUpTearDown() { remove(testfilename.c_str()); }
