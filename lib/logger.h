@@ -54,14 +54,16 @@ public:
         // if we still can't opemn the file, then we failed
         ThrainLogger::error("Failed to open log file %s; logger output file not changed\n", filename.c_str());
       }
+      fprintf(stderr, "Failed to open log file %s; logger output file not changed\n", filename.c_str());
+    } else {
+      // close any open log file
+      instance().closeOpenLogFile();
+      // set the file
+      std::lock_guard<std::mutex> lock(instance().logMutex);
+      instance().fp = otherfp;
+      instance().logToFile = true;
+      otherfp = nullptr;
     }
-    // close any open log file
-    instance().closeOpenLogFile();
-    // set the file
-    std::lock_guard<std::mutex> lock(instance().logMutex);
-    instance().fp = otherfp;
-    instance().logToFile = true;
-    otherfp = nullptr;
   }
 
   static void unsetOutputFile() {
