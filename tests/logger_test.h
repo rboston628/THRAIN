@@ -20,7 +20,7 @@ class LoggerTest : public CxxTest::TestSuite {
 public:
 
 static LoggerTest *createSuite (){
-  fileio::makedir(ThrainConfig::outputDir());
+  filelib::makedir(ThrainConfig::outputDir());
   printf("\n## LOGGER TESTS ##\n");
   return new LoggerTest();
 }
