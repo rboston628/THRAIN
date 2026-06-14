@@ -461,9 +461,7 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 
 void ChandrasekharWD::writeStar(char const *const c){
 	//create names for files to be opened
-	std::string outputdir;
-	if(c==NULL)	outputdir = strmakef("./out/%c", name.c_str());
-	else        outputdir = strmakef("./%s/star",c);
+	std::string outputdir = ThrainConfig::resolveCalcName(c, name) + "star";
 	filelib::makedir(outputdir);
 
 	printStar(outputdir.c_str());
@@ -472,7 +470,6 @@ void ChandrasekharWD::writeStar(char const *const c){
 	printChem(outputdir.c_str());
 	printCoefficients(outputdir.c_str());
 }
-
 
 void ChandrasekharWD::printDeg(char const *const outputdir){
 	std::string txtname, outname;

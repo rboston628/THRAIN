@@ -696,15 +696,13 @@ void MESA::printCoefficients(const char *const c, double const g){
 //method to print pertinent values of star to .txt, and plot them in gnuplot
 void MESA::writeStar(const char *const c){
 	//create names for files to be opened
-	std::string filename, rootname, txtname, outname;
-	if(c==NULL)	filename = strmakef("./out/%s", name.c_str());
-	else filename = strmakef("./%s/star/", c);
-	txtname = strmakef("%s/%s.txt", filename.c_str(), name.c_str());
-	outname = strmakef("%s/%s.png", filename.c_str(), name.c_str());
+	std::string const ouputdir = ThrainConfig::resolveCalcName(c, name) + "star";
+	std::string const txtname = outputdir + name + ".txt";
+	std::string const outname = outputdir + name + ".png";
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		filelib::makedir(filename);
+		filelib::makedir(outputdir);
 		if(!(fp = fopen(txtname.c_str(), "w"))) 
 			ThrainLogger::error("big trouble, boss\n");		
 	}

@@ -1807,11 +1807,10 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	pclose(gnuplot);	
 }
 void SimpleWD::printBigASCII(const char *const c){
-
 	std::string filename(c), txtname, outname;
 	std::string title = graph_title();
 
-	txtname = filename + strmakef("/M%0.3le_R%0.2le_Teff%4.0lf.txt", Msolar, Rsolar, Teff);
+	txtname = strmakef("%s/M%0.3le_R%0.2le_Teff%4.0lf.txt", filename, Msolar, Rsolar, Teff);
 	FILE* fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "## SimpleWD output file\n");
 	fprintf(fp, "# Mass \t%le (g)\t%0.3le (Msun) \n", Mstar, Msolar);
@@ -1935,19 +1934,17 @@ void SimpleWD::printBigASCII(const char *const c){
 }
 void SimpleWD::writeStar(const char *const c){
 	//create names for files to be opened
-	std::string filename, txtname, outname;
-	if(c==NULL)	filename = "./out." + name;
-	else filename = strmakef("./%s/star", c);
-	txtname = filename + "/star.txt";
-	outname = filename + "/star.png";
+	std::string const outputdir = ThrainConfig::resolveCalcName(c, name) + "star";
+	std::string const txtname = outputdir + "/star.txt";
+	std::string const outname = outputdir + "/star.png";
 
 	std::string title = graph_title();
 
 	//prepare the output directory, making sure it exists
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		filelib::makedir(filename);
-		if(!(fp = fopen(filename.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
+		filelib::makedir(outputdir);
+		if(!(fp = fopen(txtname.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
 	}
 	
 	//print results to text file

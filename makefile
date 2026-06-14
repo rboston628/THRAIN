@@ -70,7 +70,7 @@ MODESRC  = $(patsubst %, $(SDIR)/%, $(_MODESRC))
 
 ## files needed to compile main program
 #  dependencies
-_MAINDEPS = constants.h ThrainMain.h ThrainIO.h ThrainUnits.h
+_MAINDEPS = constants.h ThrainMain.h ThrainIO.h ThrainUnits.h ThrainConfig.h
 MAINDEPS = $(patsubst %, $(IDIR)/%, $(_MAINDEPS)) $(STARDEPS) $(MODEDEPS) $(DRVDEPS)
 #  soure
 _MAINSRC = ThrainMain.cpp ThrainIO.cpp ThrainUnits.cpp ThrainStellar.cpp ThrainMode.cpp

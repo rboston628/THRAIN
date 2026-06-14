@@ -9,6 +9,7 @@
 #include "ThrainMain.h"
 #include "ThrainIO.h"
 
+#include "ThrainConfig.h"
 #include "../lib/string.h"
 #include "../lib/filelib.h"
 
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	//remove any information from past calculations, and create directory for the calculation
-	std::string output_dir = "./output/" + calcdataIn.calcname;
+	std::string output_dir = ThrainConfig::outputDir() + calcdataIn.calcname;
 	filelib::remove(output_dir);
 	filelib::makedir(output_dir + "/star");
 	filelib::makedir(output_dir + "/modes");

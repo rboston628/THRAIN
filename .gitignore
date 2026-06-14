@@ -59,6 +59,8 @@ tests/cxxtests.cpp
 !tests/inputs/
 !tests/inputs/spline/
 !tests/inputs/spline/*
+# the test config
+!tests/tests.config
 
 ## DOCUMENTATION
 # include the documentation

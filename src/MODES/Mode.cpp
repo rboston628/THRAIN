@@ -321,16 +321,14 @@ int Mode<numvar>::verifyMode(){
 template <std::size_t numvar> 
 void Mode<numvar>::writeMode(const char *const c){
 	//create names for files to be opened
-	std::string filename, modename = strmakef("/mode_%d.%d", l, k);
-	if(c==NULL)	filename = "./out/" + star->name + "/mode";
-	else filename = addstring("./", c) + "/modes";
-	std::string rootname = filename + modename;
 	//save data to folder to avoid clutter - make sure folder exists
+	std::string outputdir = ThrainConfig::resolveCalcName(c, star->name) + "modes";
+	std::string rootname = string::strmakef("%s/mode_%d.%d", outputdir.c_str(), l, k);
 	std::string txtname = rootname + ".txt";
 	std::string outname = rootname + ".png";
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		filelib::makedir(filename);
+		fileio::makedir(outputdir);
 		fp = fopen(txtname.c_str(), "w");
 	}
 	double R = rad[len-1];

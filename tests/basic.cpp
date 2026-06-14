@@ -3,7 +3,10 @@
 #include <cstdlib>
 
 struct SetUp {
-  SetUp() { printf("test of testing\n"); }
+  SetUp() {
+    ThrainConfig::reconfigure("./tests/tests.config");
+    printf("test of testing\n");
+  }
   ~SetUp() = default;
 };
 

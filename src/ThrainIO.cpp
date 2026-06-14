@@ -14,9 +14,27 @@
 #include "ThrainUnits.h"
 #include "ThrainMain.h"
 #include "ThrainIO.h"
+#include "ThrainConfig.h"
 #include "../lib/filelib.h"
+#include "../lib/logger.h"
 
 class Polytrope;
+
+namespace {
+	std::string calculation_output_dir(Calculation::InputData const& calcdata) {
+		return ThrainConfig::outputDir() + calcdata.calcname + "/";
+	}
+	std::string calculation_input_file(Calculation::InputData const& calcdata) {
+		return calculation_output_dir(calcdata) + calcdata.calcname + "_in.txt";
+	}
+	std::string calculation_summary_file(Calculation::InputData const& calcdata) {
+		return calculation_output_dir(calcdata) + calcdata.calcname + ".txt";
+	}
+	std::string calculation_output_file(Calculation::InputData const& calcdata, std::string filename) {
+		return calculation_output_dir(calcdata) + filename;
+	}
+}
+
 
 namespace io {
 
@@ -24,9 +42,10 @@ namespace io {
 int read_input(const char input_file_name[128], Calculation::InputData &calcdata){
 	//open file
 
-	FILE* input_file = fopen(input_file_name, "r");
+	std::string input_file_path = ThrainConfig::inputDir() + input_file_name;
+	FILE* input_file = fopen(input_file_path.c_str(), "r");
 	if(!input_file){
-		perror("Input file not found");
+		ThrainLogger::error("Input file not found");
 		return 1;
 	}
 	
@@ -289,16 +308,16 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 //this function will print back the input file, so the same calculation can be run again
 int echo_input(Calculation::InputData &calcdata){
 	ThrainLogger::info("Copying input file...\t");
-	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+"_in.txt";
+	//open file to write output summary;
+	std::string output_file_name = calculation_input_file(calcdata);
 	FILE* output_file;
 	
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-		//if an error occurs, try making the folder needed
-		filelib::makedir("./output/"+calcdata.calcname);
+		//if an error occurs, try making the parent folder
+		filelib::makedir(calculation_output_dir(calcdata).c_str());
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			ThrainLogger::error("output file not found.\n");
+			ThrainLogger::error("Could not open file %s for input echo\n", output_file_name.c_str());
 			return 1;
 		}
 	}
@@ -423,7 +442,7 @@ int setup_output(Calculation::InputData &data_in, Calculation::OutputData &data_
 	//formatting units may need to be re-performed after calculation, depending on star
 	ThrainLogger::info("MASS = %le\n", data_out.mass);
 	units::format_units(data_out);
-	ThrainLogger::info("MASS = %le\n", data_out.mass);
+	ThrainLogger::debug("MASS = %le\n", data_out.mass);
 	
 	//now prepare the modes
 	data_out.mode_num = data_in.mode_num;
@@ -498,14 +517,14 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	ThrainLogger::info("Writing stellar data to file...\t");
 	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
+	std::string output_file_name = calculation_summary_file(calcdata);
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the parent directory
 		ThrainLogger::info("creating file...");
 		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
-		filelib::makedir("./output/"+calcdata.calcname);
+		filelib::makedir(calculation_output_dir(calcdata));
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::info("Could not open file %s\n", output_file_name.c_str());
 			return 1;
@@ -627,8 +646,8 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	fprintf(output_file, "\n");
 	fclose(output_file);
 	
-	std::string outname = "./output/"+calcdata.calcname;
-	calcdata.star->writeStar(outname.c_str());
+	std::string output_dir = calculation_output_dir(calcdata);
+	calcdata.star->writeStar(output_dir.c_str());
 	
 	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 	return 0;
@@ -637,7 +656,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 int write_mode_output(Calculation::OutputData& calcdata){
 	ThrainLogger::info("writing mode data to file...\t");
 	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/"+calcdata.calcname+".txt";
+	std::string output_file_name = calculation_summary_file(calcdata);
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
@@ -731,14 +750,14 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	ThrainLogger::info("Writing tidal overlap coefficients...\t");
-	//open file to write output summary
-	std::string output_file_name = "./output/"+calcdata.calcname+"/tidal_overlap.txt";
+	//open file to write output summary;
+	std::string output_file_name = calculation_output_file(calcdata, "tidal_overlap.txt");
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-		//if an error occurs, try making the folder needed
+		//if an error occurs, try making the parent folder
 		ThrainLogger::info("creating file...\n");
-		filelib::makedir("./output/"+calcdata.calcname);
+		filelib::makedir(calculation_output_dir(calcdata));
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::error("Could not open %s: the file doesn't exist\n", output_file_name.c_str());
 			return 1;
