@@ -9,7 +9,6 @@
 //  	For mocking behavior of modes for use in tests
 //**************************************************************************************
 // needed for abstract class
-void DummyMode::printMode(const char *const c){}
 void DummyMode::writeMode(const char *const c){}
 double DummyMode::getRad(std::size_t x){return 0.0;}
 double DummyMode::getY(int i, std::size_t x){return 0.0;}

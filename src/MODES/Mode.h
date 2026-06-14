@@ -83,7 +83,6 @@ protected:
 
 public:
 	//file output methods to write and view plots of mode
-	void printMode(const char *const c = NULL);
 	void writeMode(const char *const c = NULL);
 };
 

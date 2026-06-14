@@ -363,23 +363,6 @@ void Mode<numvar>::writeMode(const char *const c){
 	pclose(gnuplot);
 }
 
-//write the mode, and then open the png to screen for easy viewing
-template <std::size_t numvar> 
-void Mode<numvar>::printMode(const char *const c){
-	writeMode(c);
-	std::string outname, modename = "mode_"+std::to_string(l)+"."+std::to_string(k)+".png";
-	if(c==NULL) outname = "./out/"+star->name+"/mode/"+modename;
-	else {
-		outname = "./";
-		for(std::size_t i=0; c[i]!=0; i++){
-			outname += c[i];
-		}
-		outname += "modes/"+modename;
-	}
-	char openmyplot[248];
-	system(std::string("open "+outname).c_str());
-}
-
 //ways to access the frequency
 template <std::size_t numvar> 
 double Mode<numvar>::getOmega2(){

@@ -1497,7 +1497,6 @@ void SimpleWD::getC1Surface(double *cs, int& maxPow){
 // optional argument c[] is calculation directory where files should be written
 // if no argument, files written to ./out/[name], where name is shown in constructor
 void SimpleWD::printChem(const char *const c){
-
 	std::string filename(c), rootname, txtname, outname;
 	std::string title = graph_title();
 	
@@ -1646,7 +1645,6 @@ void SimpleWD::printOpacity(const char *const c){
 	pclose(gnuplot);
 }
 void SimpleWD::printCoefficients(const char *const c, const double g){
-
 	std::string filename, txtname, outname;
 	filename = addstring(c,"/wave_coefficient");
 	system( ("mkdir -p " + filename).c_str() );

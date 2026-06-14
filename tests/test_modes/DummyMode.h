@@ -23,7 +23,6 @@ const double ZEROW2 = 0.16;
 class DummyMode : public ModeBase {
 public:
     static const unsigned int num_var=0U;
-    void printMode(const char *const c) override;
     void writeMode(const char *const c) override;
     double getRad(std::size_t x) override;
     double getY(int i, std::size_t x) override;
