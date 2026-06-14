@@ -24,6 +24,7 @@
 #include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
+#include "../ThrainConfig.h"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
@@ -1810,7 +1811,7 @@ void SimpleWD::printBigASCII(const char *const c){
 	std::string filename(c), txtname, outname;
 	std::string title = graph_title();
 
-	txtname = strmakef("%s/M%0.3le_R%0.2le_Teff%4.0lf.txt", filename, Msolar, Rsolar, Teff);
+	txtname = strmakef("%s/M%0.3le_R%0.2le_Teff%4.0lf.txt", c, Msolar, Rsolar, Teff);
 	FILE* fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "## SimpleWD output file\n");
 	fprintf(fp, "# Mass \t%le (g)\t%0.3le (Msun) \n", Mstar, Msolar);
@@ -1991,10 +1992,10 @@ void SimpleWD::writeStar(const char *const c){
 	pclose(gnuplot);
 	
 	//call files to print other properties
-	printChem(filename.c_str());
-	printBV(filename.c_str());
-	printOpacity(filename.c_str());
-	printCoefficients(filename.c_str());	
+	printChem(outputdir.c_str());
+	printBV(outputdir.c_str());
+	printOpacity(outputdir.c_str());
+	printCoefficients(outputdir.c_str());	
 	//printBigASCII(filename);
 }
 

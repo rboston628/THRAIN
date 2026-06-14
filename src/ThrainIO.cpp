@@ -21,17 +21,17 @@
 class Polytrope;
 
 namespace {
-	std::string calculation_output_dir(Calculation::InputData const& calcdata) {
-		return ThrainConfig::outputDir() + calcdata.calcname + "/";
+	std::string calculation_output_dir(std::string const& calcname) {
+		return ThrainConfig::outputDir() + calcname + "/";
 	}
-	std::string calculation_input_file(Calculation::InputData const& calcdata) {
-		return calculation_output_dir(calcdata) + calcdata.calcname + "_in.txt";
+	std::string calculation_input_file(std::string const& calcname) {
+		return calculation_output_dir(calcname) + calcname + "_in.txt";
 	}
-	std::string calculation_summary_file(Calculation::InputData const& calcdata) {
-		return calculation_output_dir(calcdata) + calcdata.calcname + ".txt";
+	std::string calculation_summary_file(std::string const& calcname) {
+		return calculation_output_dir(calcname) + calcname + ".txt";
 	}
-	std::string calculation_output_file(Calculation::InputData const& calcdata, std::string filename) {
-		return calculation_output_dir(calcdata) + filename;
+	std::string calculation_output_file(std::string const& calcname, std::string const&filename) {
+		return calculation_output_dir(calcname) + filename;
 	}
 }
 
@@ -309,13 +309,13 @@ int read_frequencies(FILE* input_file, Calculation::InputData& calcdata){
 int echo_input(Calculation::InputData &calcdata){
 	ThrainLogger::info("Copying input file...\t");
 	//open file to write output summary;
-	std::string output_file_name = calculation_input_file(calcdata);
+	std::string output_file_name = calculation_input_file(calcdata.calcname);
 	FILE* output_file;
 	
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the parent folder
-		filelib::makedir(calculation_output_dir(calcdata).c_str());
+		filelib::makedir(calculation_output_dir(calcdata.calcname));
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::error("Could not open file %s for input echo\n", output_file_name.c_str());
 			return 1;
@@ -517,14 +517,14 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	int d=0;
 	ThrainLogger::info("Writing stellar data to file...\t");
 	//open file to write output summary
-	std::string output_file_name = calculation_summary_file(calcdata);
+	std::string output_file_name = calculation_summary_file(calcdata.calcname);
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the parent directory
 		ThrainLogger::info("creating file...");
 		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
-		filelib::makedir(calculation_output_dir(calcdata));
+		filelib::makedir(calculation_output_dir(calcdata.calcname));
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::info("Could not open file %s\n", output_file_name.c_str());
 			return 1;
@@ -646,7 +646,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	fprintf(output_file, "\n");
 	fclose(output_file);
 	
-	std::string output_dir = calculation_output_dir(calcdata);
+	std::string output_dir = calculation_output_dir(calcdata.calcname);
 	calcdata.star->writeStar(output_dir.c_str());
 	
 	ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
@@ -656,7 +656,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 int write_mode_output(Calculation::OutputData& calcdata){
 	ThrainLogger::info("writing mode data to file...\t");
 	//open file to write output summary
-	std::string output_file_name = calculation_summary_file(calcdata);
+	std::string output_file_name = calculation_summary_file(calcdata.calcname);
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
@@ -751,13 +751,13 @@ void print_splash(FILE* output_file, const char *const title, int WIDTH){
 int write_tidal_overlap(Calculation::OutputData& calcdata){
 	ThrainLogger::info("Writing tidal overlap coefficients...\t");
 	//open file to write output summary;
-	std::string output_file_name = calculation_output_file(calcdata, "tidal_overlap.txt");
+	std::string output_file_name = calculation_output_file(calcdata.calcname, "tidal_overlap.txt");
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the parent folder
 		ThrainLogger::info("creating file...\n");
-		filelib::makedir(calculation_output_dir(calcdata));
+		filelib::makedir(calculation_output_dir(calcdata.calcname));
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::error("Could not open %s: the file doesn't exist\n", output_file_name.c_str());
 			return 1;

@@ -1,6 +1,7 @@
 #include "doctest.h"
 #include <cstdio>
 #include <cstdlib>
+#include "../src/ThrainConfig.h"
 
 struct SetUp {
   SetUp() {

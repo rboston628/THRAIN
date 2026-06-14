@@ -16,6 +16,8 @@
 #define MESACLASS
 
 #include "MESA.h"
+#include "../ThrainConfig.h"
+#include "../../lib/logger.h"
 
 MESA::MESA(const char* filename, std::size_t L) : len(L) {
 	ThrainLogger::info("Beginning read-in of MESA data.\n");
@@ -696,7 +698,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 //method to print pertinent values of star to .txt, and plot them in gnuplot
 void MESA::writeStar(const char *const c){
 	//create names for files to be opened
-	std::string const ouputdir = ThrainConfig::resolveCalcName(c, name) + "star";
+	std::string const outputdir = ThrainConfig::resolveCalcName(c, name) + "star";
 	std::string const txtname = outputdir + name + ".txt";
 	std::string const outname = outputdir + name + ".png";
 
@@ -737,8 +739,8 @@ void MESA::writeStar(const char *const c){
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 		
-	printBV(filename.c_str());
-	printCoefficients(filename.c_str());	
+	printBV(outputdir.c_str());
+	printCoefficients(outputdir.c_str());	
 }
 
 double MESA::SSR(){	

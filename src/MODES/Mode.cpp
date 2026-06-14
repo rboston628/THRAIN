@@ -12,8 +12,10 @@
 #define MODECLASS
 
 #include "Mode.h"
+#include "../ThrainConfig.h"
 #include "../../lib/rootfind.h"
 #include "../../lib/filelib.h"
+#include "../../lib/string.h"
 
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching
@@ -323,12 +325,12 @@ void Mode<numvar>::writeMode(const char *const c){
 	//create names for files to be opened
 	//save data to folder to avoid clutter - make sure folder exists
 	std::string outputdir = ThrainConfig::resolveCalcName(c, star->name) + "modes";
-	std::string rootname = string::strmakef("%s/mode_%d.%d", outputdir.c_str(), l, k);
+	std::string rootname = strmakef("%s/mode_%d.%d", outputdir.c_str(), l, k);
 	std::string txtname = rootname + ".txt";
 	std::string outname = rootname + ".png";
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		fileio::makedir(outputdir);
+		filelib::makedir(outputdir);
 		fp = fopen(txtname.c_str(), "w");
 	}
 	double R = rad[len-1];
