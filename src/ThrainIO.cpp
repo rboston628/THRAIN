@@ -335,7 +335,6 @@ int echo_input(Calculation::InputData &calcdata){
 			fprintf(output_file, "EOS:\n");
 			char line1[258], line2[258];
 			sscanf(calcdata.str_input_param.c_str(), "%257[^\n]\n%257[^\n]", line1, line2); 
-			//fprintf(output_file, "%s\n", calcdata.str_input_param.c_str());
 			fprintf(output_file, "\tcore\t%s\n\tatm\t%s\n", line1, line2);
 			fprintf(output_file, "chemical parameters:\n");
 			fprintf(output_file, "\the\t%lg\t%lg\t%lg\n",calcdata.input_params[1], calcdata.input_params[2], calcdata.input_params[3]);
@@ -390,7 +389,7 @@ int echo_input(Calculation::InputData &calcdata){
 		}
 	}
 	if(checkcount != calcdata.mode_num){
-		ThrainLogger::error("non-matching numbers of modes");
+		ThrainLogger::error("non-matching numbers of modes: %zu vs %d", calcdata.mode_num, checkcount);
 		return 1;
 	}
 	
@@ -502,12 +501,12 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-		//if an error occurs, try making the folder needed
+		//if an error occurs, try making the parent directory
 		ThrainLogger::info("creating file...");
 		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
 		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			ThrainLogger::info("output file not found.\n");
+			ThrainLogger::info("Could not open file %s\n", output_file_name.c_str());
 			return 1;
 		}
 	}
@@ -525,7 +524,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 	for(int j=1; j<WIDTH; j++) fprintf(output_file, "-");
 	fprintf(output_file, "\n");
 	
-	// char s[256],m[256];
+	// print the model
 	std::string s, m;
 	switch(calcdata.model){
 		case model::polytrope:
@@ -641,7 +640,7 @@ int write_mode_output(Calculation::OutputData& calcdata){
 	FILE* output_file;
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "a")) ){
-		ThrainLogger::error("the file doesn't exist\n");
+		ThrainLogger::error("Could not open %s: the file doesn't exist\n", output_file_name.c_str());
 		return 1;
 	}
 		
@@ -740,7 +739,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 		ThrainLogger::info("creating file...\n");
 		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
-			ThrainLogger::error("output file not found.\n");
+			ThrainLogger::error("Could not open %s: the file doesn't exist\n", output_file_name.c_str());
 			return 1;
 		}
 	}

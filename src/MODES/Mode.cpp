@@ -13,6 +13,7 @@
 
 #include "Mode.h"
 #include "../../lib/rootfind.h"
+#include "../../lib/filelib.h"
 
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching
@@ -329,7 +330,7 @@ void Mode<numvar>::writeMode(const char *const c){
 	std::string outname = rootname + ".png";
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( ("mkdir -p "+filename).c_str() );
+		filelib::makedir(filename);
 		fp = fopen(txtname.c_str(), "w");
 	}
 	double R = rad[len-1];

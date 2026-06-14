@@ -137,8 +137,6 @@ TEST_CORE_OBJS := \
 	$(MODEOBJ) $(STAROBJ) $(DRVOBJ) \
 	$(TESTMODEOBJ) $(TESTSTAROBJ)
 
-.PHONY: tests tests-doctest tests-cxxtest clean-cxxtest
-
 # Build both during migration
 tests: tests-doctest tests-cxxtest
 
@@ -159,9 +157,6 @@ tests-cxxtest: thrain $(TESTSTAROBJ) $(TESTMODEOBJ)
 		$(TEST_CORE_OBJS) \
 		$(CXXTEST_CPP) $(CPPFLAGS) $(CXXFLAGS) \
 		$(LDIR)/mylib.a $(LDLIBS)
-
-clean-cxxtest:
-	rm -f $(CXXTEST_CPP) $(CXXTEST_OUT)
 
 #TESTSRC := $(TDIR)/mode_test.cpp $(TDIR)/rootfind_test.cpp $(TDIR)/basic.cpp $(TDIR)/string_test.cpp $(TDIR)/logger_test.cpp $(TDIR)/fullcalc_test.cpp $(TDIR)/test_main.cpp $(TDIR)/matrix_test.cpp $(TDIR)/thrainunits_test.cpp
 #TESTSRC := $(wildcard $(TDIR)/*.cpp)

@@ -39,6 +39,7 @@ src/STARS/ZAMS.cpp
 !lib/stellar.*
 !lib/string.*
 !lib/logger.h
+!lib/filelib.*
 lib/*.o
 
 # the test suite

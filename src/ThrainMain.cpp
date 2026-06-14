@@ -9,6 +9,9 @@
 #include "ThrainMain.h"
 #include "ThrainIO.h"
 
+#include "../lib/string.h"
+#include "../lib/filelib.h"
+
 namespace mode {
 	int create_modes(Calculation::OutputData &data_out);
 }
@@ -30,9 +33,10 @@ int main(int argc, char* argv[]){
 	}
 	
 	//remove any information from past calculations, and create directory for the calculation
-	system( ( "rm -r ./output/"+calcdataIn.calcname ).c_str() );
-	system( ( "mkdir -p ./output/"+calcdataIn.calcname+"/star" ).c_str() );
-	system( ( "mkdir -p ./output/"+calcdataIn.calcname+"/modes" ).c_str() );
+	std::string output_dir = "./output/" + calcdataIn.calcname;
+	filelib::remove(output_dir);
+	filelib::makedir(output_dir + "/star");
+	filelib::makedir(output_dir + "/modes");
 	//print a copy of the input file for future reference
 	io::echo_input(calcdataIn);
 	//prepare the output, based on the input
