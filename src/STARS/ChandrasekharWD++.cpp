@@ -464,8 +464,7 @@ void ChandrasekharWD::writeStar(char const *const c){
 	std::string outputdir;
 	if(c==NULL)	outputdir = strmakef("./out/%c", name.c_str());
 	else        outputdir = strmakef("./%s/star",c);
-
-	system( ("mkdir -p "+outputdir).c_str() );
+	filelib::makedir(outputdir);
 
 	printStar(outputdir.c_str());
 	printDeg(outputdir.c_str());

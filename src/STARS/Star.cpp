@@ -24,8 +24,7 @@ void Star::writeStar(const char *const c){
 	std::string outputdir;
 	if(c==NULL)	outputdir = strmakef("./out/%s/", name.c_str());
 	else outputdir = strmakef("./%s/star/", c);
-	
-	system( ("mkdir -p "+outputdir).c_str() );
+	filelib::makedir(outputdir);
 	
 	printStar(outputdir.c_str());
 	printBV(outputdir.c_str());
@@ -40,7 +39,7 @@ void Star::printStar(const char *const outputdir){
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( addstring("mkdir -p ",outputdir).c_str() );
+		filelib::makedir(outputdir);
 		fp = fopen(txtname.c_str(), "w");
 	}
 	//print results to text file
@@ -168,7 +167,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	
 	// FIRST: print out coefficients near center and surface, for series analysis
 	std::string wavecoeffdir = addstring(outputdir, "/wave_coefficient");
-	system( ("mkdir -p " + wavecoeffdir).c_str() ); 
+	filelib::makedir(wavecoeffdir);
 
 	std::size_t Ntot = length();
 	const int num_c=3, num_s=5;

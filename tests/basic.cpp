@@ -3,10 +3,7 @@
 #include <cstdlib>
 
 struct SetUp {
-  SetUp() {
-    printf("test of testing\n");
-    system("rm tests/artifacts/logio.txt");
-  }
+  SetUp() { printf("test of testing\n"); }
   ~SetUp() = default;
 };
 

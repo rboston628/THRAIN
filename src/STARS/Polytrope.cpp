@@ -463,8 +463,7 @@ void Polytrope::writeStar(const char *const c){
 	std::string pathname;
 	if(c==NULL)	pathname = "./out/" + name;
 	else pathname = strmakef("./%s/star/", c);
-
-	system( addstring("mkdir -p ", pathname).c_str() );
+	filelib::makedir(pathname);
 	
 	printStar(pathname.c_str());
 	printBV(pathname.c_str(), 5./3.);

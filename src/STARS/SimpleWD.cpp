@@ -1647,7 +1647,7 @@ void SimpleWD::printOpacity(const char *const c){
 void SimpleWD::printCoefficients(const char *const c, const double g){
 	std::string filename, txtname, outname;
 	filename = addstring(c,"/wave_coefficient");
-	system( ("mkdir -p " + filename).c_str() );
+	filelib::makedir(filename);
 	
 	std::string title = graph_title();
 	
@@ -1946,7 +1946,7 @@ void SimpleWD::writeStar(const char *const c){
 	//prepare the output directory, making sure it exists
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( ("mkdir -p " + filename).c_str() );
+		filelib::makedir(filename);
 		if(!(fp = fopen(filename.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
 	}
 	

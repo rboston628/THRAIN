@@ -540,10 +540,9 @@ void MESA::printBV(const char *const c, double const g){
 }
 
 void MESA::printCoefficients(const char *const c, double const g){
-
 	std::string filename, rootname, txtname, outname;
 	filename = addstring(c, "/wave_coefficient");
-	system( ("mkdir -p " + filename).c_str() );
+	filelib::makedir(filename);
 	
 	//print the coefficients of the center and surface, for series analysis
 	txtname = filename + "/center.txt";
@@ -705,7 +704,7 @@ void MESA::writeStar(const char *const c){
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( ("mkdir -p " + filename).c_str() );
+		filelib::makedir(filename);
 		if(!(fp = fopen(txtname.c_str(), "w"))) 
 			ThrainLogger::error("big trouble, boss\n");		
 	}

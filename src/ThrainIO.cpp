@@ -14,6 +14,7 @@
 #include "ThrainUnits.h"
 #include "ThrainMain.h"
 #include "ThrainIO.h"
+#include "../lib/filelib.h"
 
 class Polytrope;
 
@@ -295,7 +296,7 @@ int echo_input(Calculation::InputData &calcdata){
 	//try to open the output file
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
-		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		filelib::makedir("./output/"+calcdata.calcname);
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::error("output file not found.\n");
 			return 1;
@@ -504,7 +505,7 @@ int write_stellar_output(Calculation::OutputData& calcdata){
 		//if an error occurs, try making the parent directory
 		ThrainLogger::info("creating file...");
 		// std::string command = "mkdir -p ./output/"+calcdata.calcname;
-		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		filelib::makedir("./output/"+calcdata.calcname);
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::info("Could not open file %s\n", output_file_name.c_str());
 			return 1;
@@ -737,7 +738,7 @@ int write_tidal_overlap(Calculation::OutputData& calcdata){
 	if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 		//if an error occurs, try making the folder needed
 		ThrainLogger::info("creating file...\n");
-		system( ("mkdir -p ./output/"+calcdata.calcname).c_str() );
+		filelib::makedir("./output/"+calcdata.calcname);
 		if( !(output_file = fopen(output_file_name.c_str(), "w")) ){
 			ThrainLogger::error("Could not open %s: the file doesn't exist\n", output_file_name.c_str());
 			return 1;
