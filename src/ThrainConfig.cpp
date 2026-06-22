@@ -33,11 +33,10 @@ void ThrainConfig::reconfigure(std::unordered_map<std::string, std::string> cons
 }
 
 /// Determine correct location for writing output; directory terminates with a "/"
-std::string ThrainConfig::resolveCalcName(char const *const c, std::string const& name) {
+std::string ThrainConfig::resolveCalcName(std::string const& c, std::string const& name) {
   std::string ret;
-  if (c) return ret = c;
-  else ret = outputDir() + defaultCalcName() + "/" + name + "/";
-  if (ret.back() != '/') ret += '/';
+  if (c != "") return ret = c;
+  else ret = outputDir() + trailingSlash(defaultCalcName()) + trailingSlash(name);
   return ret;
 }
 
@@ -53,5 +52,10 @@ void ThrainConfig::setConfig(std::unordered_map<std::string, std::string> const&
 }
 
 std::unordered_set<std::string> const ThrainConfig::valid_keys{"input_directory", "output_directory", "default_calc_name"};
+std::unordered_map<std::string, std::string> const ThrainConfig::default_config{
+  {"input_directory", "./"},
+  {"output_directory", "./output/"},
+  {"default_calc_name", "models"}
+};
 
 #endif
