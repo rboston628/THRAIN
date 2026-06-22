@@ -59,8 +59,8 @@ TEST_SUITE("ThrainConfig") {
     CHECK_NE(ThrainConfig::outputDir(), "testout");
     CHECK_NE(ThrainConfig::defaultCalcName(), "testname");
     ThrainConfig::reconfigure("tests/inputs/config_test.config");
-    CHECK_EQ(ThrainConfig::inputDir(), "testin");
-    CHECK_EQ(ThrainConfig::outputDir(), "testout");
+    CHECK_EQ(ThrainConfig::inputDir(), "testin/");
+    CHECK_EQ(ThrainConfig::outputDir(), "testout/");
     CHECK_EQ(ThrainConfig::defaultCalcName(), "testname");
   }
 
@@ -81,10 +81,10 @@ TEST_SUITE("ThrainConfig") {
 
   TEST_CASE_FIXTURE(SetupTeardown, "resolveCalcName") {
     std::string name = "testcalc";
-    std::string resolved = ThrainConfig::resolveCalcName(nullptr, name);
+    std::string resolved = ThrainConfig::resolveCalcName("", name);
     CHECK_EQ(resolved, ThrainConfig::outputDir() + ThrainConfig::defaultCalcName() + "/" + name + "/");
     std::string custom = "customdir/";
-    resolved = ThrainConfig::resolveCalcName(custom.c_str(), name);
+    resolved = ThrainConfig::resolveCalcName(custom, name);
     CHECK_EQ(resolved.back(), '/');
     CHECK_EQ(resolved, custom);
   }
