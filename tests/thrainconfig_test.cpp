@@ -239,7 +239,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     calcdataOut.mode_writ = 0;
     calcdataOut.mode_done = 0;
     // setup the config so that the star prints at tests/output/test_config_poly
-    ThrainConfig::reconfigure({"output_directory", "./tests/output/"});
+    ThrainConfig::reconfigure({{"output_directory", "./tests/output/"}});
     calcdataOut.calcname = "test_config_poly";
     // call to print the star
     io::write_stellar_output(calcdataOut);
