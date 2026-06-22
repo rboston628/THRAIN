@@ -324,13 +324,13 @@ template <std::size_t numvar>
 void Mode<numvar>::writeMode(const char *const c){
 	//create names for files to be opened
 	//save data to folder to avoid clutter - make sure folder exists
-	std::string outputdir = ThrainConfig::resolveCalcName(c, star->name) + "modes";
-	std::string rootname = strmakef("%s/mode_%d.%d", outputdir.c_str(), l, k);
-	std::string txtname = rootname + ".txt";
-	std::string outname = rootname + ".png";
-	FILE *fp;
-	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		filelib::makedir(outputdir);
+	std::string calcname = ThrainConfig::resolveCalcName(c, star->name);
+	std::string txtname = ThrainConfig::calculationFileName(calcname, "modes", strmakef("mode_%d.%d.txt", l, k));
+	std::string outname = ThrainConfig::calculationFileName(calcname, "modes", strmakef("mode_%d.%d.png", l, k));
+
+	FILE *fp = fopen(txtname.c_str(), "w");
+	if(fp){
+		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "modes"));
 		fp = fopen(txtname.c_str(), "w");
 	}
 	double R = rad[len-1];

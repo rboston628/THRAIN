@@ -63,10 +63,10 @@ public:
 	virtual double Gee() =0;
 	virtual double light_speed2();
 	//print relevant values of the star in .txt and gnuplot
-	virtual void writeStar(const char *const c = NULL);
-	virtual void printStar(const char *const c = NULL);
-	virtual void printBV(  const char *const c = NULL, double const gam1=0.0);
-	virtual void printCoefficients(const char *const c = NULL, double const gam1=0.0);
+	virtual void writeStar(std::string const & c = "");
+	virtual void printStar(std::string const &);
+	virtual void printBV(  std::string const &, double const gam1=0.0);
+	virtual void printCoefficients(std::string const &, double const gam1=0.0);
 	virtual double SSR();
 	
 	//allow Modes to access private members of Star

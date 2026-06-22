@@ -111,9 +111,9 @@ public:
 	void getC1Surface(double*, int&) override final;
 
 	//a particular output generation for this model of white dwarf
-	void writeStar(char const *const c=NULL) override final;
-	void printDeg(char const *const c);
-	void printChem(char const *const c);
+	void writeStar(std::string const& calcname = "") override final;
+	void printDeg(std::string const& calcname);
+	void printChem(std::string const& calcname);
 };
 
 namespace Chandrasekhar {

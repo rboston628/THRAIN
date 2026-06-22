@@ -74,11 +74,11 @@ public:
 	void getUSurface(double*, int&) override final;
 	void getVgSurface(double*, int&, double g=0) override final;
 	void getC1Surface(double*, int&) override final;
-	void writeStar(const char *const c=NULL) override final;
+	void writeStar(std::string const& calcname = "") override final;
 	double SSR() override final;
 private:
-	void printBV(const char *const, double const g=0) override final;
-	void printCoefficients(const char *const, double const g=0) override final;
+	void printBV(std::string const& calcname, double const g=0) override final;
+	void printCoefficients(std::string const& calcname, double const g=0) override final;
 };
 
 #endif

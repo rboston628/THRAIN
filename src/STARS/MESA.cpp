@@ -501,13 +501,12 @@ void MESA::getC1Surface(double *cs, int& maxPow){
 }
 
 
-void MESA::printBV(const char *const c, double const g){
-	std::string filename = c, rootname, txtname, outname;
+void MESA::printBV(std::string const& calcname, double const g){
 	std::string title = graph_title();
 	
 	//print the Brunt-Vaisala frequency
-	txtname = filename + "/BruntVaisala.txt";
-	outname = filename + "/BruntVaisala.png";
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.png");
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0;
 	double scaleN2 = G_CGS*Mtot*pow(Rtot,-3);		//put N^2 back into CGS units
@@ -541,13 +540,13 @@ void MESA::printBV(const char *const c, double const g){
 	pclose(gnuplot);
 }
 
-void MESA::printCoefficients(const char *const c, double const g){
-	std::string filename, rootname, txtname, outname;
-	filename = addstring(c, "/wave_coefficient");
-	filelib::makedir(filename);
+void MESA::printCoefficients(std::string const& calcname, double const g){
+	std::string const wave_coeff{"wave_coefficient"};
+	filelib::makedir(ThrainConfig::calculationSubdir(calcname, wave_coeff));
 	
 	//print the coefficients of the center and surface, for series analysis
-	txtname = filename + "/center.txt";
+	std::string txtname, outname;
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "center.txt");
 	FILE *fp = fopen(txtname.c_str(), "w");
 	double gam1 = Gam1->interp(radi[1]);
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\n", dc[0],dc[1],dc[2]);
@@ -557,7 +556,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	fprintf(fp, "Vg  :\t%0.16le\t%0.16le\t%0.16le\n", V0[0]/gam1,V0[1]/gam1,V0[2]/gam1);
 	fprintf(fp, "c1  :\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	txtname = filename + "/surface.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surface.txt");
 	fp = fopen(txtname.c_str(), "w");
 	gam1 = Gam1->interp(radi[len-1]);
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ds[0],ds[1],ds[2],ds[3],ds[4]);
@@ -570,7 +569,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 	
 	//print fits to those coefficients at center and surface
 	std::size_t NC=15, NS=15;
-	txtname = filename + "/centerfit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double x2 = 0.0;
 	gam1 = Gam1->interp(radi[1]);
@@ -594,7 +593,7 @@ void MESA::printCoefficients(const char *const c, double const g){
 		);
 	}
 	fclose(fp);
-	txtname = filename + "/surfacefit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double t = 1.-radi[len-2];
 	gam1 = Gam1->interp(radi[len-1]);
@@ -620,8 +619,8 @@ void MESA::printCoefficients(const char *const c, double const g){
 	fclose(fp);
 	
 	//print the pulsation coeffcients frequency
-	txtname = filename + "/coefficients.txt";
-	outname = filename + "/coefficients.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "coefficients.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "coefficients.png");
 	fp  = fopen(txtname.c_str(), "w");
 	for(std::size_t X=0; X< length(); X++){
 		fprintf(fp, "%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n",
@@ -654,8 +653,8 @@ void MESA::printCoefficients(const char *const c, double const g){
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	txtname = filename + "/centerfit.txt";
-	outname = filename + "/centerfit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.png");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -671,8 +670,8 @@ void MESA::printCoefficients(const char *const c, double const g){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($10-$11)/$10) w lp t 'Vg'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/$12) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	txtname = filename + "/surfacefit.txt";
-	txtname = filename + "/surfacefit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.png");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -696,15 +695,15 @@ void MESA::printCoefficients(const char *const c, double const g){
 
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
-void MESA::writeStar(const char *const c){
+void MESA::writeStar(std::string const& c){
 	//create names for files to be opened
-	std::string const outputdir = ThrainConfig::resolveCalcName(c, name) + "star";
-	std::string const txtname = outputdir + name + ".txt";
-	std::string const outname = outputdir + name + ".png";
+	std::string const calcname = ThrainConfig::resolveCalcName(c, name);
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", name + ".txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", name + ".png");
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		filelib::makedir(outputdir);
+		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "star"));
 		if(!(fp = fopen(txtname.c_str(), "w"))) 
 			ThrainLogger::error("big trouble, boss\n");		
 	}
@@ -739,8 +738,8 @@ void MESA::writeStar(const char *const c){
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 		
-	printBV(outputdir.c_str());
-	printCoefficients(outputdir.c_str());	
+	printBV(calcname);
+	printCoefficients(calcname);	
 }
 
 double MESA::SSR(){	

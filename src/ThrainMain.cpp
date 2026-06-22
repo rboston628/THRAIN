@@ -34,10 +34,9 @@ int main(int argc, char* argv[]){
 	}
 	
 	//remove any information from past calculations, and create directory for the calculation
-	std::string output_dir = ThrainConfig::outputDir() + calcdataIn.calcname;
-	filelib::remove(output_dir);
-	filelib::makedir(output_dir + "/star");
-	filelib::makedir(output_dir + "/modes");
+	filelib::remove(ThrainConfig::calculationDir(calcdataIn.calcname));
+	filelib::makedir(ThrainConfig::calculationSubdir(calcdataIn.calcname, "star"));
+	filelib::makedir(ThrainConfig::calculationSubdir(calcdataIn.calcname, "modes"));
 	//print a copy of the input file for future reference
 	io::echo_input(calcdataIn);
 	//prepare the output, based on the input

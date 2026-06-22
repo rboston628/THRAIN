@@ -32,6 +32,9 @@ int create_star(Calculation::OutputData &data_out){
 			break;
 	}
 	return 0;
+	// crudely assign the name of the star
+	// TODO better constructor or setter method
+	data_out.star->name = data_out.calcname;
 }
 
 //create a classical polytrope

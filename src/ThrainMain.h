@@ -87,8 +87,10 @@ struct OutputData {
 		for(auto it=mode.begin(); it!=mode.end(); it++){
 			delete (*it);
 		}
-		for(int e=0; e<i_err; e++)
+		for(int e=0; e<i_err; e++) {
 			delete[] err[e];
+		}
+		delete[] err;
 	}
 };
 
