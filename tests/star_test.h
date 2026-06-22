@@ -613,7 +613,7 @@ void test_MESA_fit(){
     }
     fclose(fp);
     // create a MESA model from that file
-    MESA *testStar = new MESA(testfile.c_str(), LEN);
+    MESA *testStar = new MESA(testfile, LEN);
     // some routine verifications
     TS_ASSERT_EQUALS(testStar->length(), 2*(LEN-1) + 1);
     TS_ASSERT_LESS_THAN(testStar->SSR(), 1.0/LEN)
@@ -640,7 +640,7 @@ void test_MESA_constructor(){
     fprintf(stderr, "\nSTAR TESTS - MESA BOUNDARIES");
     std::size_t const LEN(101);
     std::string mesa_file = "mesa_co_wd_cold.dat";
-    MESA *testStar = new MESA(mesa_file.c_str(), LEN);
+    MESA *testStar = new MESA(mesa_file, LEN);
     TS_ASSERT_LESS_THAN( testStar->SSR(), 1.0e-2 );
     do_test_center(testStar, 1.e-4);
     // TODO make surface work

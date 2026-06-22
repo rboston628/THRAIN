@@ -17,21 +17,21 @@
 class ModeBase {
 public:
 	//file output methods to write and view plots of mode
-	virtual void writeMode(const char *const c = NULL) = 0;
+	virtual void writeMode(std::string const& c = "") const = 0;
 		
 	virtual ~ModeBase(){};
 	
-	virtual int modeOrder() = 0;
-	virtual void modeNumbers(int&, int&, int&) =0;
-	virtual double getOmega2() = 0;
-	virtual double SSR() = 0;
-	virtual double tidal_overlap() =0;
-	virtual double getFreq() =0;
-	virtual double getPeriod()=0;
+	virtual int modeOrder() const = 0;
+	virtual void modeNumbers(int&, int&, int&) const =0;
+	virtual double getOmega2() const = 0;
+	virtual double SSR() const = 0;
+	virtual double tidal_overlap() const =0;
+	virtual double getFreq() const =0;
+	virtual double getPeriod() const =0;
 	
-	virtual double getRad(std::size_t x) =0;
-	virtual double getY(int i, std::size_t x) =0;
-	virtual double getYtilde(int i, std::size_t x) =0;
+	virtual double getRad(std::size_t x) const =0;
+	virtual double getY(int i, std::size_t x) const =0;
+	virtual double getYtilde(int i, std::size_t x) const =0;
 };
 
 //**************************************************************************************
@@ -50,18 +50,18 @@ public:
 	virtual ~ModeDriver(){};
 	ModeDriver(ModeDriver const&) = delete;
 	ModeDriver& operator=(ModeDriver const&) = delete;
-	virtual std::size_t length() =0;
-	virtual double Gamma1() =0;
-	virtual double rad(std::size_t) =0;
+	virtual std::size_t length() const =0;
+	virtual double Gamma1() const =0;
+	virtual double rad(std::size_t) const =0;
 
 	virtual std::size_t CentralBC(double **y, double *yo, double s2, int l, int m=0) =0;
 	virtual std::size_t SurfaceBC(double **y, double *ys, double s2, int l, int m=0) =0;
 	virtual void getCoeff(double *CC, const std::size_t, const int, const double, const int) =0;
 	virtual void setupBoundaries() =0;
 	
-	virtual double SSR(double, int, ModeBase*) =0;
-	virtual double tidal_overlap(ModeBase*) =0;
-	virtual double innerproduct(ModeBase*, ModeBase*) =0;
+	virtual double SSR(double, int, ModeBase const*) const =0;
+	virtual double tidal_overlap(ModeBase const*) const =0;
+	virtual double innerproduct(ModeBase const*, ModeBase const*) const =0;
 	
 	//virtual double test_eigenvalue(double, int) =0;
 	

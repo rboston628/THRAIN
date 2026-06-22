@@ -19,11 +19,11 @@
 #include "../ThrainConfig.h"
 #include "../../lib/logger.h"
 
-MESA::MESA(const char* filename, std::size_t L) : len(L) {
+MESA::MESA(std::string const &filename, std::size_t L) : len(L) {
 	ThrainLogger::info("Beginning read-in of MESA data.\n");
 	FILE *infile;
-	if( !(infile = fopen(filename, "r")) ) {
-		ThrainLogger::error("No such file %s\n", filename);
+	if( !(infile = fopen(filename.c_str(), "r")) ) {
+		ThrainLogger::error("No such file %s\n", filename.c_str());
 		ThrainLogger::error("In directory: ");
 		system("pwd");
 		ThrainLogger::error("Available files:\n");
@@ -166,6 +166,7 @@ MESA::~MESA(){
 double MESA::Radius(){return Rstar;} //total radius in appropriate units
 double MESA::Mass()  {return Mstar;} //total mass   in appropriate units
 double MESA::Gee()   {return G_CGS;} //Newton's constant in appropriate units
+double MESA::Luminosity() {return Lstar;} //total luminosity in appropriate units
 
 //Here we define functions to access radius, pressure, etc.
 double MESA::rad(std::size_t X){

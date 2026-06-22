@@ -12,6 +12,7 @@
 namespace {
   struct SetupTeardown {
     SetupTeardown() {
+      ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
       original_config = ThrainConfig::getConfigOptions();
     }
     ~SetupTeardown() {
@@ -91,8 +92,42 @@ TEST_SUITE("ThrainConfig") {
 }
 
 
-/// This suite is meant to test the integration of ThrainConfig with the rest of the code, 
-/// in particular ThrainIO.  Ensure ThrainIO and others are saving to locations specified by the config
+/// This suite is meant to test the integration of ThrainConfig with the rest of the code.
+/// Ensure ThrainIO and others are saving to locations specified by the config
+
+namespace {
+  std::string do_test_star_write(std::string const& name, Star* star) {
+      // retrieve an input file to load a calcdata object
+    Calculation::InputData calcdataIn;
+    ThrainConfig::reconfigure("./tests/tests.config");
+    io::read_input("example_input.txt", calcdataIn);
+    calcdataIn.calcname = "testcalc";
+    // from it create an output calcdata object
+    Calculation::OutputData calcdataOut;
+    io::setup_output(calcdataIn, calcdataOut);
+    // add a small polytrope star to the output
+    calcdataOut.star = star;
+    // make sure the driver is set to nullptr and mode_writ and mode_done are set to 0
+    calcdataOut.driver = nullptr;
+    calcdataOut.mode_writ = 0;
+    calcdataOut.mode_done = 0;
+    calcdataOut.calcname = "test_config_star_" + name;
+    // call to print the star
+    if(filelib::exists(ThrainConfig::calculationDir(calcdataOut.calcname))) {
+      filelib::remove(ThrainConfig::calculationDir(calcdataOut.calcname));
+    }
+    io::write_stellar_output(calcdataOut);
+    // verify the star outputs exist
+    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt"));
+    REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt")));
+    REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".png")));
+    REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", "BruntVaisala.txt")));
+    REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", "BruntVaisala.png")));
+    REQUIRE(filelib::exists(ThrainConfig::calculationSubdir(calcdataOut.calcname, "wave_coefficient")));
+    return ThrainConfig::calculationDir(calcdataOut.calcname);
+  }
+}
+
 TEST_SUITE("ThrainConfigIntegration") {
   // THRAIN IO READ_INPUT
   TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio read input") {
@@ -224,33 +259,33 @@ TEST_SUITE("ThrainConfigIntegration") {
   }
   // POLYTROPE WRITES TO CORRECT LOCATION
   TEST_CASE_FIXTURE(SetupTeardown, "dir through polytrope write") {
-    // retrieve an input file to load a calcdata object
-    Calculation::InputData calcdataIn;
-    ThrainConfig::reconfigure("./tests/tests.config");
-    io::read_input("example_input.txt", calcdataIn);
-    calcdataIn.calcname = "testcalc";
-    // from it create an output calcdata object
-    Calculation::OutputData calcdataOut;
-    io::setup_output(calcdataIn, calcdataOut);
-    // add a small polytrope star to the output
-    calcdataOut.star = new Polytrope(1.5, 100);
-    // make sure the driver is set to nullptr and mode_writ and mode_done are set to 0
-    calcdataOut.driver = nullptr;
-    calcdataOut.mode_writ = 0;
-    calcdataOut.mode_done = 0;
-    // setup the config so that the star prints at tests/output/test_config_poly
-    ThrainConfig::reconfigure({{"output_directory", "./tests/output/"}});
-    calcdataOut.calcname = "test_config_poly";
-    // call to print the star
-    io::write_stellar_output(calcdataOut);
-    // verify the star outputs exist: 
-    // - star/star.txt (and .png)
-    // - star/BV.txt (and .png)
-    // - star/wave_coefficients/ (should be at least four files here)
+    Star *star = new Polytrope(1.5, 100);
+    std::string const dir = do_test_star_write("polytrope.1.5", star);
     // cleanup
+    filelib::remove(ThrainConfig::calculationDir(dir));
   }
-
-
-
+  // CHWD WRITES TO CORRECT LOCATION
+  TEST_CASE_FIXTURE(SetupTeardown, "dir through chwd write") {
+    Star *star = new ChandrasekharWD(1.5, 100, Chandrasekhar::A0, Chandrasekhar::B0);
+    std::string const dir = do_test_star_write("ChandrasekharWD.1.500", star);
+    // cleanup
+    filelib::remove(ThrainConfig::calculationDir(dir));
+  }
+  // MESA WRITES TO CORRECT LOCATION
+  TEST_CASE_FIXTURE(SetupTeardown, "dir through mesa write") {
+    MESA *star = new MESA(ThrainConfig::inputDir() + "test_polytrope_n=2.2_v101.dat", 100);
+    std::string const name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", star->Mass(), star->Radius(), star->Luminosity());
+    std::string const dir = do_test_star_write(name, star);
+    // cleanup
+    filelib::remove(ThrainConfig::calculationDir(dir));
+  }
+  // SWD WRITES TO CORRECT LOCATION
+  TEST_CASE_FIXTURE(SetupTeardown, "dir through swd write") {
+    SimpleWD *star = new SimpleWD(0.8, 12000, 100);
+    std::string const name = strmakef("WD_M0.80_L1.10_X0.00_Y0.06");
+    std::string const dir = do_test_star_write(name, star);
+    // cleanup
+    filelib::remove(ThrainConfig::calculationDir(dir));  
+  }
 }
 

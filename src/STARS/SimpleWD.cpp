@@ -1931,8 +1931,8 @@ void SimpleWD::printBigASCII( std::string const& calcname){
 void SimpleWD::writeStar(std::string const& c){
 	//create names for files to be opened
 	std::string const calcname = ThrainConfig::resolveCalcName(c, name);
-	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "star.txt");
-	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "star.png");
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", name + ".txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", name + ".png");
 
 	std::string title = graph_title();
 

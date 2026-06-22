@@ -31,11 +31,11 @@ void SineModeDriver::varnames(std::string* names) {
     names[0] = "sine"; names[1] = "cosine";
 }
 
-std::size_t SineModeDriver::length(){return len;}
+std::size_t SineModeDriver::length() const {return len;}
 
-double SineModeDriver::Gamma1(){return 0.0;}
+double SineModeDriver::Gamma1() const {return 0.0;}
 
-double SineModeDriver::rad(std::size_t X){return double(X)/double(len-1);}
+double SineModeDriver::rad(std::size_t X) const {return double(X)/double(len-1);}
 
 //these functions come from coupled wave equations -- see Unno et al. Ch 18
 void SineModeDriver::getCoeff(
@@ -92,7 +92,7 @@ std::size_t SineModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, 
 	return len-1;
 }
 
-double SineModeDriver::SSR(double w2, int L, ModeBase* mode){
+double SineModeDriver::SSR(double w2, int L, ModeBase const* mode) const {
         double sum = 0.0;
         double y1 , y2;
         for(std::size_t X=1; X<len; X++){
@@ -103,9 +103,9 @@ double SineModeDriver::SSR(double w2, int L, ModeBase* mode){
         return (sum/len);
 }
 
-double SineModeDriver::tidal_overlap(ModeBase* mode){return 1.0;}
+double SineModeDriver::tidal_overlap(ModeBase const* mode) const {return 1.0;}
 
-double SineModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
+double SineModeDriver::innerproduct(ModeBase const* mode1, ModeBase const* mode2) const {
 	double dx = 1.0/double(len-1);
 	double sum1 = 1.0, sum2 = 0.0, integral = 0.0;
 	double sin1, sin2, cos1, cos2;
