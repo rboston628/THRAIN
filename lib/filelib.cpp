@@ -23,7 +23,7 @@ namespace filelib {
 void makedir(std::string const &path) {
   // get the parent, recurse baxkward until parent path exists, then create forward
   std::string const parent = path.substr(0, path.find_last_of("/\\"));
-  if (!parent.empty() && !exists(parent)) {
+  if (!parent.empty() && parent != path &&!exists(parent)) {
     makedir(parent);
   }
   // make the final directory
@@ -53,6 +53,10 @@ void remove(std::string const &path) {
 
 void touch(std::string const &path) {
   FILE *fp = fopen(path.c_str(), "a");
+  if (!fp) {
+    makedir(path.substr(0, path.find_last_of("/\\")));
+    fp = fopen(path.c_str(), "w");
+  }
   if (!fp) throw std::runtime_error("Failed to touch file " + path);
   fclose(fp);
 }

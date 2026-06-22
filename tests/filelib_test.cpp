@@ -102,4 +102,15 @@ TEST_SUITE("FileLib") {
     // cleanup
     filelib::remove(testfile);
   }
+
+  TEST_CASE("no infinite recursion") {
+    std::string const testdir ("filelib_test_dir");
+    // this will segfA=ault due to recursion depth if not passing
+    filelib::makedir(testdir);
+    REQUIRE( filelib::exists(testdir) );
+    // cleanup
+    filelib::remove(testdir);
+  }
+
+
 }

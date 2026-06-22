@@ -1,4 +1,4 @@
-// declare this function
+// methods for interacting with the file system
 
 #ifndef THRAINFILELIB
 #define THRAINFILELIB
@@ -11,4 +11,5 @@ void remove(std::string const &path);
 void touch(std::string const &path);
 bool exists(std::string const &path);
 }
+
 #endif
