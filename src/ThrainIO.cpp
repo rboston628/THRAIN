@@ -23,13 +23,12 @@ class Polytrope;
 namespace io {
 
 //this function reads in user input from the specified file to create calculation data
-int read_input(const char input_file_name[128], Calculation::InputData &calcdata){
+int read_input(std::string const &input_file_name, Calculation::InputData &calcdata){
 	//open file
-
 	std::string input_file_path = ThrainConfig::inputFileName(input_file_name);
 	FILE* input_file = fopen(input_file_path.c_str(), "r");
 	if(!input_file){
-		ThrainLogger::error("Input file not found");
+		ThrainLogger::error("Input file %s not found", input_file_path.c_str());
 		return 1;
 	}
 	

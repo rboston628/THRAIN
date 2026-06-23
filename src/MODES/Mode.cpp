@@ -329,10 +329,11 @@ void Mode<numvar>::writeMode(std::string const &c) const {
 	std::string outname = ThrainConfig::calculationFileName(calcname, "modes", strmakef("mode_%d.%d.png", l, k));
 
 	FILE *fp = fopen(txtname.c_str(), "w");
-	if(fp){
+	if(!fp){
 		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "modes"));
 		fp = fopen(txtname.c_str(), "w");
 	}
+	assert(fp != NULL);
 	double R = rad[len-1];
 	double M = star->Mass();
 	for(std::size_t x=0; x<len; x++){

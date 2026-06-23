@@ -25,7 +25,8 @@ int main(int argc, char* argv[]){
 	if(argc == 2) {
 		//the calculation filename is sent as command-line argument
 		//call the read_input routine on the given filename (see GRPulseIO.h)
-		if(!io::read_input(argv[1], calcdataIn)) ThrainLogger::info("file read\n");
+		std::string input_file(argv[1]);
+		if(!io::read_input(input_file, calcdataIn)) ThrainLogger::info("file read\n");
 		else return 1;
 	}
 	else {

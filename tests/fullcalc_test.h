@@ -79,9 +79,13 @@ public:
     void test_full_calculation_uniform() {
         printf("\nTEST CALCULATION UNIFORM STAR");
         ThrainLogger::setLogLevel(ThrainLogger::LogLevel::ERROR);
-        system("mkdir -p ./output/../tests/uniform/../tests");
-        system("touch ./output/../tests/uniform/../tests/uniform.txt");
-        Calculation::InputData in = make_input_data_pmodes("../tests/uniform");
+        ThrainConfig::reconfigure("tests/tests.config");
+
+        Calculation::InputData in = make_input_data_pmodes("uniform");
+        filelib::makedir(ThrainConfig::calculationDir(in.calcname));
+        filelib::touch(ThrainConfig::summaryFileName(in.calcname));
+        TSM_ASSERT(ThrainConfig::summaryFileName(in.calcname), filelib::exists(ThrainConfig::summaryFileName(in.calcname)));
+        
         Calculation::OutputData out;
         TS_ASSERT_EQUALS(0, io::setup_output(in, out));
         TS_ASSERT_EQUALS(0, create_star(out));
@@ -97,7 +101,9 @@ public:
             }
             printf("\n");
         }
+        // cleanup
         ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
+        filelib::remove(ThrainConfig::calculationDir(in.calcname));
     }
 
 //     /* test n=1 polytrope */

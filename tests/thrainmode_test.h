@@ -8,23 +8,21 @@
 // TODO: check failure if not using ModeDriver
 // TODO: check g-modes (k<0)
 
+namespace {
+    std::string const calcname = "modefinder";
+}
+
 class ModeBaseTest : public CxxTest::TestSuite {
 public:
 
     static ModeBaseTest *createSuite (){
         printf("\nMODE FINDER TESTS I");
+        ThrainConfig::reconfigure("tests/tests.config");
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
         return new ModeBaseTest;
     }
     static void destroySuite(ModeBaseTest *suite) { 
         delete suite; 
-    }
-
-    void setUp() {
-        freopen("tests/artifacts/logio.txt", "a", stdout);
-    }
-
-    void tearDown() {
-        freopen("/dev/tty", "w", stdout);
     }
 
     // test that result fails if given bad polytrope index
@@ -180,12 +178,15 @@ public:
 
 class ModeFinderTest : public CxxTest::TestSuite {
 public:
-
     // this function will make output files for better debugging
-    static ModeFinderTest *createSuite (){
-        system("mkdir -p ./output/../tests/modefinder/../tests");
-        system("rm -f ./output/../tests/modefinder/../tests/modefinder.txt");
-        system("touch ./output/../tests/modefinder/../tests/modefinder.txt");
+    static ModeFinderTest *createSuite () {
+        ThrainConfig::reconfigure("tests/tests.config");
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
+        if (filelib::exists(ThrainConfig::calculationDir(calcname))) {
+            filelib::remove(ThrainConfig::calculationDir(calcname));
+        }
+        filelib::makedir(ThrainConfig::calculationDir(calcname));
+        filelib::touch(ThrainConfig::calculationFileName(calcname, "modefinder.txt"));
         printf("\nMODE FINDER TESTS II");
         return new ModeFinderTest();
     }
@@ -193,23 +194,16 @@ public:
         delete suite; 
     }
 
-    void setUp() {
-        freopen("tests/artifacts/logio.txt", "a", stdout);
-    }
-
-    void tearDown() {
-        freopen("/dev/tty", "w", stdout);
-    }
-
     Calculation::OutputData mode_finder_test_setup(
         const std::vector<int>& L,
         const std::vector<int>& K
     ){
         Calculation::OutputData data;
-        data.calcname = "../tests/modefinder";
+        data.calcname = calcname;
         data.freq0 = 1.0;
         data.star = nullptr;
         data.driver = new DummyModeDriver(data.star, 1.5);
+        data.err = nullptr;
         data.i_err = 0;
         for(int i=0; i<4; i++)
             data.error[i] = false;
@@ -234,21 +228,26 @@ public:
         const std::vector<int>& Kexp,
         const std::vector<double>& w2exp
     ){
-        Calculation::OutputData data = mode_finder_test_setup(L,K);
-        FILE* modetest = fopen("./tests/tests/modefinder.txt", "a");
-        fprintf(modetest, "\n#  TEST NAME: %s\n", test_name.c_str());
-        fclose(modetest);
-        printf("TEST %s\n", test_name.c_str());
-        mode::mode_finder<DummyMode, DummyModeDriver>(data);
+        {
+            Calculation::OutputData data = mode_finder_test_setup(L,K);
+            {
+                FILE* modetest = fopen(ThrainConfig::calculationFileName(calcname, "modefinder.txt").c_str(), "a");
+                TS_ASSERT(modetest);
+                fprintf(modetest, "\n#  TEST NAME: %s\n", test_name.c_str());
+                fclose(modetest);
+            }
+            printf("TEST %s\n", test_name.c_str());
+            mode::mode_finder<DummyMode, DummyModeDriver>(data);
 
-        TS_ASSERT_EQUALS(data.mode_num, Kexp.size());
-        TS_ASSERT_EQUALS(data.k.size(), Kexp.size());
-        TS_ASSERT_EQUALS(data.l.size(), Kexp.size());
-        TS_ASSERT_EQUALS(data.k.size(), Lexp.size());
-        for(std::size_t i=0; i<Kexp.size(); i++){
-            TS_ASSERT_EQUALS(data.l[i], Lexp[i]);
-            TS_ASSERT_EQUALS(data.k[i], Kexp[i]);
-            TS_ASSERT_EQUALS(data.w[i], sqrt(double(w2exp[i])));
+            TS_ASSERT_EQUALS(data.mode_num, Kexp.size());
+            TS_ASSERT_EQUALS(data.k.size(), Kexp.size());
+            TS_ASSERT_EQUALS(data.l.size(), Lexp.size());
+            TS_ASSERT_EQUALS(data.k.size(), Lexp.size());
+            for(std::size_t i=0; i<Kexp.size(); i++){
+                TS_ASSERT_EQUALS(data.l[i], Lexp[i]);
+                TS_ASSERT_EQUALS(data.k[i], Kexp[i]);
+                TS_ASSERT_EQUALS(data.w[i], sqrt(double(w2exp[i])));
+            }
         }
     }
 
@@ -449,17 +448,9 @@ public:
         printf("\nMODE FINDER TESTS III");
         return new ControlledModeFinderTest();
     }
-    static void destroySuite(ControlledModeFinderTest *suite) { 
-        system("rm -r ./tests/modefinder/");
+    static void destroySuite(ControlledModeFinderTest *suite) {
+        filelib::remove(ThrainConfig::calculationDir(calcname));
         delete suite; 
-    }
-
-    void setUp() {
-        freopen("tests/artifacts/logio.txt", "a", stdout);
-    }
-
-    void tearDown() {
-        freopen("/dev/tty", "w", stdout);
     }
 
     void do_test_mode_finder_fake_classes(
@@ -471,7 +462,7 @@ public:
         const std::vector<double>& w2exp
     ){
         Calculation::OutputData data = mode_finder_test_setup(L,K);
-        FILE* modetest = fopen("./tests/tests/modefinder.txt", "a");
+        FILE* modetest = fopen(ThrainConfig::calculationFileName(calcname, "modefinder.txt").c_str(), "a");
         fprintf(modetest, "\n#  TEST NAME: %s\n", test_name.c_str());
         fclose(modetest);
         printf("TEST %s\n", test_name.c_str());

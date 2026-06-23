@@ -7,33 +7,27 @@ public:
 
     static IOBaseTest *createSuite (){
         printf("\nIO TESTS");
+        ThrainConfig::reconfigure("tests/tests.config");
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
         return new IOBaseTest();
     }
     static void destroySuite(IOBaseTest *suite) { 
         delete suite; 
     }
 
-    void setUp() {
-        freopen("tests/artifacts/logio.txt", "a", stdout);
-    }
-
-    void tearDown() {
-        freopen("/dev/tty", "w", stdout);
-    }
-
     void make_test_input(std::string filename, std::string towrite){
-        FILE* outfile = fopen(filename.c_str(), "w");
+        FILE* outfile = fopen(ThrainConfig::inputFileName(filename).c_str(), "w");
         if(!outfile){
-            TS_FAIL("could not open test input\n");
+            TS_FAIL("could not open test input " + ThrainConfig::inputFileName(filename));
         }
         fprintf(outfile, "%s", towrite.c_str());
         fclose(outfile);
     }
 
     void read_entire_file(std::string filename, std::string& contents){
-        FILE* infile = fopen(filename.c_str(), "r");
+        FILE* infile = fopen(ThrainConfig::echoedFileName(filename).c_str(), "r");
         if(!infile) {
-            TS_FAIL("could not read in indicated file\n");
+            TS_FAIL("could not read in indicated file " + ThrainConfig::echoedFileName(filename));
         }
         fseek(infile, 0, SEEK_END);
         std::size_t fsize = ftell(infile);
@@ -51,46 +45,45 @@ public:
 
     void test_fail_bad_file() {
         printf("IO TEST - BAD FILE\n");
-        freopen("tests/artifacts/logio.txt", "a", stderr);
         Calculation::InputData data;
-        char badfilename[] = "tests/nonexistent.txt";
+        std::string const badfilename = "nonexistent.txt";
+        TS_ASSERT(!filelib::exists(ThrainConfig::inputFileName(badfilename)));
         TS_ASSERT_EQUALS(1, io::read_input(badfilename, data));
-        freopen("/dev/tty", "w", stderr);
     }
 
     void test_fail_bad_calcname() {
         printf("IO TEST - BAD CALCNAME\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Nombre: espanol\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Nombre: espanol\n";
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_calcname(in, data));
         fclose(in);
         // also ensure read_input fails when these do
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
      void test_fail_no_calcname() {
         printf("IO TEST - NO CALCNAME\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Name:\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Name:\n";
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_calcname(in, data));
         fclose(in);
         // also ensure read_input fails when these do
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
     void test_read_calcname() {
         printf("IO TEST - READ CALCNAME\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Name: valid_test_name\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Name: valid_test_name\n";
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_calcname(in, data));
         TS_ASSERT_EQUALS(data.calcname, "valid_test_name");
         fclose(in);
@@ -101,38 +94,38 @@ public:
     void test_fail_bad_model() {
         printf("IO TEST - BAD MODEL\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = 
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = 
             "Name: valid_test_name\n"
             "Model: GR fakemodel\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_model(in, data));
         TS_ASSERT_EQUALS(data.regime, regime::PN0);
         fclose(in);
         // also ensure read_input fails when these do
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
     void test_fail_no_model() {
         printf("IO TEST - NO MODEL\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = 
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = 
             "Name: valid_test_name\n"
             "Model: newtonian\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_model(in, data));
         TS_ASSERT_EQUALS(data.regime, regime::PN0);
         fclose(in);
         // also ensure read_input fails when these do
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
     void do_test_read_model(model::StellarModel m){
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = "Model: newtonian ";
         switch(m){
         case model::polytrope:
@@ -148,8 +141,8 @@ public:
             filecontents += "SWD\t\n";
             break;
         }
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_model(in, data));
         TS_ASSERT_EQUALS(data.regime, regime::PN0);
         TS_ASSERT_EQUALS(data.model, m);
@@ -169,10 +162,10 @@ public:
     void test_fail_no_units() {
         printf("IO TEST - NO UNITS\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Unidades: buenos\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Unidades: buenos\n";
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_units(in, data));
         fclose(in);
     }
@@ -180,17 +173,17 @@ public:
     void test_fail_bad_units() {
         printf("IO TEST - BAD UNITS\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Units: fakeunits\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Units: fakeunits\n";
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_units(in, data));
         fclose(in);
     }
 
     void do_test_units_types(units::Units u) {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string const testfilename = "test_file.txt";
         std::string filecontents = "Units: ";
         switch(u){
         case units::Units::astro:
@@ -207,7 +200,7 @@ public:
             break;
         }
         make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_units(in, data));
         TS_ASSERT_EQUALS(data.units, u);
         fclose(in);
@@ -226,10 +219,10 @@ public:
     void test_no_modetype() {
         printf("IO TEST - NO MODETYPE\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Frequencies: 5/3\n"; //will become nonradial mode
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Frequencies: 5/3\n"; //will become nonradial mode
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(1, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.modetype, modetype::nonradial);
         TS_ASSERT(std::isnan(data.adiabatic_index));
@@ -239,10 +232,10 @@ public:
     void test_read_bad_modetype() {
         printf("IO TEST - BAD MODETYPE\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Frequencies: fakemode 5/3\n"; //will become nonradial mode
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Frequencies: fakemode 5/3\n"; //will become nonradial mode
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.modetype, modetype::nonradial);
         TS_ASSERT_EQUALS(data.adiabatic_index, 5./3.);
@@ -252,7 +245,7 @@ public:
 
     void do_test_modetype(modetype::ModeType mtype) {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string const testfilename = "test_file.txt"; 
         std::string filecontents = "Frequencies: ";
         switch(mtype){
         case modetype::radial:
@@ -267,7 +260,7 @@ public:
         } 
         filecontents += " 5/3\n";
         make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.modetype, mtype);
         TS_ASSERT_EQUALS(data.adiabatic_index, 5./3.);
@@ -283,11 +276,10 @@ public:
 
     void do_test_adiabatic_index(std::string index, double res) {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = "Frequencies: nonradial ";
-        filecontents += index;
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = "Frequencies: nonradial " + index;
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.adiabatic_index, res);
         fclose(in);
@@ -310,7 +302,7 @@ public:
     void test_read_mode_list() {
         printf("IO TEST - READ MODE LIST\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string const testfilename = "test_file.txt";
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[3] = {1,2,3};
         int Kvalues[5] = {1,2,3,4,5};
@@ -319,8 +311,8 @@ public:
                 filecontents += strmakef("%d,%d\n", L,K);
             }
         }
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.mode_num, 17); //L=2,3 will have K=0 added
         TS_ASSERT_EQUALS(3, data.l.size());
@@ -342,7 +334,7 @@ public:
         // tests that duplicate L,K will be removed
         // and that they will be put in order
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string const testfilename = "test_file.txt";
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[] = {3,1,2     /* duplicates to be ignored */, 3,1,2};
         int Kvalues[] = {4,2,3,5,1 /* duplicates to be ignored */, 5,5,1};
@@ -351,8 +343,8 @@ public:
                 filecontents += strmakef("%d,%d\n", L,K);
             }
         }
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.mode_num, 17); //L=2,3 will have K=0 added
         TS_ASSERT_EQUALS(3, data.l.size());
@@ -380,7 +372,7 @@ public:
         // tests that duplicate L,K will be removed
         // and that they will be put in order
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string const testfilename = "test_file.txt";
         std::string filecontents = "Frequencies: nonradial 5/3\n";
         int Lvalues[] = {1,2};
         int Kvalues[] = {0,1,2,3}; //the k=0 will be dropped when l=1
@@ -389,8 +381,8 @@ public:
                 filecontents += strmakef("%d,%d\n", L,K);
             }
         }
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         
         // there is no l=1,k=0 mode present
@@ -414,15 +406,15 @@ public:
     void test_read_bad_mode_list() {
         printf("IO TEST - READ BAD MODE LIST\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = 
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = 
             "Frequencies: nonradial 5/3\n"
             "1,1\n"
             "1,2\n"
             "a,b\n"
             "1,3\n";
-        make_test_input(testfilename,filecontents);
-        FILE* in = fopen(testfilename.c_str(), "r");
+        make_test_input(testfilename, filecontents);
+        FILE* in = fopen(ThrainConfig::inputFileName(testfilename).c_str(), "r");
         TS_ASSERT_EQUALS(0, io::read_frequencies(in, data));
         TS_ASSERT_EQUALS(data.mode_num, 3);
         TS_ASSERT_EQUALS(data.l.size(), 1);
@@ -440,27 +432,27 @@ public:
     void test_fail_bad_params() {
         printf("IO TEST - BAD PARAMS\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
-        std::string filecontents = 
+        std::string const testfilename = "test_file.txt";
+        std::string const filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
             "Model: newtonian polytrope 1.5 1\n"
             "Params: fakeparam1 1.0 fakeparm2 10.0\n";
-        make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        make_test_input(testfilename, filecontents);
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.calcname, "valid_test_name");
         TS_ASSERT_EQUALS(data.regime, regime::PN0); 
         TS_ASSERT_EQUALS(data.model, model::polytrope);
         TS_ASSERT_EQUALS(data.input_params.size(), 2);
         TS_ASSERT_EQUALS(data.input_params[0], 1.5);
         TS_ASSERT_EQUALS(data.input_params[1], 1);
-        TS_ASSERT_EQUALS(data.Ngrid, 1); 
+        TS_ASSERT_EQUALS(data.Ngrid, 1);
     }
 
     void test_open_file_polytrope() {
         printf("IO TEST - OPEN FILE\n");
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -469,7 +461,7 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.calcname, "valid_test_name");
         TS_ASSERT_EQUALS(data.regime, regime::PN0); 
         TS_ASSERT_EQUALS(data.model, model::polytrope);
@@ -487,7 +479,7 @@ public:
 
     void test_open_file_polytrope_RZ() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -496,14 +488,14 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.radius, 10.0);
         TS_ASSERT_EQUALS(data.zsurf, 0.01);
     }
 
     void test_open_file_polytrope_MZ() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename(" test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -512,14 +504,14 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.mass, 1.0);
         TS_ASSERT_EQUALS(data.zsurf, 0.01);
     }
 
     void test_open_file_polytrope_RLogg() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -528,14 +520,14 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.radius, 10.0);
         TS_ASSERT_EQUALS(data.logg, 10.0);
     }
 
     void test_open_file_polytrope_MLogg() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -544,14 +536,14 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         TS_ASSERT_EQUALS(data.mass, 1.0);
         TS_ASSERT_EQUALS(data.logg, 10.0);
     }
 
     void test_open_file_polytrope_fail_RR() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -560,12 +552,12 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
     void test_open_file_polytrope_fail_teff() {
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
             "# test a comment\n\n"
             "Name: valid_test_name\n"
@@ -574,7 +566,7 @@ public:
             "Units: geo\n"
             "Frequencies: cowling 4/3\n\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(1, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(1, io::read_input(testfilename, data));
     }
 
     /* test reading CHWD input  */
@@ -586,31 +578,31 @@ public:
     void test_echo_input() {
         // create a test file, echo it, read in the echo, check match
         Calculation::InputData data;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents = 
-            "Name:\t../tests/test_file\n"
+            "Name:\ttest_file\n"
             "Model:\tnewtonian polytrope 1.50 1\n"
             "Params:\tmass 1\tradius 10\n"
             "Units:\tgeo\n\n"
             "Frequencies:\tcowling\t1.500\n";
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), data));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, data));
         system("mkdir -p tests/tests");
         std::string echoedcontents;
-        std::string readfilename("tests/tests/test_file_in.txt");
+        std::string readfilename("test_file");
         TS_ASSERT_EQUALS(0, io::echo_input(data));
         read_entire_file(readfilename, echoedcontents);
         TS_ASSERT_EQUALS(filecontents, echoedcontents);
         // clean up the file tree
         system("rm -r tests/tests");
-        system("rm -r tests/test_file");
+        filelib::remove(ThrainConfig::inputFileName("test_file.txt"));
     }
 
     /* test setup output, which created output object */
 
     void test_setup_output() {
         Calculation::InputData indata;
-        std::string testfilename("tests/test_file.txt");
+        std::string testfilename("test_file.txt");
         std::string filecontents =
             "# test a comment\n\n"
             "Name: TEST_SETUP_OUTPUT\n"
@@ -628,7 +620,7 @@ public:
             }
         }
         make_test_input(testfilename,filecontents);
-        TS_ASSERT_EQUALS(0, io::read_input(testfilename.c_str(), indata));
+        TS_ASSERT_EQUALS(0, io::read_input(testfilename, indata));
         TS_ASSERT_EQUALS(indata.mode_num, 7);
 
         Calculation::OutputData outdata;
@@ -668,6 +660,6 @@ public:
     }
 
     ~IOBaseTest(){
-        system("rm tests/test_file.txt");
+        filelib::remove(ThrainConfig::inputFileName("test_file.txt"));
     }
 };

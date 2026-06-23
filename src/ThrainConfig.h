@@ -50,7 +50,7 @@ public:
   static std::string defaultCalcName() { return instance().config_options.at("default_calc_name"); }
   
   static std::string inputFileName(std::string const& name) {
-    return inputDir() + name;
+    return name.front() == '/' ? name :  inputDir() + name;
   }
   static std::string calculationDir(std::string const& calcname) {
     return outputDir() + trailingSlash(calcname);

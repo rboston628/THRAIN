@@ -148,7 +148,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     ThrainConfig::reconfigure({{"input_directory", dest_dir}});
     // now read it and verify
     Calculation::InputData calcdata;
-    io::read_input(dest_name.c_str(), calcdata);
+    io::read_input(dest_name, calcdata);
     CHECK_EQ(calcdata.calcname, "test_input_file");
     CHECK_EQ(calcdata.regime, regime::PN0);
     CHECK_EQ(calcdata.model, model::polytrope);
