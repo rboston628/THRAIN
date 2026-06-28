@@ -51,7 +51,7 @@ public:
       filelib::makedir(dir);
       otherfp = fopen(filename.c_str(), access);
       if (!otherfp) {
-        // if we still can't opemn the file, then we failed
+        // if we still can't open the file, then we failed
         ThrainLogger::error("Failed to open log file %s; logger output file not changed\n", filename.c_str());
       }
       fprintf(stderr, "Failed to open log file %s; logger output file not changed\n", filename.c_str());
@@ -62,9 +62,10 @@ public:
       std::lock_guard<std::mutex> lock(instance().logMutex);
       instance().fp = otherfp;
       instance().logToFile = true;
+      // NOTE the file pointer is stored in singleton and deleted on destruction or reset
       otherfp = nullptr;
     }
-  }
+  } // cppcheck-suppress resourceLeak
 
   static void unsetOutputFile() {
     instance().closeOpenLogFile();
