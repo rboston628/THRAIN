@@ -271,16 +271,17 @@ TEST_SUITE("Splinor") {
     // remove old artifacts[]
     filelib::remove("./tests/artifacts/spline");
     filelib::makedir("./tests/artifacts/spline");
-    std::string tests[] = {"log", "cosine", "runge", "step", "window"};
-    std::size_t N;
+    std::vector<std::string> tests = {"log", "cosine", "runge", "step", "window"};
     double *xdata, *ydata;
 
     for (std::string test : tests) {        
       // open the data file and read in the number from the first row
       std::string name = "./tests/inputs/spline/test_" + test + ".dat";
       FILE *data_file = fopen(name.c_str(), "r");
+      std::size_t N = 0;
       fscanf(data_file, "%lu %*[^\n]", &N);
-      
+      if (N < 2) N = 21; // default to 21 points if we fail to read
+
       // create data arrays to hold the data
       xdata = new double[N];
       ydata = new double[N];

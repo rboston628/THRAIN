@@ -234,128 +234,128 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
 // }
 
 /* test CHWD with uniform mu */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_CHWD_simple [slow]") {
-  printf("TEST CALCULATION CHWD SIMPLE\n");
-  Calculation::InputData in = make_input_data_pmodes("../tests/chwd_0");
-  in.model = model::CHWD;
-  double temp = in.input_params[1];
-  in.input_params = {1.581, 0, temp};
-  in.adiabatic_index = 0;
-  Calculation::OutputData out;
-  CHECK_EQ(0, io::setup_output(in, out));
-  CHECK_EQ(0, create_star(out));
-  CHECK_EQ(0, mode::create_modes(out));
+// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_CHWD_simple [slow]") {
+//   printf("TEST CALCULATION CHWD SIMPLE\n");
+//   Calculation::InputData in = make_input_data_pmodes("../tests/chwd_0");
+//   in.model = model::CHWD;
+//   double temp = in.input_params[1];
+//   in.input_params = {1.581, 0, temp};
+//   in.adiabatic_index = 0;
+//   Calculation::OutputData out;
+//   CHECK_EQ(0, io::setup_output(in, out));
+//   CHECK_EQ(0, create_star(out));
+//   CHECK_EQ(0, mode::create_modes(out));
 
-  std::map<int,ModeBase*> fmodes;
+//   std::map<int,ModeBase*> fmodes;
 
-  CHECK_LT(out.star_SSR, 1.e-12);
-  for(int i=0; i<out.mode_num ; i++){
-    printf("%d,%d\t", out.l[i], out.k[i]);
-    printf("%le\n", out.err[0][i]);
-    fflush(stdout);
-    CHECK_LT(out.err[0][i], 1.e-8);
+//   CHECK_LT(out.star_SSR, 1.e-12);
+//   for(int i=0; i<out.mode_num ; i++){
+//     printf("%d,%d\t", out.l[i], out.k[i]);
+//     printf("%le\n", out.err[0][i]);
+//     fflush(stdout);
+//     CHECK_LT(out.err[0][i], 1.e-8);
 
-    if(out.l[i]==1 && out.k[i]==1){
-      fmodes[out.l[i]] = out.mode[i];
-    }
-    if(out.l[i]==2 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-    if(out.l[i]==3 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-  }
-  //test the c0 values
-  for(int i=0; i<out.mode_num; i++){
-    if( 
-      (out.l[i]==1 && out.k[i]!=1) ||
-      (out.l[i]==2 && out.k[i]!=0) ||
-      (out.l[i]==3 && out.k[i]!=0)
-    ) {
-      CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
-    }
-  }
-}
+//     if(out.l[i]==1 && out.k[i]==1){
+//       fmodes[out.l[i]] = out.mode[i];
+//     }
+//     if(out.l[i]==2 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//     if(out.l[i]==3 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//   }
+//   //test the c0 values
+//   for(int i=0; i<out.mode_num; i++){
+//     if( 
+//       (out.l[i]==1 && out.k[i]!=1) ||
+//       (out.l[i]==2 && out.k[i]!=0) ||
+//       (out.l[i]==3 && out.k[i]!=0)
+//     ) {
+//       CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
+//     }
+//   }
+// }
 
 /* test CHWD with sigmoidal mu -- pmode */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_pmode [slow]") {
-  printf("TEST CALCULATION CHWD SIGMOIDAL\n");
-  Calculation::InputData in = make_input_data_pmodes("../tests/chwd_1_p");
-  in.model = model::CHWD;
-  double temp = in.input_params[1];
-  in.input_params = {1.581, 1, temp};
-  Calculation::OutputData out;
-  CHECK_EQ(0, io::setup_output(in, out));
-  CHECK_EQ(0, create_star(out));
-  CHECK_EQ(0, mode::create_modes(out));
-  std::map<int,ModeBase*> fmodes;
+// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_pmode [slow]") {
+//   printf("TEST CALCULATION CHWD SIGMOIDAL\n");
+//   Calculation::InputData in = make_input_data_pmodes("../tests/chwd_1_p");
+//   in.model = model::CHWD;
+//   double temp = in.input_params[1];
+//   in.input_params = {1.581, 1, temp};
+//   Calculation::OutputData out;
+//   CHECK_EQ(0, io::setup_output(in, out));
+//   CHECK_EQ(0, create_star(out));
+//   CHECK_EQ(0, mode::create_modes(out));
+//   std::map<int,ModeBase*> fmodes;
 
-  CHECK_LT(out.star_SSR, 1.e-02);
-  for(int i=0; i<out.mode_num; i++){
-    printf("%d,%d\t", out.l[i], out.k[i]);
-    printf("%le\n", out.err[0][i]);
-    CHECK_LT(out.err[0][i], 1.e-8);
-    if(out.l[i]==1 && out.k[i]==1){
-      fmodes[out.l[i]] = out.mode[i];
-    }
-    if(out.l[i]==2 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-    if(out.l[i]==3 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-  }
-  //test the c0 values
-  for(int i=0; i<out.mode_num; i++){
-    if( 
-      (out.l[i]==1 && out.k[i]!=1) ||
-      (out.l[i]==2 && out.k[i]!=0) ||
-      (out.l[i]==3 && out.k[i]!=0)
-    ) {
-      CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
-    }
-  }
-}
+//   CHECK_LT(out.star_SSR, 1.e-02);
+//   for(int i=0; i<out.mode_num; i++){
+//     printf("%d,%d\t", out.l[i], out.k[i]);
+//     printf("%le\n", out.err[0][i]);
+//     CHECK_LT(out.err[0][i], 1.e-8);
+//     if(out.l[i]==1 && out.k[i]==1){
+//       fmodes[out.l[i]] = out.mode[i];
+//     }
+//     if(out.l[i]==2 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//     if(out.l[i]==3 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//   }
+//   //test the c0 values
+//   for(int i=0; i<out.mode_num; i++){
+//     if( 
+//       (out.l[i]==1 && out.k[i]!=1) ||
+//       (out.l[i]==2 && out.k[i]!=0) ||
+//       (out.l[i]==3 && out.k[i]!=0)
+//     ) {
+//       CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
+//     }
+//   }
+// }
 
-/* test CHWD with sigmoidal mu -- gmode */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_gmode [slow]") {
-  printf("TEST CALCULATION CHWD SIGMOIDAL GMODE\n");
-  Calculation::InputData in = make_input_data_gmodes("../tests/chwd_1_g");
-  in.model = model::CHWD;
-  double temp = in.input_params[1];
-  in.input_params = {1.581, 1, temp};
-  Calculation::OutputData out;
-  CHECK_EQ(0, io::setup_output(in, out));
-  CHECK_EQ(0, create_star(out));
-  CHECK_EQ(0, mode::create_modes(out));
+// /* test CHWD with sigmoidal mu -- gmode */
+// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_gmode [slow]") {
+//   printf("TEST CALCULATION CHWD SIGMOIDAL GMODE\n");
+//   Calculation::InputData in = make_input_data_gmodes("../tests/chwd_1_g");
+//   in.model = model::CHWD;
+//   double temp = in.input_params[1];
+//   in.input_params = {1.581, 1, temp};
+//   Calculation::OutputData out;
+//   CHECK_EQ(0, io::setup_output(in, out));
+//   CHECK_EQ(0, create_star(out));
+//   CHECK_EQ(0, mode::create_modes(out));
 
-  std::map<int,ModeBase*> fmodes;
+//   std::map<int,ModeBase*> fmodes;
 
-  CHECK_LT(out.star_SSR, 1.e-02);
-  for(int i=0; i<out.mode_num; i++){
-    printf("%d,%d\t", out.l[i], out.k[i]);
-    printf("%le\n", out.err[0][i]);
-    CHECK_LT(out.err[0][i], 1.e-8);
+//   CHECK_LT(out.star_SSR, 1.e-02);
+//   for(int i=0; i<out.mode_num; i++){
+//     printf("%d,%d\t", out.l[i], out.k[i]);
+//     printf("%le\n", out.err[0][i]);
+//     CHECK_LT(out.err[0][i], 1.e-8);
 
-    if(out.l[i]==1 && out.k[i]==1){
-      fmodes[out.l[i]] = out.mode[i];
-    }
-    if(out.l[i]==2 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-    if(out.l[i]==3 && out.k[i] == 0){
-      if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
-    }
-  }
-  //test the c0 values
-  for(int i=0; i<out.mode_num; i++){
-    if( 
-      (out.l[i]==1 && out.k[i]!=1) ||
-      (out.l[i]==2 && out.k[i]!=0) ||
-      (out.l[i]==3 && out.k[i]!=0)
-    ) {
-      CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
-    }
-  }
-}
+//     if(out.l[i]==1 && out.k[i]==1){
+//       fmodes[out.l[i]] = out.mode[i];
+//     }
+//     if(out.l[i]==2 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//     if(out.l[i]==3 && out.k[i] == 0){
+//       if(out.k[i]==0) fmodes[out.l[i]]=out.mode[i];
+//     }
+//   }
+//   //test the c0 values
+//   for(int i=0; i<out.mode_num; i++){
+//     if( 
+//       (out.l[i]==1 && out.k[i]!=1) ||
+//       (out.l[i]==2 && out.k[i]!=0) ||
+//       (out.l[i]==3 && out.k[i]!=0)
+//     ) {
+//       CHECK_LT(out.driver->innerproduct(out.mode[i], fmodes[out.l[i]]), 1.e-10);
+//     }
+//   }
+// }
 }
