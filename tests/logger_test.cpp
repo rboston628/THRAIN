@@ -12,7 +12,7 @@ ThrainLogger::LogLevel operator+(ThrainLogger::LogLevel l, unsigned char i) {
 }
 
 namespace {
-  std::string const testfilename ("tests/tests/log_test.txt");
+  std::string const testfilename ("tests/output/log_test.txt");
 
   void log_all_levels(ThrainLogger::LogLevel const level) {
     // set the log level
@@ -91,7 +91,7 @@ namespace {
 struct SetUpTearDown {
   SetUpTearDown() { 
     // filelib::makedir("tests");
-    filelib::makedir("tests/tests");
+    filelib::makedir("tests/output");
     ThrainLogger::setOutputFile(testfilename, "w");
   }
   ~SetUpTearDown() { remove(testfilename.c_str()); }
