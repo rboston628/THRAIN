@@ -88,8 +88,17 @@ public:
         
         Calculation::OutputData out;
         TS_ASSERT_EQUALS(0, io::setup_output(in, out));
+        // create the star, and print it out
         TS_ASSERT_EQUALS(0, create_star(out));
+        io::write_stellar_output(out);
+        // ensure the output was written
+        TS_ASSERT(filelib::exists(ThrainConfig::summaryFileName(out.calcname)));
+
+        // create the modes and print them out
         TS_ASSERT_EQUALS(0, mode::create_modes(out));
+        io::write_mode_output(out);
+        // ensure the modes were written
+        TS_ASSERT(filelib::exists(ThrainConfig::calculationFileName(out.calcname, "modes", "mode_1.1.txt")));
 
         TS_ASSERT_LESS_THAN(out.star_SSR, 1.e-12);
         for(int i=0; i<out.mode_num; i++){

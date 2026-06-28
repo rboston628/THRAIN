@@ -706,8 +706,7 @@ int write_mode_output(Calculation::OutputData& calcdata){
 			else fprintf(output_file, "\tN/A");
 		}
 		fprintf(output_file, "\n");
-		std::string outname = ThrainConfig::calculationDir(calcdata.calcname);
-		(calcdata.mode[j])->writeMode(outname.c_str());
+		(calcdata.mode[j])->writeMode(calcdata.calcname);
 		fflush(output_file);
 		calcdata.mode_writ++;
 	}

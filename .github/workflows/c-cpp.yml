@@ -112,6 +112,14 @@ jobs:
       shell: bash
       run: mkdir -p /tmp
 
+    # gnuplot is not available for windows through pixi, so install manually
+    - name: Install Windows gnuplot
+      if: startsWith(matrix.config.os, 'windows')
+      shell: bash
+      run: |
+        choco install gnuplot -y --no-progress
+        echo "C:\Program Files\gnuplot\bin" >> "$GITHUB_PATH"
+
     - name: Build
       shell: bash
       env:

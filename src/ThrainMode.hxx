@@ -531,9 +531,7 @@ int mode_finder(Calculation::OutputData &data){
 		if(e!=data.i_err) ThrainLogger::info("Error in mode error listing...\n");
 		ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "done\n");
 
-//STEP 8: at the end of each L, print all data to the output file 
-		io::write_mode_output(data);
-
+//STEP 8: cleanup
 		// clean up the remaining allocated pointers to modes
 		// delete only the modes that were not in the list
 		for(auto mt=modefilled.begin(); mt!=modefilled.end(); mt++){

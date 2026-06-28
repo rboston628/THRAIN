@@ -83,7 +83,7 @@ TEST_SUITE("ThrainConfig") {
   TEST_CASE_FIXTURE(SetupTeardown, "resolveCalcName") {
     std::string name = "testcalc";
     std::string resolved = ThrainConfig::resolveCalcName("", name);
-    CHECK_EQ(resolved, ThrainConfig::outputDir() + ThrainConfig::defaultCalcName() + "/" + name + "/");
+    CHECK_EQ(resolved, ThrainConfig::defaultCalcName() + "/" + name);
     std::string custom = "customdir/";
     resolved = ThrainConfig::resolveCalcName(custom, name);
     CHECK_EQ(resolved.back(), '/');

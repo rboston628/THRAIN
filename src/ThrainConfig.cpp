@@ -36,7 +36,7 @@ void ThrainConfig::reconfigure(std::unordered_map<std::string, std::string> cons
 std::string ThrainConfig::resolveCalcName(std::string const& c, std::string const& name) {
   std::string ret;
   if (c != "") return ret = c;
-  else ret = outputDir() + trailingSlash(defaultCalcName()) + trailingSlash(name);
+  else ret = trailingSlash(defaultCalcName()) + name;
   return ret;
 }
 
