@@ -457,20 +457,15 @@ void Polytrope::getC1Surface(double *cs, int& maxPow){
 	if(maxPow> 4) maxPow = 4;
 }
 
-
-void Polytrope::writeStar(const char *const c){
+void Polytrope::writeStar(std::string const& c){
 	//create names for files to be opened
-	std::string pathname;
-	if(c==NULL)	pathname = "./out/" + name;
-	else pathname = strmakef("./%s/star/", c);
-
-	system( addstring("mkdir -p ", pathname).c_str() );
+	std::string calcname = ThrainConfig::resolveCalcName(c, name);
+	filelib::makedir(ThrainConfig::calculationSubdir(calcname, "star"));
 	
-	printStar(pathname.c_str());
-	printBV(pathname.c_str(), 5./3.);
-	printCoefficients(pathname.c_str(), 5./3.);
+	printStar(calcname);
+	printBV(calcname, 5./3.);
+	printCoefficients(calcname, 5./3.);
 }
-
 
 int Polytrope::read_star_input(FILE* input_file, Calculation::InputData& calcdata){
 	char input_buffer[512];

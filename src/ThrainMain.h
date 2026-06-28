@@ -70,7 +70,7 @@ struct OutputData {
 	std::vector<double> w, f, period;//vectors of frequency and period for each mode
 	std::vector<double> mode_SSR;    //the backsubstitution residual for each mode
 	int i_err;						 //a number of errors to calculate for each mode
-	double **err;					 //an array, for each mode listing all required errors
+	double **err = nullptr;					 //an array, for each mode listing all required errors
 	double mass, radius, zsurf, logg, teff, star_SSR;
 	double freq0;					 //a base frequency given the mass, radiusof star
 	double adiabatic_index;			 //an adiabatic index to use in oscillates; if 0 uses natural Gamma
@@ -87,8 +87,10 @@ struct OutputData {
 		for(auto it=mode.begin(); it!=mode.end(); it++){
 			delete (*it);
 		}
-		for(int e=0; e<i_err; e++)
+		for(int e=0; e<i_err; e++) {
 			delete[] err[e];
+		}
+		if (err) delete[] err;
 	}
 };
 

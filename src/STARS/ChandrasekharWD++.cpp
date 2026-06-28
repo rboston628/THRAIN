@@ -459,26 +459,21 @@ void ChandrasekharWD::getC1Surface(double *cs, int& maxPow){
 	if(maxPow  > 4) maxPow = 4;
 }
 
-void ChandrasekharWD::writeStar(char const *const c){
+void ChandrasekharWD::writeStar(std::string const& c){
 	//create names for files to be opened
-	std::string outputdir;
-	if(c==NULL)	outputdir = strmakef("./out/%c", name.c_str());
-	else        outputdir = strmakef("./%s/star",c);
+	std::string const calcname = ThrainConfig::resolveCalcName(c, name);
+	filelib::makedir(ThrainConfig::calculationSubdir(calcname, "star"));
 
-	system( ("mkdir -p "+outputdir).c_str() );
-
-	printStar(outputdir.c_str());
-	printDeg(outputdir.c_str());
-	printBV(outputdir.c_str());
-	printChem(outputdir.c_str());
-	printCoefficients(outputdir.c_str());
+	printStar(calcname);
+	printDeg(calcname);
+	printBV(calcname);
+	printChem(calcname);
+	printCoefficients(calcname);
 }
 
-
-void ChandrasekharWD::printDeg(char const *const outputdir){
-	std::string txtname, outname;
-	txtname = addstring(outputdir, "/degeneracy.txt");
-	outname = addstring(outputdir, "/degeneracy.png");
+void ChandrasekharWD::printDeg(std::string const& calcname){
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "degeneracy.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "degeneracy.png");
 
 	FILE *fp = fopen(txtname.c_str(), "w");
 	for(std::size_t X=0; X < length(); X++){
@@ -506,12 +501,10 @@ void ChandrasekharWD::printDeg(char const *const outputdir){
 	pclose(gnuplot);
 }
 
-void ChandrasekharWD::printChem(char const *const outputdir){
+void ChandrasekharWD::printChem(std::string const& calcname){
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "chemical.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "chemical.png");
 
-	std::string txtname, outname;
-	txtname = addstring(outputdir, "/chemical.txt");
-	outname = addstring(outputdir, "/chemical.png");
-	
 	//print the chemical gradient
 	FILE *fp  = fopen(txtname.c_str(), "w");
 	double H,He;
@@ -535,7 +528,7 @@ void ChandrasekharWD::printChem(char const *const outputdir){
 	fprintf(gnuplot, "set title 'Chemical composition for %s'\n", graph_title().c_str());
 	fprintf(gnuplot, "set logscale x 10\n");
 	fprintf(gnuplot, "set format x '%%L'\n");
-	fprintf(gnuplot, "set xlabel 'log_{10} (1-m/M)\n");
+	fprintf(gnuplot, "set xlabel 'log_{10} (1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'abundance\n");
 	fprintf(gnuplot, "set yrange [-0.01: 1.01]\n");
 	fprintf(gnuplot, "set xrange [1e-8:1e0]\n");

@@ -24,6 +24,7 @@
 #include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
+#include "../ThrainConfig.h"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
@@ -1496,14 +1497,12 @@ void SimpleWD::getC1Surface(double *cs, int& maxPow){
 // 4) graph of Brunt-Vaisala and Lamb frequency vs. logP (to compare to Goldreich & Wu)
 // optional argument c[] is calculation directory where files should be written
 // if no argument, files written to ./out/[name], where name is shown in constructor
-void SimpleWD::printChem(const char *const c){
-
-	std::string filename(c), rootname, txtname, outname;
+void SimpleWD::printChem(std::string const& calcname){
 	std::string title = graph_title();
 	
 	//print the chemical gradient
-	txtname = filename + "/chemical.txt";
-	outname = filename + "/chemical.png";
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "chemical.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "chemical.png");
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double H,He;
 	double MM = logY[Ntot-1][mass];
@@ -1536,7 +1535,8 @@ void SimpleWD::printChem(const char *const c){
 	fprintf(gnuplot, ",    '%s' u 3:7 w l t 'Z (C12)'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 3:8 w l t 'Z (O16)'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	fprintf(gnuplot, "set output '%s/chem_log.png'\n", filename.c_str());
+	std::string  logname = ThrainConfig::calculationFileName(calcname, "star", "chem_log.png");
+	fprintf(gnuplot, "set output '%s'\n", logname.c_str());
 	fprintf(gnuplot, "set xlabel 'log_{10}(1-m/M)'\n");
 	fprintf(gnuplot, "set ylabel 'log_{10} X_i'\n");
 	fprintf(gnuplot, "set format y '10^{%%L}'\n");
@@ -1552,14 +1552,12 @@ void SimpleWD::printChem(const char *const c){
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
 }
-void SimpleWD::printBV(const char *const c, const double g){
-
-	std::string filename(c), rootname, txtname, outname;
+void SimpleWD::printBV(std::string const& calcname, const double g){
 	std::string title = graph_title();
 	
 	//print the Brunt-Vaisala frequency
-	txtname = filename + "/BruntVaisala.txt";
-	outname = filename + "/BruntVaisala.png";
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.png");
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0, f0 = G_CGS*Mstar*pow(Rstar,-3);
 	fprintf(fp, "1-m\tN2\tL1\n");
@@ -1589,13 +1587,12 @@ void SimpleWD::printBV(const char *const c, const double g){
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 }
-void SimpleWD::printOpacity(const char *const c){
-	std::string filename(c), txtname, outname;
+void SimpleWD::printOpacity(std::string const& calcname){
 	std::string title = graph_title();
 	
 	//make a graph of T, nabla, opacity
-	txtname = filename + "/opacity.txt";
-	outname = filename + "/opacity.png";
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", "opacity.txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", "opacity.png");
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	Abundance X;
 	StellarVar ly;
@@ -1645,16 +1642,14 @@ void SimpleWD::printOpacity(const char *const c){
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);
 }
-void SimpleWD::printCoefficients(const char *const c, const double g){
-
-	std::string filename, txtname, outname;
-	filename = addstring(c,"/wave_coefficient");
-	system( ("mkdir -p " + filename).c_str() );
-	
+void SimpleWD::printCoefficients(std::string const& calcname, const double g){
 	std::string title = graph_title();
+	std::string wave_coeff{"wave_coefficient"};
+	filelib::makedir(ThrainConfig::calculationSubdir(calcname, wave_coeff));
 	
+	std::string txtname, outname;
 	//print the coefficients of the center and surface, for series analysis
-	txtname = filename + "/center.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "center.txt");
 	FILE *fp = fopen(txtname.c_str(), "w");
 	double gam1 = adiabatic_1[0];
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\n", dc[0],dc[1],dc[2]);
@@ -1665,7 +1660,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(fp, "Vg:\t%0.16le\t%0.16le\t%0.16le\n", V0[0]/gam1,V0[1]/gam1,V0[2]/gam1);
 	fprintf(fp, "c1:\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	txtname = filename + "/surface.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surface.txt");
 	fp = fopen(txtname.c_str(), "w");
 	gam1 = adiabatic_1[Ntot-1];
 	fprintf(fp, "dens:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", ds[0],ds[1],ds[2],ds[3],ds[4]);
@@ -1679,7 +1674,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	
 	//print fits to those coefficients at center and surface
 	std::size_t NC=15, NS=15;
-	txtname = filename + "/centerfit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double x2 = exp(2.*logY[0][radi]);
 	gam1 = adiabatic_1[0];
@@ -1705,7 +1700,7 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 		);
 	}
 	fclose(fp);
-	txtname = filename + "/surfacefit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double t = 1.-std::exp(logY[0][radi]);
 	gam1 = adiabatic_1[Ntot-1];
@@ -1733,8 +1728,8 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fclose(fp);
 	
 	//print the pulsation coeffcients
-	txtname = filename + "/coefficients.txt";
-	outname = filename + "/coefficients.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "coefficients.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "coefficients.png");
 	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
 	for(std::size_t X=0; X<Ntot; X++){
@@ -1766,8 +1761,8 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(gnuplot, "\n");
 	pclose(gnuplot);
 	//fits
-	txtname = filename + "/centerfit.txt";
-	outname = filename + "/centergit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "centerfit.png");
 	gnuplot = popen("gnuplot -persist", "w");
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
@@ -1787,8 +1782,8 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($12-$13)/abs($12)) w lp t 'Vg'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($14-$15)/abs($14)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	txtname = filename + "/surfacefit.txt";
-	outname = filename + "/surfacefit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wave_coeff, "surfacefit.png");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -1808,12 +1803,10 @@ void SimpleWD::printCoefficients(const char *const c, const double g){
 	fprintf(gnuplot, "exit\n");
 	pclose(gnuplot);	
 }
-void SimpleWD::printBigASCII(const char *const c){
-
-	std::string filename(c), txtname, outname;
+void SimpleWD::printBigASCII( std::string const& calcname){
 	std::string title = graph_title();
 
-	txtname = filename + strmakef("/M%0.3le_R%0.2le_Teff%4.0lf.txt", Msolar, Rsolar, Teff);
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", strmakef("M%0.3le_R%0.2le_Teff%4.0lf.txt", Msolar, Rsolar, Teff));
 	FILE* fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "## SimpleWD output file\n");
 	fprintf(fp, "# Mass \t%le (g)\t%0.3le (Msun) \n", Mstar, Msolar);
@@ -1935,21 +1928,19 @@ void SimpleWD::printBigASCII(const char *const c){
 	}
 	fclose(fp);
 }
-void SimpleWD::writeStar(const char *const c){
+void SimpleWD::writeStar(std::string const& c){
 	//create names for files to be opened
-	std::string filename, txtname, outname;
-	if(c==NULL)	filename = "./out." + name;
-	else filename = strmakef("./%s/star", c);
-	txtname = filename + "/star.txt";
-	outname = filename + "/star.png";
+	std::string const calcname = ThrainConfig::resolveCalcName(c, name);
+	std::string const txtname = ThrainConfig::calculationFileName(calcname, "star", name + ".txt");
+	std::string const outname = ThrainConfig::calculationFileName(calcname, "star", name + ".png");
 
 	std::string title = graph_title();
 
 	//prepare the output directory, making sure it exists
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( ("mkdir -p " + filename).c_str() );
-		if(!(fp = fopen(filename.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
+		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "star"));
+		if(!(fp = fopen(txtname.c_str(), "w"))) ThrainLogger::error("big trouble, boss\n");		
 	}
 	
 	//print results to text file
@@ -1996,10 +1987,10 @@ void SimpleWD::writeStar(const char *const c){
 	pclose(gnuplot);
 	
 	//call files to print other properties
-	printChem(filename.c_str());
-	printBV(filename.c_str());
-	printOpacity(filename.c_str());
-	printCoefficients(filename.c_str());	
+	printChem(calcname);
+	printBV(calcname);
+	printOpacity(calcname);
+	printCoefficients(calcname);	
 	//printBigASCII(filename);
 }
 

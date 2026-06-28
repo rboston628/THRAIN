@@ -1,11 +1,12 @@
 #include "doctest.h"
 #include <cstdio>
 #include <cstdlib>
+#include "../src/ThrainConfig.h"
 
 struct SetUp {
   SetUp() {
+    ThrainConfig::reconfigure("./tests/tests.config");
     printf("test of testing\n");
-    system("rm tests/artifacts/logio.txt");
   }
   ~SetUp() = default;
 };

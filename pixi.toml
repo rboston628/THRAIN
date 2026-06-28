@@ -66,6 +66,9 @@ build-tests = "make cleantests tests-cxxtest tests-doctest"
 cxxtest = "make tests-cxxtest && ./tests/cxxtest.out"
 
 # Builds and rune the doctest test runner
-doctest = "make tests-doctest && ./tests/doctest.out --force-colors=1"
+# doctest = "make tests-doctest && ./tests/doctest.out --force-colors=1"
+doctest = '''
+make tests-doctest && echo "make=$?" && ./tests/doctest.out --force-colors=1 && echo "doctest=$?"
+'''
 
 clean = "make clean cleantests"

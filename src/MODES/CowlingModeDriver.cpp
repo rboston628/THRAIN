@@ -40,15 +40,15 @@ CowlingModeDriver::~CowlingModeDriver(){
 	delete[] C; delete[] V;
 }
 
-std::size_t CowlingModeDriver::length(){
+std::size_t CowlingModeDriver::length() const {
 	return len;
 }
 
-double CowlingModeDriver::Gamma1(){
+double CowlingModeDriver::Gamma1() const {
 	return adiabatic_index;
 }
 
-double CowlingModeDriver::rad(std::size_t X){
+double CowlingModeDriver::rad(std::size_t X) const {
 	return (r[X]);
 }
 
@@ -219,7 +219,7 @@ std::size_t CowlingModeDriver::SurfaceBC(double **ymode, double *ys, double omeg
 
 // *** this method is assuming a uniform grid ***
 // *** we cannot assume a unifirm grid for all stars
-double CowlingModeDriver::SSR(double omeg2, int l, ModeBase* mode){
+double CowlingModeDriver::SSR(double omeg2, int l, ModeBase const* mode) const {
 	double checkCont=0.0;
 	double checkNewt=0.0;
 	double e1,e2;
@@ -284,7 +284,7 @@ double CowlingModeDriver::SSR(double omeg2, int l, ModeBase* mode){
 	return sqrt((checkCont+checkNewt)/double(2*len-7));
 }
 
-double CowlingModeDriver::tidal_overlap(ModeBase* mode){
+double CowlingModeDriver::tidal_overlap(ModeBase const* mode) const {
 	double omega2 = mode->getOmega2();
 	int k,l,m;
 	mode->modeNumbers(k,l,m);
@@ -320,7 +320,7 @@ double CowlingModeDriver::tidal_overlap(ModeBase* mode){
 	return integral/sqrt(NN);
 }
 
-double CowlingModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
+double CowlingModeDriver::innerproduct(ModeBase const* mode1, ModeBase const* mode2) const {
 	double omega21 = mode1->getOmega2();
 	double omega22 = mode2->getOmega2();
 	int k1,l1,m1, k2,l2,m2;

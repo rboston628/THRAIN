@@ -8,6 +8,7 @@
 #include <ctime>
 #include <cstdarg>
 #include "string.h"
+#include "filelib.h"
 
 class ThrainLogger {
 
@@ -45,19 +46,29 @@ public:
     // check if the file exists
     FILE *otherfp = fopen(filename.c_str(), access);
     if (!otherfp) {
-      fprintf(stderr, "Failed to open log file %s; logger output file not changed\n", filename.c_str());
-    } else {
-      // close any open log file
-      instance().closeOpenLogFile();
-      // set the file
-      instance().fp = otherfp;
-      instance().logToFile = true;
+      // if it failed, try making the directory
+      std::string dir = filename.substr(0, filename.find_last_of("/\\"));
+      filelib::makedir(dir);
+      otherfp = fopen(filename.c_str(), access);
+      if (!otherfp) {
+        // if we still can't opemn the file, then we failed
+        ThrainLogger::error("Failed to open log file %s; logger output file not changed\n", filename.c_str());
+      }
     }
+    // close any open log file
+    instance().closeOpenLogFile();
+    // set the file
+    std::lock_guard<std::mutex> lock(instance().logMutex);
+    instance().fp = otherfp;
+    instance().logToFile = true;
+    otherfp = nullptr;
   }
 
   static void unsetOutputFile() {
     instance().closeOpenLogFile();
+    std::lock_guard<std::mutex> lock(instance().logMutex);
     instance().fp = stdout;
+    instance().logToFile = false;
   }
 
   static void setLogLevel(LogLevel level) {

@@ -21,9 +21,9 @@ public:
 	//destructor
 	virtual ~SineModeDriver();
 	
-	std::size_t length() override;
-	double Gamma1() override;//the adiabatic index, if set; 0 if same as star
-	double rad(std::size_t) override;//radial array x = r/R
+	std::size_t length() const override;
+	double Gamma1() const override;//the adiabatic index, if set; 0 if same as star
+	double rad(std::size_t) const override;//radial array x = r/R
 	//return the coefficient matrix A from equation x*dy/dx = A*y
 	void getCoeff(double *CC, const std::size_t, const int, const double, const int) override;
 
@@ -43,9 +43,9 @@ public:
 	void varnames(std::string *names) override;
 	
 	//for the Mode passed, calculate sum-square residual
-	double SSR(double, int l, ModeBase*) override;
-	double tidal_overlap(ModeBase*) override;
-	double innerproduct(ModeBase*, ModeBase*) override;
+	double SSR(double, int l, ModeBase const*) const override;
+	double tidal_overlap(ModeBase const*) const override;
+	double innerproduct(ModeBase const*, ModeBase const*) const override;
 };
 
 #endif

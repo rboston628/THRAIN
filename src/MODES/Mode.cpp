@@ -12,13 +12,16 @@
 #define MODECLASS
 
 #include "Mode.h"
+#include "../ThrainConfig.h"
 #include "../../lib/rootfind.h"
+#include "../../lib/filelib.h"
+#include "../../lib/string.h"
 
 //This is the basic setup routine common to all constructors
 // preparing all arrays for integration and matching
 //The individual constructors differ only in how they initialize frequency
 template <std::size_t  numvar>
-void Mode<numvar>::basic_setup(){
+void Mode<numvar>::basic_setup() {
 	wronskian = [this](double x) -> double {return this->calculateWronskian(x);};
 	cee2 = star->light_speed2();
 	Gee  = star->Gee();
@@ -318,20 +321,19 @@ int Mode<numvar>::verifyMode(){
 
 //print out the mode information and plot it on gnuplot
 template <std::size_t numvar> 
-void Mode<numvar>::writeMode(const char *const c){
+void Mode<numvar>::writeMode(std::string const &c) const {
 	//create names for files to be opened
-	std::string filename, modename = strmakef("/mode_%d.%d", l, k);
-	if(c==NULL)	filename = "./out/" + star->name + "/mode";
-	else filename = addstring("./", c) + "/modes";
-	std::string rootname = filename + modename;
 	//save data to folder to avoid clutter - make sure folder exists
-	std::string txtname = rootname + ".txt";
-	std::string outname = rootname + ".png";
-	FILE *fp;
-	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( ("mkdir -p "+filename).c_str() );
+	std::string calcname = ThrainConfig::resolveCalcName(c, star->name);
+	std::string txtname = ThrainConfig::calculationFileName(calcname, "modes", strmakef("mode_%d.%d.txt", l, k));
+	std::string outname = ThrainConfig::calculationFileName(calcname, "modes", strmakef("mode_%d.%d.png", l, k));
+
+	FILE *fp = fopen(txtname.c_str(), "w");
+	if(!fp){
+		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "modes"));
 		fp = fopen(txtname.c_str(), "w");
 	}
+	assert(fp != NULL);
 	double R = rad[len-1];
 	double M = star->Mass();
 	for(std::size_t x=0; x<len; x++){
@@ -363,46 +365,29 @@ void Mode<numvar>::writeMode(const char *const c){
 	pclose(gnuplot);
 }
 
-//write the mode, and then open the png to screen for easy viewing
-template <std::size_t numvar> 
-void Mode<numvar>::printMode(const char *const c){
-	writeMode(c);
-	std::string outname, modename = "mode_"+std::to_string(l)+"."+std::to_string(k)+".png";
-	if(c==NULL) outname = "./out/"+star->name+"/mode/"+modename;
-	else {
-		outname = "./";
-		for(std::size_t i=0; c[i]!=0; i++){
-			outname += c[i];
-		}
-		outname += "modes/"+modename;
-	}
-	char openmyplot[248];
-	system(std::string("open "+outname).c_str());
-}
-
 //ways to access the frequency
 template <std::size_t numvar> 
-double Mode<numvar>::getOmega2(){
+double Mode<numvar>::getOmega2() const {
 	return omega2;
 }
 template <std::size_t numvar> 
-double Mode<numvar>::getFreq(){
+double Mode<numvar>::getFreq() const {
 	return sqrt(omeg2freq * omega2);
 }
 template <std::size_t numvar> 
-double Mode<numvar>::getPeriod(){
+double Mode<numvar>::getPeriod() const {
 	return 2.*m_pi/getFreq();
 }
 
 //we want to be able to call SSR() on each Mode object
 //however, SSR() requires equations from ModeDriver
 template <std::size_t numvar> 
-double Mode<numvar>::SSR(){
+double Mode<numvar>::SSR() const {
 	return driver->SSR(omega2, l, this);
 }
 
 template <std::size_t numvar>
-double Mode<numvar>::tidal_overlap(){
+double Mode<numvar>::tidal_overlap() const {
 	return driver->tidal_overlap(this);
 }
 

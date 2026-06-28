@@ -20,8 +20,8 @@ class Mode : public ModeBase {
 public:
 	static const unsigned int  num_var = numvar;
 	//retrieve quantum numbers of pulsation
-	int  modeOrder(){return k;};
-	void modeNumbers(int& K, int& L, int& M){K=k; L=l; M=m;};
+	int  modeOrder() const override {return k;};
+	void modeNumbers(int& K, int& L, int& M) const override {K=k; L=l; M=m;};
 	//constructors: differ only in initial choice of frequency
 	//initialize from quantum numbers and a background star
 	Mode<numvar>(int k, int l, int m, ModeDriver*);
@@ -33,16 +33,16 @@ public:
 	virtual ~Mode();
 	
 	//ways to access the frequency
-	double getOmega2();
-	double getFreq();
-	double getPeriod();
-	double SSR();
-	double tidal_overlap();
+	double getOmega2() const override;
+	double getFreq() const override;
+	double getPeriod() const override;
+	double SSR() const override;
+	double tidal_overlap() const override;
 
 	//methods to access mode functions
-	double getRad(std::size_t x){ return rad[x];};
-	double getY(int i, std::size_t x){ return pow(rad[x],l-2)*y[x][i];};
-	double getYtilde(int i, std::size_t x){ return y[x][i];};
+	double getRad(std::size_t x) const override { return rad[x];};
+	double getY(int i, std::size_t x) const override { return pow(rad[x],l-2)*y[x][i];};
+	double getYtilde(int i, std::size_t x) const override { return y[x][i];};
 	
 protected:
 	//the equilibrium star
@@ -83,8 +83,7 @@ protected:
 
 public:
 	//file output methods to write and view plots of mode
-	void printMode(const char *const c = NULL);
-	void writeMode(const char *const c = NULL);
+	void writeMode(std::string const& c = "") const override;
 };
 
 //template classes in C++ cannot be split into multiple files, so we must include Mode.pp

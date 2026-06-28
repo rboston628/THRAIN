@@ -60,7 +60,7 @@ public:
 	double sound_speed2(std::size_t, double GamPert=0.0) override final;
 	
 		
-	void writeStar(const char *const c=NULL) override final;
+	void writeStar(std::string const& c = "") override final;
 	
 private:
 	void basic_setup();

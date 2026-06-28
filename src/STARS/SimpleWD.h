@@ -143,14 +143,14 @@ public:
 	void getC1Surface(double*, int&) override;
 	
 	//a particular output generation for this model of a WD
-	void writeStar(const char *const c=NULL) override;
+	void writeStar(std::string const& c = "") override;
 	double SSR() override;
 private:
-	void printChem(const char *const c);
-	void printBV(const char *const c, const double g=0)  override;
-	void printOpacity(const char *const c);
-	void printBigASCII(const char *const c);
-	void printCoefficients(const char *const c, const double g=0) override;
+	void printChem(std::string const& c);
+	void printBV(std::string const& c, const double g=0)  override;
+	void printOpacity(std::string const& c);
+	void printBigASCII(std::string const& c);
+	void printCoefficients(std::string const& c, const double g=0) override;
 };
 
 #endif

@@ -2,6 +2,8 @@
 
 #include "../src/constants.h"
 #include "../lib/string.h"
+#include "../src/ThrainConfig.h"
+#include "../lib/filelib.h"
 #include <cxxtest/TestSuite.h>
 
 // define this for the tests below to work
@@ -11,21 +13,21 @@ ThrainLogger::LogLevel operator+(ThrainLogger::LogLevel l, unsigned char i) {
 }
 
 namespace {
-  std::string const testfilename ("tests/tests/log_test.txt");
+  std::string const testfilename (ThrainConfig::outputDir() + "log_test.txt");
 }
 
 class LoggerTest : public CxxTest::TestSuite {
 public:
 
 static LoggerTest *createSuite (){
-  system( "mkdir -p tests/tests" );
+  filelib::makedir(ThrainConfig::outputDir());
   printf("\n## LOGGER TESTS ##\n");
   return new LoggerTest();
 }
 
 static void destroySuite(LoggerTest *suite) { 
   printf("\n################");
-  remove(testfilename.c_str());
+  filelib::remove(testfilename.c_str());
   delete suite; 
 }
 

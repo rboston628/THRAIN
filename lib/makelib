@@ -11,9 +11,9 @@ AR ?= ar
 
 ## files needed to compile stellar models
 #  dependencies
-LIBDEPS = Splinor.h  chandra.h   stellar.h   rootfind.h   string.h  logger.h
+LIBDEPS = Splinor.h  chandra.h   stellar.h   rootfind.h   string.h  logger.h filelib.h
 #  source
-LIBSRC = Splinor.cpp chandra.cpp stellar.cpp rootfind.cpp string.cpp
+LIBSRC = Splinor.cpp chandra.cpp stellar.cpp rootfind.cpp string.cpp filelib.cpp
 
 ## prepare object names
 LIBOBJ = $(patsubst %.cpp, %.o, $(LIBSRC))

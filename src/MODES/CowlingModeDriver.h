@@ -21,9 +21,9 @@ public:
 	//destructor
 	virtual ~CowlingModeDriver();
 	
-	std::size_t length() override final;
-	double Gamma1() override final;//the adiabatic index, if set; 0 if same as star
-	double rad(std::size_t) override final;//radial array x = r/R
+	std::size_t length() const override final;
+	double Gamma1() const override final;//the adiabatic index, if set; 0 if same as star
+	double rad(std::size_t) const override final;//radial array x = r/R
 	//return the coefficient matrix A from equation x*dy/dx = A*y
 	void getCoeff(double *CC, const std::size_t, const int, const double, const int) override final;
 
@@ -54,9 +54,9 @@ public:
 	}
 	
 	//for the Mode passed, calculate sum-square residual
-	double SSR(double, int l, ModeBase*) override final;
-	double tidal_overlap(ModeBase*) override final;
-	double innerproduct(ModeBase*, ModeBase*) override final;
+	double SSR(double, int l, ModeBase const*) const override final;
+	double tidal_overlap(ModeBase const*) const override final;
+	double innerproduct(ModeBase const*, ModeBase const*) const override final;
 };
 
 #endif

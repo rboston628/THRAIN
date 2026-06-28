@@ -15,7 +15,7 @@ namespace Calculation {
 namespace io {
 
 //will read user input from the specified file and organize the input data
-int read_input(const char input_file_name[128], Calculation::InputData&);
+int read_input(std::string const&, Calculation::InputData&);
 // individual parts of input file
 int read_calcname(FILE* fp, Calculation::InputData&);
 int read_model(FILE* fp, Calculation::InputData&);

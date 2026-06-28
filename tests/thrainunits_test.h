@@ -7,24 +7,19 @@ public:
 
     static UnitsBaseTest *createSuite (){
         printf("\nUNIT TESTS");
+        ThrainConfig::reconfigure("tests/tests.config");
+        ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
         return new UnitsBaseTest;
     }
     static void destroySuite(UnitsBaseTest *suite) { 
         delete suite; 
     }
 
-    void setUp() {
-        freopen("tests/artifacts/logio.txt", "a", stdout);
-    }
-
-    void tearDown() {
-        freopen("/dev/tty", "w", stdout);
-    }
-
     Calculation::OutputData setupFakeCalcData(units::Units unitType){
         Calculation::OutputData fakeData;
         fakeData.star = nullptr;
         fakeData.driver = nullptr;
+        fakeData.err = nullptr;
         fakeData.i_err = 0;
 
         char fakeParams = units::ParamType::pmass|units::ParamType::pradius;

@@ -39,6 +39,7 @@ src/STARS/ZAMS.cpp
 !lib/stellar.*
 !lib/string.*
 !lib/logger.h
+!lib/filelib.*
 lib/*.o
 
 # the test suite
@@ -46,9 +47,7 @@ lib/*.o
 !tests/doctest.h
 !tests/test_main.cpp
 !tests/*.h
-!tests/*.cpp
-# but DO exclude the cxxtest runner
-tests/cxxtests.cpp
+!tests/*_test.cpp
 # include test classes
 !tests/test_modes/
 !tests/test_modes/*
@@ -56,8 +55,11 @@ tests/cxxtests.cpp
 !tests/test_stars/*
 # include the test inputs
 !tests/inputs/
+!tests/inputs/*
 !tests/inputs/spline/
 !tests/inputs/spline/*
+# the test config
+!tests/tests.config
 
 ## DOCUMENTATION
 # include the documentation

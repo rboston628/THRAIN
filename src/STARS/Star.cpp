@@ -10,6 +10,7 @@
 
 #include <limits>
 #include "Star.h"
+#include "../ThrainConfig.h"
 #include "../lib/string.h"
 
 //in Newtonian, light speed is infinity
@@ -18,29 +19,26 @@ double Star::light_speed2() {
 }
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
-void Star::writeStar(const char *const c){
+void Star::writeStar(std::string const &c){
 	//create names for files to be opened
-	// char pathname[256];
-	std::string outputdir;
-	if(c==NULL)	outputdir = strmakef("./out/%s/", name.c_str());
-	else outputdir = strmakef("./%s/star/", c);
+	std::string calcname = ThrainConfig::resolveCalcName(c, name);
+	std::string outputdir = ThrainConfig::calculationSubdir(calcname, "star");
+	filelib::makedir(outputdir);
 	
-	system( ("mkdir -p "+outputdir).c_str() );
-	
-	printStar(outputdir.c_str());
-	printBV(outputdir.c_str());
-	printCoefficients(outputdir.c_str());
+	printStar(calcname);
+	printBV(calcname);
+	printCoefficients(calcname);
 }
 
 //method to print pertinent values of star to .txt, and plot them in gnuplot
-void Star::printStar(const char *const outputdir){
+void Star::printStar(std::string const &calcname){
 	//create names for files to be opened
-	std::string txtname = strmakef("%s/%s.txt", outputdir, name.c_str());
-	std::string outname = strmakef("%s/%s.png", outputdir, name.c_str());
+	std::string txtname = ThrainConfig::calculationFileName(calcname, "star", name + ".txt");
+	std::string outname = ThrainConfig::calculationFileName(calcname, "star", name + ".png");
 
 	FILE *fp;
 	if(!(fp = fopen(txtname.c_str(), "w")) ){
-		system( addstring("mkdir -p ",outputdir).c_str() );
+		filelib::makedir(ThrainConfig::calculationSubdir(calcname, "star"));
 		fp = fopen(txtname.c_str(), "w");
 	}
 	//print results to text file
@@ -124,10 +122,10 @@ double Star::SSR(){
 	return sqrt((checkPoiss+checkEuler)/double(2*len-8));
 }
 
-void Star::printBV(const char *const outputdir, double const gam1){
-	std::string txtname = addstring(outputdir, "/BruntVaisala.txt");
-	std::string outname = addstring(outputdir, "/BruntVaisala.png");
-	
+void Star::printBV(std::string const &calcname, double const gam1){
+	std::string txtname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.txt");
+	std::string outname = ThrainConfig::calculationFileName(calcname, "star", "BruntVaisala.png");
+
 	//print the Brunt-Vaisala frequency
 	FILE* fp  = fopen(txtname.c_str(), "w");
 	double N2 = -1.0, R = Radius();
@@ -161,14 +159,14 @@ void Star::printBV(const char *const outputdir, double const gam1){
 	pclose(gnuplot);
 }
 
-void Star::printCoefficients(const char *const outputdir, double const gam1){
-
+void Star::printCoefficients(std::string const &calcname, double const gam1){
 	std::string txtname, outname;
 	std::string title = graph_title();
 	
 	// FIRST: print out coefficients near center and surface, for series analysis
-	std::string wavecoeffdir = addstring(outputdir, "/wave_coefficient");
-	system( ("mkdir -p " + wavecoeffdir).c_str() ); 
+	std::string const wavecoeff = "wave_coefficient";
+	std::string wavecoeffdir = ThrainConfig::calculationSubdir(calcname, wavecoeff);
+	filelib::makedir(wavecoeffdir);
 
 	std::size_t Ntot = length();
 	const int num_c=3, num_s=5;
@@ -187,14 +185,14 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	getC1Surface(c1,bc_s);
 	
 	//print the coefficients of the center and surface, for series analysis
-	txtname = wavecoeffdir + "/center.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "center.txt");
 	FILE *fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "A*:\t%0.16le\t%0.16le\t%0.16le\n", A0[0],A0[1],A0[2]);
 	fprintf(fp, "U :\t%0.16le\t%0.16le\t%0.16le\n", U0[0],U0[1],U0[2]);
 	fprintf(fp, "Vg:\t%0.16le\t%0.16le\t%0.16le\n", V0[0],V0[1],V0[2]);
 	fprintf(fp, "c1:\t%0.16le\t%0.16le\t%0.16le\n", c0[0],c0[1],c0[2]);
 	fclose(fp);
-	txtname = wavecoeffdir + "/surface.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "surface.txt");
 	fp = fopen(txtname.c_str(), "w");
 	fprintf(fp, "A*:\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", A1[0],A1[1],A1[2],A1[3],A1[4]);
 	fprintf(fp, "U :\t%0.16le\t%0.16le\t%0.16le\t%0.16le\t%0.16le\n", U1[0],U1[1],U1[2],U1[3],U1[4]);
@@ -204,7 +202,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	
 	//print fits to those coefficients at center and surface
 	std::size_t const NC=15, NS=15;
-	txtname = wavecoeffdir + "/centerfit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "centerfit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double Rtot = Radius();
 	double x, x2;
@@ -225,7 +223,7 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 		);
 	}
 	fclose(fp);
-	txtname = wavecoeffdir + "/surfacefit.txt";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "surfacefit.txt");
 	fp = fopen(txtname.c_str(), "w");
 	double t = 0.;
 	fprintf(fp, "t%*c\tA*      \tA*_fit   \tU       \tU_fit   \tVg      \tVg_fit  \tc1      \tc1_fit  \n", 7, ' ');
@@ -246,8 +244,8 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	fclose(fp);
 	
 	//print the pulsation coeffcients
-	txtname = wavecoeffdir + "/coefficients.txt";
-	outname = wavecoeffdir + "/coefficients.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "coefficients.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wavecoeff, "coefficients.png");
 	fp  = fopen(txtname.c_str(), "w");
 	fprintf(fp, "m\tA*\tU\tVg\tc1\n");
 	for(std::size_t X=0; X<Ntot; X++){
@@ -281,8 +279,8 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	//fits
 	fprintf(gnuplot, "reset\n");
 	fprintf(gnuplot, "set term png size 1000,800\n");
-	txtname = wavecoeffdir + "/centerfit.txt";
-	outname = wavecoeffdir + "/centerfit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "centerfit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wavecoeff, "centerfit.png");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Central Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");
@@ -297,8 +295,8 @@ void Star::printCoefficients(const char *const outputdir, double const gam1){
 	fprintf(gnuplot, ",    '%s' u 1:(abs($6-$7)/abs($6)) w lp t 'Vg'", txtname.c_str());
 	fprintf(gnuplot, ",    '%s' u 1:(abs($8-$9)/abs($8)) w lp t 'c1'", txtname.c_str());
 	fprintf(gnuplot, "\n");
-	txtname = wavecoeffdir + "/surfacefit.txt";
-	outname = wavecoeffdir + "/surfacefit.png";
+	txtname = ThrainConfig::calculationFileName(calcname, wavecoeff, "surfacefit.txt");
+	outname = ThrainConfig::calculationFileName(calcname, wavecoeff, "surfacefit.png");
 	fprintf(gnuplot, "set output '%s'\n", outname.c_str());
 	fprintf(gnuplot, "set title 'Surface Fitting by Power Series for %s'\n", title.c_str());
 	fprintf(gnuplot, "set xlabel 'r/R'\n");

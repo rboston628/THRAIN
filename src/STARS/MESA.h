@@ -14,11 +14,12 @@
 
 class MESA : public Star {
 public:	
-	MESA(const char*, std::size_t);	//constructor
+	MESA(std::string const&, std::size_t);	//constructor
 	virtual ~MESA(); //destructor - clears all space in memory
 	std::size_t length() override final {return len;}
 	double Mass() override final;
 	double Radius() override final;
+	double Luminosity();
 	double Gee() override final;
 	std::string graph_title () override final {
 		return strmakef("MESA model w/ Mass=%lg", Mtot);
@@ -74,11 +75,11 @@ public:
 	void getUSurface(double*, int&) override final;
 	void getVgSurface(double*, int&, double g=0) override final;
 	void getC1Surface(double*, int&) override final;
-	void writeStar(const char *const c=NULL) override final;
+	void writeStar(std::string const& calcname = "") override final;
 	double SSR() override final;
 private:
-	void printBV(const char *const, double const g=0) override final;
-	void printCoefficients(const char *const, double const g=0) override final;
+	void printBV(std::string const& calcname, double const g=0) override final;
+	void printCoefficients(std::string const& calcname, double const g=0) override final;
 };
 
 #endif

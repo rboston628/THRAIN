@@ -40,15 +40,15 @@ NonradialModeDriver::~NonradialModeDriver(){
 	delete[] C; delete[] V;
 }
 
-std::size_t NonradialModeDriver::length(){
+std::size_t NonradialModeDriver::length() const {
 	return len;
 }
 
-double NonradialModeDriver::Gamma1(){
+double NonradialModeDriver::Gamma1() const {
 	return adiabatic_index;
 }
 
-double NonradialModeDriver::rad(std::size_t X){
+double NonradialModeDriver::rad(std::size_t X) const {
 	return r[X];
 }
 
@@ -159,7 +159,7 @@ void NonradialModeDriver::setupBoundaries() {
 //	Limited by number of terms returned by stellar model
 //	For the derivation of this algorithm, see Mathematica notebook NewtonianBCs.nb
 //	The expansions must be in terms of x = r/R
-std::size_t NonradialModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m){
+std::size_t NonradialModeDriver::CentralBC(double **ymode, double *y0, double omeg2, int l, int m) {
 	double yy[num_var][BC_C/2+1];//0,2,4
 	//the zero-order terms are simple
 	yy[y1][0] = y0[y1];
@@ -216,7 +216,7 @@ std::size_t NonradialModeDriver::CentralBC(double **ymode, double *y0, double om
 //	Limited by number of terms returned by stellar model
 //	For the derivation of this algorithm, see Mathematica notebook NewtonianBCs.nb
 //	The expansiions must be in terms of t = 1-r/R
-std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l, int m){
+std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double omeg2, int l, int m) {
 	//int surface_bc_order = 4;
 	//specify initial conditions at surface
 	double yy[num_var][BC_S+1];	//coefficients y = yy[0] + yy[1]t + ... + yy[k]t^k
@@ -292,7 +292,7 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 
 // *** this method is assuming a uniform grid ***
 // *** we cannot assume a unifirm grid for all stars
-double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
+double NonradialModeDriver::SSR(double omega2, int l, ModeBase const* mode) const {
 	if(len < 14UL) return nan("Mode SSR must have at least 14 grid points\n");
 	double checkCont=0.0;
 	double checkNewt=0.0;
@@ -394,7 +394,7 @@ double NonradialModeDriver::SSR(double omega2, int l, ModeBase* mode){
 	return sqrt((checkCont+checkPois+checkNewt)/double(3*len-7));
 }
 
-double NonradialModeDriver::tidal_overlap(ModeBase* mode){
+double NonradialModeDriver::tidal_overlap(ModeBase const* mode) const {
 	double omega2 = mode->getOmega2();
 	int k,l,m;
 	mode->modeNumbers(k,l,m);
@@ -430,7 +430,7 @@ double NonradialModeDriver::tidal_overlap(ModeBase* mode){
 	return integral/sqrt(NN);
 }
 
-double NonradialModeDriver::innerproduct(ModeBase* mode1, ModeBase* mode2){
+double NonradialModeDriver::innerproduct(ModeBase const* mode1, ModeBase const* mode2) const {
 	double omega21 = mode1->getOmega2();
 	double omega22 = mode2->getOmega2();
 	int k1,l1,m1, k2,l2,m2;
