@@ -313,7 +313,7 @@ TEST_SUITE("Splinor [unit]") {
       pclose(gnuplot);
 
       // clean up
-      system("rm ./tests/artifacts/spline/compare.txt"); 
+      filelib::remove("./tests/artifacts/spline/compare.txt"); 
       delete[] xdata;
       delete[] ydata; 
     }

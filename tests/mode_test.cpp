@@ -14,6 +14,7 @@
 #include "../src/MODES/CowlingModeDriver.h"
 #include "../src/MODES/Mode.h"
 #include "../src/ThrainMode.h"   // contains Pekeris formula
+#include "../lib/filelib.h"      // for logging
 // classes defined only for testing
 #include "test_modes/SineModeDriver.h"
 #include "test_modes/DummyMode.h" // contains SineMode
@@ -26,7 +27,7 @@
 
 namespace {
 inline void ensure_artifacts_dir() {
-    std::system("mkdir -p tests/artifacts");
+    filelib::makedir("tests/artifacts");
 }
 } // namespace
 
