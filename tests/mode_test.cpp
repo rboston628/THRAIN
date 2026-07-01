@@ -30,11 +30,11 @@ inline void ensure_artifacts_dir() {
 }
 } // namespace
 
-TEST_SUITE("Mode") {
+TEST_SUITE("Mode [unit]") {
 
 /***** basic tests of the error functions *****/
 
-TEST_CASE("make_any_mode") {
+  TEST_CASE("mode: make_any_mode") {
     std::size_t constexpr LEN(2001);
     auto uniform_star = std::make_unique<Isopycnic>(LEN);
     auto driver_on_uniform = std::make_unique<NonradialModeDriver>(uniform_star.get(), 5./3.);
@@ -44,7 +44,7 @@ TEST_CASE("make_any_mode") {
     CHECK_LT( 0.0, nonradialMode->getPeriod() );
 }
 
-TEST_CASE("basic_mode_properties") {
+  TEST_CASE("mode: basic_mode_properties") {
     /** tests the following:
     *   - modes can be found with decent SSR
     *   - frequency close to known values
@@ -119,7 +119,7 @@ TEST_CASE("basic_mode_properties") {
     }
 }
 
-TEST_CASE("bad_SSR") {
+  TEST_CASE("mode: bad_SSR") {
     /* Tests that low number of grid points
     *  will produce a bad SSR */
 
@@ -159,9 +159,9 @@ TEST_CASE("bad_SSR") {
     CHECK_LT( BAD_ERR, c0 );
 }
 
-TEST_CASE("SSR_scale") {}
+  TEST_CASE("mode: SSR_scale") {}
 
-TEST_CASE("w2_freq_period") {
+  TEST_CASE("mode: w2_freq_period") {
     std::size_t const LEN(1000);
     double constexpr GAM1(5./3.);
     double constexpr INDEX(1.5);
@@ -181,7 +181,7 @@ TEST_CASE("w2_freq_period") {
 
 /***** TESTS OF NONRADIAL MODES *****/
 
-TEST_CASE("pekeris_frequency") {
+  TEST_CASE("mode: pekeris_frequency") {
     double constexpr LEN{6001};
     double constexpr Gam1(5./3.);
     double constexpr ACCEPTABLE_ERROR(1.e-6);
@@ -209,7 +209,7 @@ Compare to tables in Christensen-Dalsgaard and Mullan,
 Mon. Not. R. Astron. Soc. 270, 921-935 (1994)
 */
 
-TEST_CASE("compare_JCD_DJM_1_5") {
+  TEST_CASE("mode: compare_JCD_DJM_1_5") {
     // Table 1, Christensen-Dalsgaard and Mullan 1994
     double const INDEX(1.5);
     std::size_t const LEN(10000);
@@ -237,7 +237,7 @@ TEST_CASE("compare_JCD_DJM_1_5") {
     }
 }
 
-TEST_CASE("compare_JCD_DJM_3_0") {
+  TEST_CASE("mode: compare_JCD_DJM_3_0") {
     // Table 2, Christensen-Dalsgaard and Mullan 1994
     double const INDEX(3.0);
     std::size_t const LEN(10000);
@@ -254,7 +254,7 @@ TEST_CASE("compare_JCD_DJM_3_0") {
     }
 }
 
-TEST_CASE("compare_JCD_DJM_4_0") {
+  TEST_CASE("mode: compare_JCD_DJM_4_0") {
     // Table 3, Christensen-Dalsgaard and Mullan 1994
     double const INDEX(4.0);
     std::size_t const LEN(10000);
@@ -280,7 +280,7 @@ TEST_CASE("compare_JCD_DJM_4_0") {
 // as they are an approximation and so people 
 // don't bother printing highly accurate tables of them.
 
-TEST_CASE("same_coefficients_star") {
+  TEST_CASE("mode: same_coefficients_star") {
     std::size_t const LEN (1001);
     auto testStar = std::make_unique<Polytrope>(2.3, LEN);
     auto cowlingDriver = std::make_unique<CowlingModeDriver>(testStar.get(), 0.0);
@@ -308,7 +308,7 @@ TEST_CASE("same_coefficients_star") {
     }
 }
 
-TEST_CASE("same_on_dummy_star") {
+  TEST_CASE("mode: same_on_dummy_star") {
     /*
     It can be shown that for the DummyStar with P=rho=const,
     that there is only a single mode per L.

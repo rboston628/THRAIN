@@ -75,25 +75,13 @@ namespace {
   }
 
   std::string const testfilename = "tests/output/fullcalc_test_log.txt";
-
-  struct SetUpTearDown {
-    SetUpTearDown() {
-      ThrainLogger::setLogLevel(ThrainLogger::LogLevel::ERROR);
-      ThrainConfig::reconfigure("tests/tests.config");
-    }
-    ~SetUpTearDown() {}
-  };
-
 } // namespace
 
-TEST_SUITE("FullCalculation [slow]") {
+TEST_SUITE("FullCalculation [system]") {
   
 /* test uniform density (n=0) polytrope */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_uniform [slow]") {
+TEST_CASE("full_calculation_uniform [system]") {
   printf("\nTEST CALCULATION UNIFORM STAR");
-  ThrainLogger::setLogLevel(ThrainLogger::LogLevel::ERROR);
-  ThrainConfig::reconfigure("tests/tests.config");
-
   Calculation::InputData in = make_input_data_pmodes("uniform");
   Calculation::OutputData out;
   CHECK_EQ(0, io::setup_output(in, out));
@@ -115,13 +103,10 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_uniform [slow]") {
     CHECK_LT(out.err[0][i], 1.e-8);
     CHECK_LT(out.err[1][i], 1.e-6);
   }
-  // cleanup
-  ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
-  filelib::remove(ThrainConfig::calculationDir(in.calcname));
 }
 
 /* test n=1 polytrope */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_15 [slow]") {
+TEST_CASE("full_calculation_polytrope_15 [system]") {
   printf("TEST CALCULATION POLYTROPE n=1.5\n");
   Calculation::InputData in = make_input_data_pmodes("../tests/poly1.5");
   in.input_params[0] = 1.5; // change polytrope index
@@ -140,11 +125,10 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_15 [slow]") {
     }
     printf("\n");
   }
-  ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
 }
 
 /* test n=3 polytrope */
-TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
+TEST_CASE("full_calculation_polytrope_30_pmode [system]") {
   printf("TEST CALCULATION POLYTROPE n=3.0\n");
   Calculation::InputData in = make_input_data_pmodes("../tests/poly3.0");
   in.input_params[0] = 3.0; // change polytrope index
@@ -186,7 +170,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
   }
 }
 
-// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_gmode [slow]") {
+// TEST_CASE("full_calculation_polytrope_30_gmode [system]") {
 //   printf("TEST CALCULATION POLYTROPE n=3.0 GMODE\n");
 //   Calculation::InputData in = make_input_data_gmodes("../tests/poly3.0g");
 //   in.input_params[0] = 3.0; // change polytrope index
@@ -230,7 +214,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
 // }
 
 /* test CHWD with uniform mu */
-// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_CHWD_simple [slow]") {
+// TEST_CASE("full_calculation_CHWD_simple [system]") {
 //   printf("TEST CALCULATION CHWD SIMPLE\n");
 //   Calculation::InputData in = make_input_data_pmodes("../tests/chwd_0");
 //   in.model = model::CHWD;
@@ -274,7 +258,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
 // }
 
 /* test CHWD with sigmoidal mu -- pmode */
-// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_pmode [slow]") {
+// TEST_CASE("full_calculation_sigmoidal_CHWD_pmode [system]") {
 //   printf("TEST CALCULATION CHWD SIGMOIDAL\n");
 //   Calculation::InputData in = make_input_data_pmodes("../tests/chwd_1_p");
 //   in.model = model::CHWD;
@@ -314,7 +298,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_polytrope_30_pmode [slow]") {
 // }
 
 // /* test CHWD with sigmoidal mu -- gmode */
-// TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_sigmoidal_CHWD_gmode [slow]") {
+// TEST_CASE("full_calculation_sigmoidal_CHWD_gmode [system]") {
 //   printf("TEST CALCULATION CHWD SIGMOIDAL GMODE\n");
 //   Calculation::InputData in = make_input_data_gmodes("../tests/chwd_1_g");
 //   in.model = model::CHWD;

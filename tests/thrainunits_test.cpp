@@ -3,7 +3,6 @@
 #include "doctest.h"
 
 namespace {
-
 Calculation::OutputData setupFakeCalcData(units::Units unitType){
   Calculation::OutputData fakeData;
   fakeData.star = nullptr;
@@ -84,27 +83,18 @@ void do_test_setUnits(units::Units unitType){
   CHECK_EQ(fakeData.logg, logg);
   CHECK_EQ(fakeData.freq0, sqrt(G_CGS*mcgs*pow(rcgs,-3)));
 }
-
-struct SetUpTearDown {
-  SetUpTearDown() {
-    // freopen("tests/artifacts/logio.txt", "a", stdout);
-  }
-  ~SetUpTearDown() {
-    // freopen("/dev/tty", "w", stdout);
-  }
-};
 } // namespace
 
-TEST_SUITE("Units") {
+TEST_SUITE("Units [unit]") {
 
-TEST_CASE_FIXTURE(SetUpTearDown, "setAllUnits_noparams"){
+TEST_CASE("units: setAllUnits_noparams"){
     do_test_setUnits_noparams(units::Units::astro);
     do_test_setUnits_noparams(units::Units::geo);
     do_test_setUnits_noparams(units::Units::SI);
     do_test_setUnits_noparams(units::Units::CGS);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "setAllUnits"){
+TEST_CASE("units: setAllUnits"){
     do_test_setUnits(units::Units::astro);
     do_test_setUnits(units::Units::geo);
     do_test_setUnits(units::Units::SI);
@@ -112,7 +102,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "setAllUnits"){
 }
 
 // test astro explicitly
-TEST_CASE_FIXTURE(SetUpTearDown, "units_astro") {
+TEST_CASE("units: units_astro") {
     Calculation::OutputData fakeData = setupFakeCalcData(units::Units::astro);
     // assert units set properly
     CHECK( fakeData.unitset.G == G_astro );
@@ -123,7 +113,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "units_astro") {
 }
 
 // test geo explicitly
-TEST_CASE_FIXTURE(SetUpTearDown, "units_geo") {
+TEST_CASE("units: units_geo") {
     Calculation::OutputData fakeData = setupFakeCalcData(units::Units::geo);
     // assert units set properly
     CHECK( fakeData.unitset.G == 1.0 );
@@ -134,7 +124,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "units_geo") {
 }
 
 // test all the param setter functions
-TEST_CASE_FIXTURE(SetUpTearDown, "param_setters") {
+TEST_CASE("units: param_setters") {
     // use geometric units, because easier to predict
     Calculation::OutputData fakeData = setupFakeCalcData(units::Units::geo);
 

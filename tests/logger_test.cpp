@@ -72,18 +72,18 @@ namespace {
     fclose(in);
   }
 
-  void check_file(char const *expected) {
+  void check_file(std::string const &expected) {
     FILE *in = fopen(testfilename.c_str(), "r");
     REQUIRE(in != nullptr);
     char line[128] = {'\0'};
     char *s = fgets(line, 128, in);
     fclose(in);
 
-    if (expected[0] == '\0') {
+    if (expected.empty()) {
       CHECK(((s == nullptr) || (line[0] == '\0')));
     } else {
       REQUIRE(s != nullptr);
-      CHECK_EQ(std::string(line), std::string(expected));
+      CHECK_EQ(std::string(line), expected);
     }
   }
 } // namespace
@@ -102,12 +102,11 @@ struct SetUpTearDown {
   }
 };
 
-TEST_SUITE("Logger") {
+TEST_SUITE("Logger [unit]") {
 
-TEST_CASE_FIXTURE(SetUpTearDown, "set_output") {
-  ThrainLogger::setOutputFile(testfilename, "w");
-  char expected[] = "test";
-  ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, expected);
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: set_output [unit]") {
+  std::string expected("test");
+  ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, expected.c_str());
   ThrainLogger::unsetOutputFile();
   ThrainLogger::logInline(ThrainLogger::LogLevel::INFO, "logged to stdout");
   
@@ -117,8 +116,7 @@ TEST_CASE_FIXTURE(SetUpTearDown, "set_output") {
 
 // debug
 
-TEST_CASE_FIXTURE(SetUpTearDown, "debug") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: debug") {
   log_all_levels(ThrainLogger::LogLevel::DEBUG);
   // set the log level to info
   ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
@@ -129,20 +127,19 @@ TEST_CASE_FIXTURE(SetUpTearDown, "debug") {
   check_logged_level(ThrainLogger::LogLevel::DEBUG);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "log_debug") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: log_debug") {
   log_func_all_levels(ThrainLogger::LogLevel::DEBUG);
   check_logged_level(ThrainLogger::LogLevel::DEBUG);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "loginline_debug") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: loginline_debug") {
   loginline_func_all_levels(ThrainLogger::LogLevel::DEBUG);
   check_file("1234");
 }
 
 // info
 
-TEST_CASE_FIXTURE(SetUpTearDown, "info") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: info") {
   log_all_levels(ThrainLogger::LogLevel::INFO);
   // set the log level to warning
   ThrainLogger::setLogLevel(ThrainLogger::LogLevel::WARNING);
@@ -152,20 +149,19 @@ TEST_CASE_FIXTURE(SetUpTearDown, "info") {
   check_logged_level(ThrainLogger::LogLevel::INFO);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "log_info") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: log_info") {
   log_func_all_levels(ThrainLogger::LogLevel::INFO);
   check_logged_level(ThrainLogger::LogLevel::INFO);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "loginline_info") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: loginline_info") {
   loginline_func_all_levels(ThrainLogger::LogLevel::INFO);
   check_file("234");
 }
 
 // warning
 
-TEST_CASE_FIXTURE(SetUpTearDown, "warning") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: warning") {
   log_all_levels(ThrainLogger::LogLevel::WARNING);
   // set the log level to error
   ThrainLogger::setLogLevel(ThrainLogger::LogLevel::ERROR);
@@ -176,20 +172,19 @@ TEST_CASE_FIXTURE(SetUpTearDown, "warning") {
   check_logged_level(ThrainLogger::LogLevel::WARNING);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "log_warning") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: log_warning") {
   log_func_all_levels(ThrainLogger::LogLevel::WARNING);
   check_logged_level(ThrainLogger::LogLevel::WARNING);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "loginline_warning") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: loginline_warning") {
   loginline_func_all_levels(ThrainLogger::LogLevel::WARNING);
   check_file("34");
 }
 
 // error
 
-TEST_CASE_FIXTURE(SetUpTearDown, "error") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: error") {
   log_all_levels(ThrainLogger::LogLevel::ERROR);
   // set the log level to error
   ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
@@ -200,34 +195,31 @@ TEST_CASE_FIXTURE(SetUpTearDown, "error") {
   check_logged_level(ThrainLogger::LogLevel::ERROR);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "log_error") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: log_error") {
   log_func_all_levels(ThrainLogger::LogLevel::ERROR);
   check_logged_level(ThrainLogger::LogLevel::ERROR);
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "loginline_error") {
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: loginline_error") {
   loginline_func_all_levels(ThrainLogger::LogLevel::ERROR);
   check_file("4");
 }
 
 // mute
 
-TEST_CASE_FIXTURE(SetUpTearDown, "mute") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: mute") {
   log_all_levels(ThrainLogger::LogLevel::MUTE);
   ThrainLogger::unsetOutputFile();
   check_file("");
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "log_mute") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: log_mute") {
   log_func_all_levels(ThrainLogger::LogLevel::MUTE);
   ThrainLogger::unsetOutputFile();
   check_file("");
 }
 
-TEST_CASE_FIXTURE(SetUpTearDown, "loginline_mute") {
-  ThrainLogger::setOutputFile(testfilename, "w");
+TEST_CASE_FIXTURE(SetUpTearDown, "logger: loginline_mute") {
   loginline_func_all_levels(ThrainLogger::LogLevel::MUTE);
   ThrainLogger::unsetOutputFile();
   check_file("");
