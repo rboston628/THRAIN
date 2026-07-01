@@ -483,7 +483,7 @@ TEST_SUITE("ThrainIO [unit]") {
 
   TEST_CASE("io: open_file_polytrope_MZ") {
     Calculation::InputData data;
-    std::string testfilename(" test_file.txt");
+    std::string testfilename("test_file.txt");
     std::string filecontents = 
       "# test a comment\n\n"
       "Name: valid_test_name\n"
@@ -582,8 +582,6 @@ TEST_SUITE("ThrainIO [unit]") {
     read_entire_file(readfilename, echoedcontents);
     CHECK_EQ(filecontents, echoedcontents);
     // clean up the file tree
-    filelib::remove("tests/tests");
-    filelib::remove(ThrainConfig::inputFileName("test_file.txt"));
   }
 
   /* test setup output, which created output object */
