@@ -89,12 +89,17 @@ namespace {
 } // namespace
 
 struct SetUpTearDown {
+  ThrainLogger::LogLevel originalLevel;
   SetUpTearDown() { 
-    // filelib::makedir("tests");
-    filelib::makedir("tests/output");
+    originalLevel = ThrainLogger::getLogLevel();
+    ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
     ThrainLogger::setOutputFile(testfilename, "w");
   }
-  ~SetUpTearDown() { remove(testfilename.c_str()); }
+  ~SetUpTearDown() { 
+    ThrainLogger::unsetOutputFile();
+    filelib::remove(testfilename);
+    ThrainLogger::setLogLevel(originalLevel);
+  }
 };
 
 TEST_SUITE("Logger") {

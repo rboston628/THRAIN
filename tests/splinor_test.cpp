@@ -6,22 +6,12 @@
 #include <stdio.h>
 
 namespace {
-
   std::default_random_engine generator = std::default_random_engine();
-
-  struct SetupTeardown {
-    SetupTeardown() {
-      ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
-    }
-    ~SetupTeardown() {}
-  };
-
-
 }
 
-TEST_SUITE("Splinor") {
+TEST_SUITE("Splinor [unit]") {
 
-  TEST_CASE_FIXTURE(SetupTeardown, "basic spline tests") {
+  TEST_CASE("spline: basic spline tests") {
     // range of test data
     double x0=0.0, x1=1.0;
 
@@ -97,7 +87,7 @@ TEST_SUITE("Splinor") {
     CHECK_LT( sum_quadratic, 0.01 );
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "splinor line natural") {
+  TEST_CASE("spline: splinor line natural") {
     // test distribution, line of slope 1
     std::size_t const num_points = 10;
     double xtest[num_points], ytest[num_points];
@@ -136,7 +126,7 @@ TEST_SUITE("Splinor") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "splinor line clamped") {
+  TEST_CASE("spline: splinor line clamped") {
     // test distribution, line of slope 1
     std::size_t const num_points = 10;
     std::uniform_real_distribution<double> sample_x_axis(0.0,double(num_points));
@@ -177,7 +167,7 @@ TEST_SUITE("Splinor") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "splinor quadratic") {
+  TEST_CASE("spline: splinor quadratic") {
     double x0 = 0.0, x1 = 10.0;
     std::uniform_real_distribution<double> sample_x_axis(x0,x1);
 
@@ -233,7 +223,7 @@ TEST_SUITE("Splinor") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "splinor cubic") {
+  TEST_CASE("spline: splinor cubic") {
     double A=1.2, B=0.5, C=3.0, D=-5.0;
     std::function<double(double)> cubic = [A,B,C,D](double x)->double {return ((A*x+B)*x+C)*x+D;};
     
@@ -264,7 +254,7 @@ TEST_SUITE("Splinor") {
     CHECK_LT(sum_deriv, 1.e-8);
 }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "splinor graphical fits") {
+  TEST_CASE("spline: splinor graphical fits") {
     /** This test utilizes several test data files to fit cubic splines
      * and creates graphs of the spline fits for visual validation.
     */

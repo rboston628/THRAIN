@@ -103,21 +103,21 @@ struct Rngfixture {
 } // namespace
 
 
-TEST_SUITE("Matrix") {
+TEST_SUITE("Matrix [unit]") {
 
-TEST_CASE("det_singular"){
+  TEST_CASE("matrix: det_singular"){
     double constexpr ZERO = 0.0;
     double m[4][4] = {{1,4,6,2},{-7,2,1,4}, {0,0,0,0}, {1,9,8,5}};
     CHECK_EQ(matrix::determinant(m), ZERO);
 }
 
-TEST_CASE("det_scalar"){
+  TEST_CASE("matrix: det_scalar"){
     double constexpr VALUE = 13.0;
     double m[1][1] = {{VALUE}};
     CHECK_EQ(matrix::determinant(m), VALUE);
 }
 
-TEST_CASE("det_2x2"){
+    TEST_CASE("matrix: det_2x2"){
     //|  1 3 | -7 2 | -7   2   | -7  2   |
     //| -7 2 |  1 3 |  0 3+2/7 |  0 23/7 |
     //| d=1  | d=-1 | d=7      | d=23    |
@@ -131,7 +131,7 @@ TEST_CASE("det_2x2"){
     CHECK_EQ(m[1][1], 23./7.);
 }
 
-TEST_CASE("det_3x3"){
+    TEST_CASE("matrix: det_3x3"){
     double m[3][3] = {
         {1,2,3},
         {3,5,6},
@@ -142,7 +142,7 @@ TEST_CASE("det_3x3"){
     // TODO: test shape of matrix
 }
 
-TEST_CASE("det_identity") {
+  TEST_CASE("matrix: det_identity") {
     std::size_t constexpr N=5;
     double I[N][N];
     for(int i=0; i<N; i++){
@@ -151,7 +151,7 @@ TEST_CASE("det_identity") {
     CHECK_EQ(matrix::determinant(I), 1.0);
 }
 
-TEST_CASE("det_diagonal") {
+  TEST_CASE("matrix: det_diagonal") {
     std::size_t constexpr N=5;
     double D[N][N];
     for(int i=0; i<N; i++){
@@ -164,7 +164,7 @@ TEST_CASE("det_diagonal") {
     CHECK_EQ(matrix::determinant(D), expected);
 }
 
-TEST_CASE("det_row_swap_flips_sign") {
+  TEST_CASE("matrix: det_row_swap_flips_sign") {
     std::size_t constexpr N=3;
     double A[N][N] = {
         {1, 2, 3},
@@ -200,7 +200,7 @@ TEST_CASE("det_row_swap_flips_sign") {
     CHECK_EQ(detD, -detA);
 }
 
-TEST_CASE("det_duplicate_rows_zero") {
+  TEST_CASE("matrix: det_duplicate_rows_zero") {
     double m[3][3] = {
         {1, 2, 3},
         {1, 2, 3},
@@ -209,7 +209,7 @@ TEST_CASE("det_duplicate_rows_zero") {
     CHECK_EQ(matrix::determinant(m), 0.0);
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "det_many_2x2"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: det_many_2x2"){
     const std::size_t N=2, num_trials = 100;
     
     double sum = 0.0;
@@ -223,7 +223,7 @@ TEST_CASE_FIXTURE(Rngfixture, "det_many_2x2"){
     CHECK_LT(sum, 1.e-12);
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "det_many_3x3"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: det_many_3x3"){
     const std::size_t N = 3, num_trials = 100;
 
     double sum = 0.0;
@@ -237,7 +237,7 @@ TEST_CASE_FIXTURE(Rngfixture, "det_many_3x3"){
     CHECK_LT(sum, 1.e-12);
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "det_many_NxN"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: det_many_NxN"){
     const std::size_t N = 8, num_trials = 100;
 
     double sum = 0.0;
@@ -251,7 +251,7 @@ TEST_CASE_FIXTURE(Rngfixture, "det_many_NxN"){
     CHECK_LT(sum, 1.e-12);
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "det_NxN_complex"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: det_NxN_complex"){
     const int N=8;
     typedef std::complex<double> C;
 
@@ -262,7 +262,7 @@ TEST_CASE_FIXTURE(Rngfixture, "det_NxN_complex"){
     CHECK_LT( abs(ans - res)/abs(ans), 1.e-12 ); 
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "det_many_NxN_complex"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: det_many_NxN_complex"){
     const int N=4, num_trials = 100;
     typedef std::complex<double> C;
 
@@ -300,7 +300,7 @@ TEST_CASE_FIXTURE(Rngfixture,"invert_2x2"){
     CHECK(matrix_triangular(m));
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "invert_many_2x2"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: invert_many_2x2"){
     const int N=2, num_trials = 100;
 
     // solving A*x = b.
@@ -329,7 +329,7 @@ TEST_CASE_FIXTURE(Rngfixture, "invert_many_2x2"){
     CHECK_LT( sum, 1.e-12 );
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "invert_many_NxN"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: invert_many_NxN"){
     const int N=6, num_trials = 100;
 
     // solving A*x = b.
@@ -358,7 +358,7 @@ TEST_CASE_FIXTURE(Rngfixture, "invert_many_NxN"){
     CHECK_LT( sum, 1.e-12 );
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "invert_many_NxN_complex"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: invert_many_NxN_complex"){
     const int N=6, num_trials = 10;
     typedef std::complex<double> C;
 
@@ -389,7 +389,7 @@ TEST_CASE_FIXTURE(Rngfixture, "invert_many_NxN_complex"){
 }
 
 
-TEST_CASE_FIXTURE(Rngfixture, "invert_tridiagonal"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: invert_tridiagonal"){
     const int N=20, num_trials = 100;
 
     // solving T*x = b where T is tridiagonal
@@ -421,7 +421,7 @@ TEST_CASE_FIXTURE(Rngfixture, "invert_tridiagonal"){
     }
 }
 
-TEST_CASE_FIXTURE(Rngfixture, "invert_identity_returns_b"){
+TEST_CASE_FIXTURE(Rngfixture, "matrix: invert_identity_returns_b"){
     int constexpr N=5, num_trials = 100;
     double sum = 0.0;
     double I[N][N] = {0.0}, res[N], b[N];
@@ -438,7 +438,7 @@ TEST_CASE_FIXTURE(Rngfixture, "invert_identity_returns_b"){
     }
 }
 
-TEST_CASE("invertMatrix_singular_should_fail") {
+  TEST_CASE("matrix: invertMatrix_singular_should_fail") {
     double A[3][3] = {
         {1,2,3},
         {1,2,3}, // repeat = singular
@@ -448,12 +448,10 @@ TEST_CASE("invertMatrix_singular_should_fail") {
     double x[3];
 
     // Singular matrix shoud fail and return 1
-    ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE); // suppress error message
     CHECK_EQ(matrix::invertMatrix(A, b, x), 1);
-    ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO); // restore error message
 }
 
-TEST_CASE("invertTridiagonal_small_N") {
+  TEST_CASE("matrix: invertTridiagonal_small_N") {
     {   // N=1
         const std::size_t N = 1;
         double left[N] = {0};

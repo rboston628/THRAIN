@@ -7,8 +7,8 @@
 #include "../lib/string.h"
 #include "doctest.h"
 
-TEST_SUITE("StringFormatter") {
-TEST_CASE("string_addition") {
+TEST_SUITE("StringFormatter [unit]") {
+TEST_CASE("string: string_addition") {
   // test adding string and c-string
   char x[] = "_c_string_1";
   char y[] = "_c_string_2";
@@ -30,7 +30,7 @@ TEST_CASE("string_addition") {
   CHECK( addstring(x,y)[22] == '\0');
 }
 
-TEST_CASE("string_format") {
+TEST_CASE("string: string_format") {
   // test formating integers
   std::string integers = strmakef("x%d%d", 2,7);
   CHECK( integers == "x27" );
