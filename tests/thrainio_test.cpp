@@ -575,13 +575,16 @@ TEST_SUITE("ThrainIO [unit]") {
       "Frequencies:\tcowling\t1.500\n";
     make_test_input(testfilename,filecontents);
     CHECK_EQ(0, io::read_input(testfilename, data));
-    filelib::makedir("tests/tests");
     std::string echoedcontents;
     std::string readfilename("test_file");
     CHECK_EQ(0, io::echo_input(data));
+    CAPTURE(ThrainConfig::echoedFileName(readfilename));
     read_entire_file(readfilename, echoedcontents);
+    CAPTURE(filecontents);
+    CAPTURE(echoedcontents);
     CHECK_EQ(filecontents, echoedcontents);
     // clean up the file tree
+    filelib::remove(ThrainConfig::inputFileName("test_file.txt"));
   }
 
   /* test setup output, which created output object */
