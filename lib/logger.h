@@ -10,6 +10,12 @@
 #include "string.h"
 #include "filelib.h"
 
+#if defined(ERROR)
+#pragma push_macro("ERROR")
+#undef ERROR
+#define RESTORE_ERROR_MACRO
+#endif
+
 class ThrainLogger {
 
 public:
@@ -75,7 +81,12 @@ public:
   }
 
   static void setLogLevel(LogLevel level) {
+    std::lock_guard<std::mutex> lock(instance().logMutex);
     instance().logLevel = level;
+  }
+
+  static LogLevel getLogLevel() {
+    return instance().logLevel;
   }
 
   static void debug(char const *fmt, ...) {
@@ -145,7 +156,7 @@ private:
     }
   }
 
-  std::string levelToString(LogLevel level) {
+  std::string levelToString(LogLevel level) const {
     switch (level) {
       case LogLevel::DEBUG:   return "DEBUG";
       case LogLevel::INFO:    return "INFO";
@@ -155,7 +166,7 @@ private:
     }
   }
 
-  std::string currentDateTime() {
+  std::string currentDateTime() const {
     std::time_t now = std::time(nullptr);
     std::tm tm_info;
 #if defined(_WIN32)
@@ -168,5 +179,10 @@ private:
     return std::string(buf);
   }
 }; // class ThrainLogger
+
+#if defined(RESTORE_ERROR_MACRO)
+#pragma pop_macro("ERROR")
+#undef RESTORE_ERROR_MACRO
+#endif
 
 #endif
