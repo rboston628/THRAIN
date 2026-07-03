@@ -28,8 +28,8 @@ public:
 	void getCoeff(double *CC, const std::size_t, const int, const double, const int) override;
 
 private:
-	std::size_t len;		//number of grid points for mode
-	std::size_t len_star;	//number of grid points in star
+	std::size_t len = 0;		//number of grid points for mode
+	std::size_t len_star = 0;	//number of grid points in star
 	enum VarNames {sin=0, cos};
 
 	double x(std::size_t const, int const);

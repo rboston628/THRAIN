@@ -10,6 +10,9 @@ struct RootFindLineFixture {
     double root = 2.0;
     double over_root = 2.4;
     double under_root = 1.6;
+protected:
+    //never deleted through a base pointer
+    ~RootFindLineFixture() = default;
 };
 struct Line {
     virtual ~Line() = default;
@@ -33,6 +36,9 @@ struct RootFindParabola : RootFindLineFixture, Line {
 
 struct RootFind2DFixture {
     double xroot[2] = {1.5, 3.7};
+protected:
+    //never deleted through a base pointer
+    ~RootFind2DFixture() = default;
 };
 struct Field {
     virtual ~Field() = default;

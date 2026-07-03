@@ -89,7 +89,7 @@ int mode_finder(Calculation::OutputData &data){
 		std::map<int, MODE*> modefilled;
 
 		int ktry;
-		double w2try;
+		double w2try = 0.0;
 		MODE* modetry = nullptr;
 		
 // STEP 2:  perform first run with rough guesses 
@@ -152,7 +152,7 @@ int mode_finder(Calculation::OutputData &data){
 				mode::save_mode<MODE>(modetry, kfilled, w2filled, modefilled);
 				//if this is the one we want, continue to next mode
 				if(kfilled.count(ktarget)){
-					ThrainLogger::info("\tFOUND k=%d, w2=%lf\n", ktry,w2try);
+					ThrainLogger::info("\tFOUND k=%d, w2=%lf\n", ktry, modetry->getOmega2());
 					continue;
 				}
 // STEP 3c: if no min bracket, try to use current, or else use absolute min

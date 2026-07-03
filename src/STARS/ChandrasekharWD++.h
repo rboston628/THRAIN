@@ -35,6 +35,9 @@ public:
 	ChandrasekharWD(double, std::size_t,               ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, const double, ChemicalGrad);
 	ChandrasekharWD(double, std::size_t, double const A0, double const B0);
+	//owns raw arrays; copying would double-free
+	ChandrasekharWD(ChandrasekharWD const&) = delete;
+	ChandrasekharWD& operator=(ChandrasekharWD const&) = delete;
 
 	virtual ~ChandrasekharWD();   //destructor
 	std::size_t length() override final {return len;}
@@ -67,8 +70,8 @@ private:
 	void init_arrays();
 	std::size_t len;
 	double Y0;		// central value of y, y^2=1+x^2
-	double X0, X02, Y02;
-	double Rn;		// radius scale
+	double X0 = 0.0, X02 = 0.0, Y02 = 0.0;
+	double Rn = 0.0;	// radius scale
 	double A0, B0;  // pressure and density scales
 	//lane-emden solution functions
 	// @xi	normalized radius
@@ -77,17 +80,17 @@ private:
 	// @z   derivative (dy/dxi)  note: dx/dxi = (dy/dxi)/x
 	// @f   the factor f(X)
 	enum VarName {xi=0, y, z, x, f, numvar};
-	double **Y;
-	double *mass;
-	double *x3; // holds x^3, to avoid repeated calls to pow
+	double **Y = nullptr;
+	double *mass = nullptr;
+	double *x3 = nullptr; // holds x^3, to avoid repeated calls to pow
 	double set_mass(double const y[numvar], double const x);
 		
 	// the chemical profile
 	ChemicalGrad chemical_gradient;
 
 	//to handle chemical profile
-	double* mue;   //mean atomic mass per electron
-	double* dmue;  //derivative of above
+	double* mue = nullptr;   //mean atomic mass per electron
+	double* dmue = nullptr;  //derivative of above
 
 	//integrate using basic RK4
 	void centerInit(double ycenter[numvar]);

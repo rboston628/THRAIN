@@ -74,36 +74,36 @@ public:
 	double sound_speed2(std::size_t, double GamPert=0.0) override;
 	double Ledoux(std::size_t, double GamPert=0.0);
 	double BruntVaisala(std::size_t, double GamPert=0.0);
-	Abundance Xmass;
+	Abundance Xmass {};
 		
 private:
 	void setup(SimpleWDParams const& params);
 	void initFromChandrasekhar();
-	StellarVar Ystart0, YstartS;
-	double Y0; //the value y0 from the Chandrasekhar model
+	StellarVar Ystart0 {}, YstartS {};
+	double Y0 = 0.0; //the value y0 from the Chandrasekhar model
 	void rescaleR();
 
 
-	std::size_t Ntot, Ncore, Natm;//number of grid points
-	
+	std::size_t Ntot, Ncore = 0, Natm = 0;//number of grid points
+
 	//surfce values
-	double Msolar, Mstar; //in solar and CGS units
-	double Lsolar, Lstar; //in solar and CGS units
-	double Rsolar, Rstar; //in solar and CGS units
+	double Msolar, Mstar = 0.0; //in solar and CGS units
+	double Lsolar = 0.0, Lstar = 0.0; //in solar and CGS units
+	double Rsolar = 0.0, Rstar = 0.0; //in solar and CGS units
 	double Teff;		  //effective temperature (K)
 	//scale values
-	double Dscale, Pscale, Tscale;
+	double Dscale = 0.0, Pscale = 0.0, Tscale = 0.0;
 
 	//solution functions
-	std::unique_ptr<double[]>     logQ;	 // the independent variable
-	std::unique_ptr<StellarVar[]> logY;  // log density, radius, pressure, mass, temperature, luminosity
-	std::unique_ptr<StellarVar[]> dlogY; // dlogY/dlogQ, as above
+	std::unique_ptr<double[]>     logQ {};	 // the independent variable
+	std::unique_ptr<StellarVar[]> logY {};  // log density, radius, pressure, mass, temperature, luminosity
+	std::unique_ptr<StellarVar[]> dlogY {}; // dlogY/dlogQ, as above
 	void setupGrid(double, std::size_t);
 	void expandGrid(std::size_t);
 
-	StellarVar Yscale, logYscale;
-	StellarVar Ysolar;
-	StellarVar Ystar;
+	StellarVar Yscale {}, logYscale {};
+	StellarVar Ysolar {};
+	StellarVar Ystar {};
 	
 	//methods to calculate the two regions
 	static constexpr std::size_t numv = 3;
@@ -124,24 +124,24 @@ private:
 	double energyTransport( const StellarVar&, const Abundance&);
 	
 	//abundances
-	Abundance  Xtot;
-	std::unique_ptr<Abundance[]> Xelem, dXelem;
+	Abundance  Xtot {};
+	std::unique_ptr<Abundance[]> Xelem {}, dXelem {};
 	Abundance massFraction();
 	//
-	EOS core_pressure, atm_pressure;
+	EOS core_pressure {}, atm_pressure {};
 	EOS* getEOS(const StellarVar& Y, const Abundance& X);
-	
-	double zy, zc, zo;
-	double by, bc, bo;
-	double my, mc, mo;
+
+	double zy = 0.0, zc = 0.0, zo = 0.0;
+	double by = 0.0, bc = 0.0, bo = 0.0;
+	double my = 0.0, mc = 0.0, mo = 0.0;
 	Abundance findAbundance(const double, const double, Abundance&);
 	
 	//thermodynamic variables
-	std::unique_ptr<double[]> adiabatic_1, nabla, nabla_ad, brunt_vaisala, ledoux, kappa;
+	std::unique_ptr<double[]> adiabatic_1 {}, nabla {}, nabla_ad {}, brunt_vaisala {}, ledoux {}, kappa {};
 	void populateBruntVaisala();
-		
+
 	//methods for handling the BCs
-	double nc;
+	double nc = 0.0;
 	double ac[8];
 	double tc[4], dc[4], pc[4];
 	double A0[4], V0[4], c0[4], U0[4];

@@ -60,9 +60,10 @@ struct Abundance {
 	Abundance operator-(const Abundance& x){
 		return Abundance(H1-x.H1, He4-x.He4, C12-x.C12, O16-x.O16);
 	}
-	void operator=(const Abundance& x){
+	Abundance& operator=(const Abundance& x){
 		H1 = x.H1; He4 = x.He4; C12 = x.C12; O16 = x.O16;
 		e = x.e;
+		return *this;
 	}
 	double  operator[](int n) const {
 		switch(n){
@@ -214,7 +215,7 @@ public:
 	void push_back(PartialPressure);
 private:
 	//the partial pressures are stored as function pointers in a vector object
-	std::vector<PartialPressure> pressure;
+	std::vector<PartialPressure> pressure {};
 };
 
 //************************************************************************************

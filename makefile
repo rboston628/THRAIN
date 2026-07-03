@@ -22,7 +22,8 @@ ifeq ($(IS_MSVC),cl)
 	CXXFLAGS += /std:c++14 /W4 /EHsc
 else
 # GCC/Clang flags
-	CXXFLAGS += -std=c++14 -Wuninitialized -Weffc++ --pedantic-errors
+# -Wno-unused-result: glibc marks fscanf/system warn_unused_result; those returns are deliberately ignored
+	CXXFLAGS += -std=c++14 -Wuninitialized -Weffc++ --pedantic-errors -Wno-unused-result
 endif
 
 # Auto dependency files
