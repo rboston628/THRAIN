@@ -52,7 +52,7 @@ TEST_SUITE("Mode Base Tests") {
     // first trst special case for K=0
     int K = 0;
     for(int L=2; L<10; L++){
-      double exp = sqrt(L); //sqrt(double(2*L*(L-1))/double(2*L+1));
+      double exp = sqrt(double(2*L*(L-1))/double(2*L+1));
       double res = mode::compare_Pekeris(exp, L, K, 0.0);
       CHECK_LT(res, 1.0e-12);
     }

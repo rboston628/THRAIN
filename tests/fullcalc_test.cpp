@@ -112,11 +112,9 @@ TEST_CASE_FIXTURE(SetUpTearDown, "full_calculation_uniform [slow]") {
   CHECK_LT(out.star_SSR, 1.e-12);
   for(int i=0; i<out.mode_num; i++){
     printf("%d,%d\t", out.l[i], out.k[i]);
-    if(out.k[i]!=0){
-      printf("%le %le", out.err[0][i], out.err[1][i]);
-      CHECK_LT(out.err[0][i], 1.e-8);
-      CHECK_LT(out.err[1][i], 1.e-6);
-    }
+    printf("%le %le", out.err[0][i], out.err[1][i]);
+    CHECK_LT(out.err[0][i], 1.e-8);
+    CHECK_LT(out.err[1][i], 1.e-6);
     printf("\n");
   }
   // cleanup
