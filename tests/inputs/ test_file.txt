@@ -1,0 +1,8 @@
+# test a comment
+
+Name: valid_test_name
+Model: newtonian polytrope 1.5 1
+Params: zsurf 0.01 mass 1.0
+Units: geo
+Frequencies: cowling 4/3
+

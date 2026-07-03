@@ -15,10 +15,26 @@
 #ifndef SIMPLEWDH
 #define SIMPLEWDH
 
+#include <memory>
+
 #include "Star.h"
 #include "../../lib/stellar.h"
 
 extern PartialPressure ideal, rad_gas, coul, deg_zero, deg_finite, deg_trap, deg_partial;
+
+//parameters specifying the equation of state and the chemical profile of a SimpleWD
+//  each chemical layer is described by its depth (z), blend (b), and magnitude (m)
+//  the default values reproduce the historical built-in model
+struct SimpleWDParams {
+	std::vector<PartialPressure> core_pressures {deg_zero, rad_gas, ideal, coul};
+	std::vector<PartialPressure> atm_pressures {rad_gas, ideal};
+	double zy = 10.0, by = 3.0, my = 1.0;	//helium layer
+	double zc =  3.0, bc = 3.0, mc = 1.0;	//carbon layer
+	double zo =  2.0, bo = 2.0, mo = 0.6;	//oxygen layer
+};
+
+//map a whitespace-separated list of tokens (e.g. "rad ideal coul deg_zero") to partial pressures
+std::vector<PartialPressure> parsePartialPressureList(std::string const& tokens);
 
 class SimpleWD : public Star {
 public:
@@ -29,9 +45,10 @@ public:
 	SimpleWD(
 		double M, 	//the mass, in solar units
 		double T,	//effective temperature in K
-		std::size_t N
+		std::size_t N,
+		SimpleWDParams const& params = SimpleWDParams()
 	);
-	virtual ~SimpleWD();	//destructor
+	virtual ~SimpleWD() = default;	//destructor
 	std::size_t length() override {return Ntot;}
 	//these three functions specify units
 	double Radius() override;	//total radius
@@ -60,7 +77,7 @@ public:
 	Abundance Xmass;
 		
 private:
-	void setup();
+	void setup(SimpleWDParams const& params);
 	void initFromChandrasekhar();
 	StellarVar Ystart0, YstartS;
 	double Y0; //the value y0 from the Chandrasekhar model
@@ -78,9 +95,9 @@ private:
 	double Dscale, Pscale, Tscale;
 
 	//solution functions
-	double *logQ;	   // the independent variable
-	StellarVar*  logY; // log density, radius, pressure, mass, temperature, luminosity
-	StellarVar* dlogY; // dlogY/dlogQ, as above
+	std::unique_ptr<double[]>     logQ;	 // the independent variable
+	std::unique_ptr<StellarVar[]> logY;  // log density, radius, pressure, mass, temperature, luminosity
+	std::unique_ptr<StellarVar[]> dlogY; // dlogY/dlogQ, as above
 	void setupGrid(double, std::size_t);
 	void expandGrid(std::size_t);
 
@@ -89,7 +106,7 @@ private:
 	StellarVar Ystar;
 	
 	//methods to calculate the two regions
-	static const int numv=3;
+	static constexpr std::size_t numv = 3;
 	void        joinAtCenter(double x[numv], double f[numv], double& F);
 	double      calculateCore( const double x[numv], std::size_t Nmax);
 	std::size_t firstCoreStep( const double x[numv], double& rholast, std::size_t Nmax);
@@ -108,7 +125,7 @@ private:
 	
 	//abundances
 	Abundance  Xtot;
-	Abundance *Xelem, *dXelem;
+	std::unique_ptr<Abundance[]> Xelem, dXelem;
 	Abundance massFraction();
 	//
 	EOS core_pressure, atm_pressure;
@@ -120,7 +137,7 @@ private:
 	Abundance findAbundance(const double, const double, Abundance&);
 	
 	//thermodynamic variables
-	double *adiabatic_1, *nabla, *nabla_ad, *brunt_vaisala, *ledoux, *kappa;
+	std::unique_ptr<double[]> adiabatic_1, nabla, nabla_ad, brunt_vaisala, ledoux, kappa;
 	void populateBruntVaisala();
 		
 	//methods for handling the BCs

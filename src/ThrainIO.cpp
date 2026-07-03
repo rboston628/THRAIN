@@ -92,30 +92,20 @@ int read_input(std::string const &input_file_name, Calculation::InputData &calcd
 		ThrainLogger::info("Ngrid=%zu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
-		FILE *swd = fopen("swd.txt", "w");
 		fscanf(input_file, "EOS:\n");
-		fprintf(swd, "# equation of state\n");
 		//read the EOS specification
 		fscanf(input_file, "\tcore\t%127[^\n]\n", input_buffer);
-		fprintf(swd, "core:\n\t%s\n", input_buffer);
 		calcdata.str_input_param = std::string(input_buffer);
 		calcdata.str_input_param += std::string("\n");
 		fscanf(input_file, "\tatm\t%127[^\n]\n", input_buffer);
-		fprintf(swd, "atm:\n\t%s\n\n", input_buffer);
 		calcdata.str_input_param += std::string(input_buffer);
 		ThrainLogger::info("THRAIN MODEL EOS:\n%s\n", calcdata.str_input_param.c_str());
-		
+
 		//on a new line, specify chemical paramters
 		fscanf(input_file, "chemical parameters:\n");  //skip a line of formatting
-		fprintf(swd, "# chemical parameters\n");
 		fscanf(input_file, " %*[^0123456789] %lf %lf %lf\n", &calcdata.input_params[1], &calcdata.input_params[2], &calcdata.input_params[3]);	//read in the helium
 		fscanf(input_file, " %*[^0123456789] %lf %lf %lf\n", &calcdata.input_params[4], &calcdata.input_params[5], &calcdata.input_params[6]);	//read in the carbon
 		fscanf(input_file, " %*[^0123456789] %lf %lf %lf\n", &calcdata.input_params[7], &calcdata.input_params[8], &calcdata.input_params[9]);	//read in the oxygen
-		fprintf(swd, "\the\t%lf\t%lf\t%lf\n",calcdata.input_params[1], calcdata.input_params[2], calcdata.input_params[3]);
-		fprintf(swd, "\tc \t%lf\t%lf\t%lf\n", calcdata.input_params[4], calcdata.input_params[5], calcdata.input_params[6]);
-		fprintf(swd, "\to \t%lf\t%lf\t%lf\n", calcdata.input_params[7], calcdata.input_params[8], calcdata.input_params[9]);
-		fprintf(swd, "\n");
-		fclose(swd);
 		fscanf(input_file, "\n");
 	
 		//now read in desired physical properties of star

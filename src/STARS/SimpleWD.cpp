@@ -21,10 +21,13 @@
 #define SIMPLEWDCLASS
 
 #include <cstring>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include "SimpleWD.h"
 #include "ChandrasekharWD++.h"
 #include "../ThrainConfig.h"
+#include "../../lib/rootfind.h"
 
 double radiative_opacity(const StellarVar& ly, const Abundance& X){
 //the below is from Hansen & Kawaler (also found in Shapiro & Teukolsky 1983 and Schwarzschild 1958)
@@ -74,11 +77,12 @@ double SimpleWD::opacity(const StellarVar& ly, const Abundance& X){
 SimpleWD::SimpleWD(
 	double M,   //mass, in solar masses
 	double Teff,//effective temperature, in kelvin
-	std::size_t Len
-)	: Msolar(M), Teff(Teff), Ntot(Len) 
+	std::size_t Len,
+	SimpleWDParams const& params
+)	: Msolar(M), Teff(Teff), Ntot(Len)
 {
-	//begin by assigning values to EOS and chemical abundance based on file
-	setup();
+	//begin by assigning values to EOS and chemical abundance
+	setup(params);
 	//prepare a starting model from a ChandrasekharWD, to guess R, P0
 	initFromChandrasekhar();
 	//
@@ -94,14 +98,14 @@ SimpleWD::SimpleWD(
 	
 	double Mcore = 0.99;
 	//initilize the log-radial grid
-	logQ = new double[Ntot];	//logQ could be either r or m
+	logQ = std::make_unique<double[]>(Ntot);	//logQ could be either r or m
 	setupGrid(Mcore, Ncore);
 	//initialize equilibrium structure arrays
-	logY = new StellarVar[Ntot];
-	dlogY= new StellarVar[Ntot];
+	logY = std::make_unique<StellarVar[]>(Ntot);
+	dlogY= std::make_unique<StellarVar[]>(Ntot);
 	//initialize chemical gradient arrays
-	Xelem = new Abundance[Ntot];
-	dXelem= new Abundance[Ntot];
+	Xelem = std::make_unique<Abundance[]>(Ntot);
+	dXelem= std::make_unique<Abundance[]>(Ntot);
 	for(std::size_t n=0; n<Ntot; n++) Xelem[n] = findAbundance(logQ[n], 0.0, dXelem[n]);
 	Xtot  = massFraction();
 	Xmass = Xtot;
@@ -128,105 +132,32 @@ SimpleWD::SimpleWD(
 	double qs = 1.e-3;
 	//variables of the Newtonian gradient-descent method
 	double x[numv] = {P0, T0, qs};
-	double z[numv] = {0., 0.,-1.e0};
-	double f[numv], dx[numv], F=1.0;
-	double M1, M2=0.0;
-	double dFdx[numv], dfdx[numv][numv];
-	double x2[numv], f2[numv], varied[numv], used[numv], F2;
-	//first iteration
-	int count=1;
-	double maxDF = 1.0;
-	while( maxDF > 1.0e-10 ){
-		ThrainLogger::info("ITERATION: %d\n", count++);
-		//recompute difference, and Jacobian matrix
-		joinAtCenter(x, f, F);
-		ThrainLogger::debug("\tX1:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x[i]);
-		ThrainLogger::debug("\n");
-		ThrainLogger::debug("\tf1:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::info("%le ", f[i]);
-		ThrainLogger::debug("\n");
-		ThrainLogger::debug("\tF1:\t%le\n", F);
-		
-		//calculate a Jacobian matrix by varying each variable
-		for(int i=0; i<numv; i++) varied[i] = 1.01*x[i];
-		for(int i=0; i<numv; i++){
-			for(int j=0; j<numv; j++) used[j] = x[j];
-			used[i] = varied[i];
-			joinAtCenter(used, f2, F2);
-			for(int j=0; j<numv; j++) dfdx[j][i] = (f2[j]-f[j])/(varied[i]-x[i]);
-			dFdx[i] = (F2-F)/(varied[i]-x[i]);
-		}
-		
-		//Newton's algorithm calls for -f
-		for(int i=0; i<numv; i++) f2[i] = -f[i];
-		
-		//save the past gradient in case matrix inversion fails
-		double dxsave[numv]; for(int i=0;i<numv;i++) dxsave[i] = dx[i];
-		//invert the matrix -- check for errors
-		if(matrix::invertMatrix(dfdx,f2, dx)){
-			//if the matrix is singular or otherwise fails
-			// then just do something to try to recover
-			ThrainLogger::error("ERROR: Matrix inversion failed!\n");
-			//use the last gradient
-			for(int i=0; i<numv; i++) dx[i] = dxsave[i];
-		}
+	double dx[numv];
+	for(std::size_t i=0; i<numv; i++){ dx[i] = 0.01*x[i]; }
+	//the function whose zero is sought: the mismatch between the core and atmosphere integrations
+	std::function<void(double[numv], double[numv])> const join =
+		[this](double f[numv], double x[numv])->void {
+			double F = 0.0;
+			this->joinAtCenter(x, f, F);
+		};
+	//physical limits on the search: P0, T0 must be positive, and qs > -1
+	std::function<bool(double[numv])> const withinLimits =
+		[](double x[numv])->bool {
+			return (x[0] >= 0.0) && (x[1] >= 0.0) && (x[2] >= -1.0);
+		};
+	rootfind::newton_search<numv>(join, x, dx, 1.0e-10, std::size_t(100), withinLimits);
 
-		bool failed = false;
-		for(int i=0; i<numv; i++) if(std::isnan(dx[i])) failed=true;
-		if(failed) for(int i=0; i<numv; i++) dx[i] = dxsave[i];
-		bool allzero = true;
-		for(int i=0; i<numv; i++) allzero &= (dx[i] == 0.0);
-		if(allzero) for(int i=0; i<numv; i++) {
-			ThrainLogger::error("all zero:\t%le %le\n", dx[0], dx[1]);
-			dx[i] = 0.1*x[i];
-		}
-	
-		double L = 1.0;
-		for(int i=0; i<numv; i++) x2[i] = x[i] + dx[i];
-		bool negative = false;
-		for(int i=0; i<numv; i++) if(x2[i]<z[i]) negative=true;
-		while(negative){
-			for(int i=0; i<numv; i++) dx[i] *= 0.1;
-			for(int i=0; i<numv; i++) x2[i] = x[i]+dx[i];
-			ThrainLogger::debug("\tX2:\t");
-			for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x2[i]);
-			ThrainLogger::debug("\n");
-			negative = false;
-			for(int i=0; i<numv; i++) if(x2[i]<z[i]) negative=true;	
-		}
-		
-		joinAtCenter(x2, f2, F2);
-		int freeze = 0;
-		while(F2 > F){
-			if(L<1.e-3) {L = 1.e-3; break;}
-			L *= 0.1;
-			for(int i=0; i<numv; i++) x2[i] = x[i] + L*dx[i];
-			joinAtCenter(x2, f2, F2);
-		}
-		ThrainLogger::debug("\tdx:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", L*dx[i]);
-		ThrainLogger::debug("\n");
-		F = F2;
-		for(int i=0; i<numv; i++) f[i] = f2[i];
-		for(int i=0; i<numv; i++) x[i] = x2[i];
-		
-		ThrainLogger::debug("\tX2:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x[i]);
-		ThrainLogger::debug("\n");
-		ThrainLogger::debug("\tf2:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", f[i]);
-		ThrainLogger::debug("\n");
-		ThrainLogger::debug("\tF2:\t%le\n", F);
-				
-		// determine the max size of the differences
-		maxDF = -1.0;
-		for(int i=0; i<numv; i++) if(fabs(f[i]) > maxDF) maxDF = fabs(f[i]);		
-		ThrainLogger::info("MAX DIF = %le\n", maxDF);
+	//re-evaluate at the solution, to leave the stellar structure arrays in the converged state
+	double f[numv], F = 1.0;
+	joinAtCenter(x, f, F);
+	//the old hand-rolled search could loop forever; now a failure to converge is detected
+	double maxDF = 0.0;
+	for(std::size_t i=0; i<numv; i++){ maxDF = std::fmax(maxDF, std::abs(f[i])); }
+	if(maxDF > 1.0e-10){
+		throw std::runtime_error(strmakef(
+			"SimpleWD model (M=%lf, Teff=%lf) failed to converge: residual %le", Msolar, Teff, maxDF));
 	}
-	
 	ThrainLogger::info("MODEL CONVERGED!\n");
-	joinAtCenter(x,f,F);
 	
 	//all done!  begin post-production
 	rescaleR();
@@ -243,78 +174,47 @@ SimpleWD::SimpleWD(
 	setupSurface();
 }
 
-SimpleWD::~SimpleWD(){
-	delete[] logQ;
-	delete[] logY;
-	delete[] dlogY;
-	delete[] Xelem;
-	//
-	delete[] dXelem;
-	delete[] adiabatic_1;
-	delete[] nabla;
-	delete[] nabla_ad;
-	delete[] brunt_vaisala;
-	delete[] ledoux;
-	delete[] kappa;
+
+std::vector<PartialPressure> parsePartialPressureList(std::string const& tokens){
+	std::vector<PartialPressure> pressures;
+	std::istringstream tokenstream(tokens);
+	std::string token;
+	while(tokenstream >> token){
+		ThrainLogger::debug("\t%s", token.c_str());
+		if(     token == "rad"){
+			pressures.push_back(rad_gas);
+		}
+		else if(token == "ideal"){
+			pressures.push_back(ideal);
+		}
+		else if(token == "coul"){
+			pressures.push_back(coul);
+		}
+		else if(token == "deg_zero"){
+			pressures.push_back(deg_zero);
+		}
+		else if(token == "deg_partial"){
+			pressures.push_back(deg_partial);
+		}
+		else if(token == "deg_finite"){
+			pressures.push_back(deg_finite);
+		}
+		else if(token == "deg_trap"){
+			pressures.push_back(deg_trap);
+		}
+		else {
+			ThrainLogger::error("ERROR: partial pressure term unrecognized: %s\n", token.c_str());
+		}
+	}
+	return pressures;
 }
 
-
-void SimpleWD::setup(){
-	FILE *input_file;
-	if(!(input_file=fopen("swd.txt", "r"))){
-		ThrainLogger::warning("ERROR: EOS file not found... using a default\n");
-		//do something
-		std::vector<PartialPressure> corePres{deg_zero, rad_gas, ideal, coul};
-		std::vector<PartialPressure> atmPres{rad_gas, ideal};
-		for(PartialPressure p : corePres) core_pressure.push_back(p);
-		for(PartialPressure p : atmPres)   atm_pressure.push_back(p);
-		zy = 10.0; by = 3.0; my=1.0;
-		zc = 3.0;  bc = 3.0; mc=1.0;
-		zo = 2.0;  bo = 2.0; mo=0.6;
-		return;
-	}
-	constexpr std::size_t buffer_size (256);
-	char input_buffer[buffer_size], *pressure;
-	std::string instring;
-	EOS *pres = NULL;
-	char *c = std::fgets(input_buffer, buffer_size, input_file);
-	ThrainLogger::debug("%s", input_buffer);
-	while(c != nullptr){
-		c = std::fgets(input_buffer, buffer_size, input_file);
-		if(c != nullptr) ThrainLogger::debug("%s", input_buffer);
-		if(     !strcmp(input_buffer, "core:\n")) pres = &core_pressure;
-		else if(!strcmp(input_buffer, "atm:\n"))  pres = &atm_pressure;
-		if(pres!=NULL){
-			std::fgets(input_buffer, buffer_size, input_file);
-			pressure = strtok(input_buffer, " \t\n");
-			while(pressure != NULL){
-				ThrainLogger::debug("\t%s", pressure);
-				if(     !strcmp(pressure, "rad"))
-					pres->push_back(rad_gas);
-				else if(!strcmp(pressure, "ideal"))
-					pres->push_back(ideal);
-				else if(!strcmp(pressure, "coul"))
-					 pres->push_back(coul);
-				else if(!strcmp(pressure, "deg_zero"))
-					pres->push_back(deg_zero);
-				else if(!strcmp(pressure, "deg_partial"))
-					pres->push_back(deg_partial);
-				else if(!strcmp(pressure, "deg_finite"))
-					pres->push_back(deg_finite);
-				else if(!strcmp(pressure, "deg_trap"))
-					pres->push_back(deg_trap);
-				else ThrainLogger::error("ERROR: partial pressure term unrecognized!\n");
-				pressure = strtok(NULL, " \t\n");
-			}
-			ThrainLogger::debug("\n");
-		}
-		if(!strcmp(input_buffer, "# chemical parameters\n")) {
-			fscanf(input_file, "%*[^0123456789] %lf %lf %lf\n", &zy, &by, &my);
-			fscanf(input_file, "%*[^0123456789] %lf %lf %lf\n", &zc, &bc, &mc);
-			fscanf(input_file, "%*[^0123456789] %lf %lf %lf\n", &zo, &bo, &mo);
-		}
-		pres = NULL;
-	}
+void SimpleWD::setup(SimpleWDParams const& params){
+	core_pressure = EOS(params.core_pressures);
+	atm_pressure  = EOS(params.atm_pressures);
+	zy = params.zy; by = params.by; my = params.my;
+	zc = params.zc; bc = params.bc; mc = params.mc;
+	zo = params.zo; bo = params.bo; mo = params.mo;
 	ThrainLogger::debug("\the\t%lf\t%lf\t%lf\n", zy, by, my);
 	ThrainLogger::debug("\tc \t%lf\t%lf\t%lf\n", zc, bc, mc);
 	ThrainLogger::debug("\to \t%lf\t%lf\t%lf\n", zo, bo, mo);
@@ -323,42 +223,29 @@ void SimpleWD::setup(){
 void SimpleWD::initFromChandrasekhar(){
 	ThrainLogger::info("Preparing starting values from Chandrasekhar model\n");
 	Mstar = Msolar*MSOLAR;
-	std::size_t Ntest = 500;
-	double y0 = 1.58,  ymin = 1.0, ymax = 20.0;
-	double Mtry = 0.0, Mmin = 0.0, Mmax = 2.02;
-	ChandrasekharWD *testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
-	Mtry = testStar->Mass()/MSOLAR-Msolar;
-	Mmin = Mmin - Msolar;
-	Mmax = Mmax - Msolar;
-	
-	while(fabs(ymin-ymax) > 1.0e-6){
-		if(Mtry*Mmax > 0.0 ){
-			ymax = y0;
-			Mmax = Mtry;
-		}
-		else if(Mtry*Mmin > 0.0){
-			ymin = y0;
-			Mmin = Mtry;
-		}
-		y0 = 0.5*(ymin+ymax);
-		delete testStar;
-		testStar = new ChandrasekharWD(y0, Ntest, Chandrasekhar::constant_mu{2.0});
-		Mtry = testStar->Mass()/MSOLAR-Msolar;
-	}
-	
-	Rstar = testStar->Radius();
+	std::size_t const Ntest = 500;
+	//find the central value y0 whose Chandrasekhar model has the desired mass
+	std::function<double(double)> const massDiff = [this, Ntest](double y0)->double {
+		ChandrasekharWD trial(y0, Ntest, Chandrasekhar::constant_mu{2.0});
+		return trial.Mass()/MSOLAR - Msolar;
+	};
+	double y0 = 1.58, ymin = 1.0, ymax = 20.0;
+	rootfind::bisection_search(massDiff, y0, ymin, ymax);
+	ChandrasekharWD testStar(y0, Ntest, Chandrasekhar::constant_mu{2.0});
+
+	Rstar = testStar.Radius();
 	Rsolar = Rstar/REARTH;
-	
+
 	Lstar = 4.*m_pi*boltzmann_sigma*pow(Rstar,2)*pow(Teff,4);
 	Lsolar = Lstar/LSOLAR;
-	
+
 	//make initial guesses for core pressure based on this model
 	// we must OVER-estimate, to avoid radiation pressure dominating
-	Ystart0[dens] = 1.5*testStar->rho(0);
-	Ystart0[pres] = 1.5*testStar->P(0);
+	Ystart0[dens] = 1.5*testStar.rho(0);
+	Ystart0[pres] = 1.5*testStar.P(0);
 	//guesses of surface -- not very good, don't use
-	YstartS[dens] = testStar->rho(Ntest-2);
-	YstartS[pres] = testStar->P(Ntest-2);
+	YstartS[dens] = testStar.rho(Ntest-2);
+	YstartS[pres] = testStar.P(Ntest-2);
 	
 	ThrainLogger::info("Radius in CM: %le\n", Rstar);
 	ThrainLogger::info("Radius in RE: %le\n", Rsolar);
@@ -405,47 +292,32 @@ void SimpleWD::setupGrid(double Qcore, std::size_t Ncenter){
 	indexFit = Ncenter;
 }
 
+namespace {
+// replace an array of length Nold with one of length Ntrue, placing
+//   the old values at the even indices to make room for half-grid points
+template <typename T>
+void spread_to_half_grid(std::unique_ptr<T[]>& arr, std::size_t const Nold, std::size_t const Ntrue){
+	auto expanded = std::make_unique<T[]>(Ntrue);
+	for(std::size_t x=0; x<Nold; x++){
+		expanded[2*x] = arr[x];
+	}
+	arr = std::move(expanded);
+}
+} // namespace
+
 void SimpleWD::expandGrid(std::size_t Ntrue){
 	//The RK4 method for finding eigenmodes requires stellar variables specified on a half-grid
 	// the below will expand the WD grid to include the half-grid points, and populate them
 
 	//first, replace each variable array with a longer one
-	//	replace logQ
-	double* tlogq = new double[Ntot];
-	for(std::size_t x=0; x<Ntot; x++) tlogq[x] = logQ[x];
-	delete[] logQ;
-	logQ = new double[Ntrue];
-	for(std::size_t x=0; x<Ntot; x++) logQ[2*x] = tlogq[x];
-	delete[] tlogq;
-	// replace logY
-	StellarVar* tlogy = new StellarVar[Ntot];
-	for(std::size_t x=0; x<Ntot; x++) tlogy[x] = logY[x];
-	delete[] logY;
-	logY = new StellarVar[Ntrue];
-	for(std::size_t x=0; x<Ntot; x++) logY[2*x] = tlogy[x];
-	delete[] tlogy;
-	// replace dlogy
-	StellarVar* tdlogy = new StellarVar[Ntot];
-	for(std::size_t x=0; x<Ntot; x++) tdlogy[x] = dlogY[x];
-	delete[] dlogY;
-	dlogY = new StellarVar[Ntrue];
-	for(std::size_t x=0; x<Ntot; x++) dlogY[2*x] = tdlogy[x];
-	delete[] tdlogy;
-	// replace Xelem
-	Abundance* tx = new Abundance[Ntot];
-	for(std::size_t x=0; x<Ntot; x++) tx[x] = Xelem[x];
-	delete[] Xelem;
-	Xelem = new Abundance[Ntrue];
-	for(std::size_t x=0; x<Ntot; x++) Xelem[2*x] = tx[x];
-	delete[] tx;
-	// replace dXelem
-	Abundance* tdx = new Abundance[Ntot];
-	for(std::size_t x=0; x<Ntot; x++) tdx[x] = dXelem[x];
-	delete[] dXelem;
-	dXelem = new Abundance[Ntrue];
-	for(std::size_t x=0; x<Ntot; x++) dXelem[2*x] = tdx[x];
-	delete[] tdx;
-	
+	// existing values are placed at the even indices; the odd
+	// half-points are filled in by the integrations below
+	spread_to_half_grid(logQ,   Ntot, Ntrue);
+	spread_to_half_grid(logY,   Ntot, Ntrue);
+	spread_to_half_grid(dlogY,  Ntot, Ntrue);
+	spread_to_half_grid(Xelem,  Ntot, Ntrue);
+	spread_to_half_grid(dXelem, Ntot, Ntrue);
+
 	//now fill in the logQ, logY, dlogY arrays at the half-points
 	//  for logY, we make two guesses of midpoint, integrating foward and backward, and average
 	double dlogr=0., dr=0., r=0.;
@@ -749,31 +621,25 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	double kp = radiative_opacity(lyp, Xsurf);
 	lyp[pres] = log(a/kp+b);	// refine guess for PS
 	//prepare a Newton method to find surface value of rho
-	double f1 = atm_pressure(Yphoto[dens], Yphoto[temp], Xsurf)-a/kp-b, f2=1.0e2;
-	double x1=1e2, x2 = Yphoto[dens], dx;
-	while(fabs(x1-x2)/x1 > 1e-10){
-		x1 = x2;
-		x2 = 1.01*x1;
-	//  perturb
-		lyp[dens] = log(x2);
-		kp = radiative_opacity(lyp,Xsurf);
-		f2 = atm_pressure(x2,Yphoto[temp],Xsurf) - a/kp-b;
-	//  correct
-		dx = -f1*(x2-x1)/(f2-f1);
-		while(x1+dx < 0.0){
-			x2 *= 0.1;
-			lyp[dens] = log(x2);
-			kp = radiative_opacity(lyp,Xsurf);
-			f2 = atm_pressure(x2,Yphoto[temp],Xsurf) - a/kp-b;
-			dx = -f1*(x2-x1)/(f2-f1);
-		}
-		x2 = x1 + dx;
-	//  find new
-		lyp[dens] = log(x2);
-		kp = radiative_opacity(lyp,Xsurf);
-		f1 = atm_pressure(x2,Yphoto[temp],Xsurf) - a/kp-b;
-	}	
-	Yphoto[dens] = x2;
+	// search in log(rho) so that rho remains positive
+	// the residual is the relative pressure mismatch, so the tolerance is dimensionless
+	std::function<double(double)> const photoBalance =
+		[this, &lyp, &Xsurf, a, b, Tphoto = Yphoto[temp]](double logrho)->double {
+			lyp[dens] = logrho;
+			double const kp_here = radiative_opacity(lyp, Xsurf);
+			return 1.0 - (a/kp_here + b)/atm_pressure(std::exp(logrho), Tphoto, Xsurf);
+		};
+	//the residual is monotone-increasing in log(rho), so bisection is guaranteed to find the single root
+	double logrho = std::log(Yphoto[dens]);
+	double logrho_min = 0.0, logrho_max = 0.0;
+	rootfind::bisection_find_brackets_move(photoBalance, logrho, logrho_min, logrho_max);
+	double const resid = rootfind::bisection_search(photoBalance, logrho, logrho_min, logrho_max);
+	if(std::abs(resid) > 1.e-8){
+		ThrainLogger::error("ERROR: photosphere density search did not converge: resid=%le\n", resid);
+	}
+	Yphoto[dens] = std::exp(logrho);
+	lyp[dens] = logrho;
+	kp = radiative_opacity(lyp, Xsurf);
 	Yphoto[pres] = a/kp+b;
 	lyp = log(Yphoto);
 	kp = radiative_opacity(lyp, Xsurf);
@@ -1172,12 +1038,12 @@ double SimpleWD::sound_speed2(std::size_t X, double GamPert){
 }
 
 void SimpleWD::populateBruntVaisala(){
-	adiabatic_1 = new double[Ntot];
-	nabla = new double[Ntot];
-	nabla_ad = new double[Ntot];
-	brunt_vaisala = new double[Ntot];
-	ledoux = new double[Ntot];
-	kappa = new double[Ntot];
+	adiabatic_1 = std::make_unique<double[]>(Ntot);
+	nabla = std::make_unique<double[]>(Ntot);
+	nabla_ad = std::make_unique<double[]>(Ntot);
+	brunt_vaisala = std::make_unique<double[]>(Ntot);
+	ledoux = std::make_unique<double[]>(Ntot);
+	kappa = std::make_unique<double[]>(Ntot);
 	
 	StellarVar YY = exp(logY[0]+logYscale);
 	StellarVar ly;
