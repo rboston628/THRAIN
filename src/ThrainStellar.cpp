@@ -106,10 +106,25 @@ int create_classical_MESA(Calculation::OutputData& data){
 int create_classical_SWD(Calculation::OutputData& data){
 	ThrainLogger::info("mass %lf\n", data.mass);
 	ThrainLogger::info("teff %lf\n", data.teff);
+	//assemble the EOS and chemical parameters read from the input file
+	// str_input_param holds the core and atm partial pressure lists, separated by a newline
+	SimpleWDParams params;
+	std::size_t const newline = data.str_input_param.find('\n');
+	if(newline != std::string::npos && data.input_params.size() >= 10){
+		params.core_pressures = parsePartialPressureList(data.str_input_param.substr(0, newline));
+		params.atm_pressures  = parsePartialPressureList(data.str_input_param.substr(newline+1));
+		params.zy = data.input_params[1]; params.by = data.input_params[2]; params.my = data.input_params[3];
+		params.zc = data.input_params[4]; params.bc = data.input_params[5]; params.mc = data.input_params[6];
+		params.zo = data.input_params[7]; params.bo = data.input_params[8]; params.mo = data.input_params[9];
+	}
+	else {
+		ThrainLogger::warning("SimpleWD EOS parameters not specified... using the defaults\n");
+	}
 	data.star = new SimpleWD(
-		data.mass, 
+		data.mass,
 		data.teff,
-		data.Ngrid
+		data.Ngrid,
+		params
 	);
 
 	//adjust inputs to match the actual values
