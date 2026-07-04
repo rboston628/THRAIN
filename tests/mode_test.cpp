@@ -310,10 +310,13 @@ TEST_CASE("same_coefficients_star") {
 
 TEST_CASE("same_on_dummy_star") {
     /*
-    It can be shown that for the DummyStar with P=rho=const, 
-    that there is only a single mode per L,
-    that this mode has a frequency of sqrt(L),
-    and that it is the same in both Cowling and 4th-order wave forms.
+    It can be shown that for the DummyStar with P=rho=const,
+    that there is only a single mode per L.
+    In the Cowling approximation this mode has a frequency of sqrt(L).
+    In the 4th-order wave form, U=3 at the surface sources a potential
+    perturbation from the surface distortion, lowering the frequency to
+    the Kelvin value 2L(L-1)/(2L+1); for L=1 this is zero (a neutral
+    translation), which the mode search cannot converge to.
     */
     double const MACHINE_PRECISION = 1.e-15;
     std::size_t const LEN (1001);
@@ -324,10 +327,13 @@ TEST_CASE("same_on_dummy_star") {
 
     // create a Cowling mode and Nonradial mode on the same star
     for (int L=1; L<10; L++){
-        auto nonradialMode = std::make_unique<Mode<4UL>>(0, L, 0, nonradialDriver.get());
         auto cowlingMode   = std::make_unique<Mode<2UL>>(0, L, 0, cowlingDriver.get());
-        CHECK_DELTA( cowlingMode->getOmega2(), nonradialMode->getOmega2(), MACHINE_PRECISION );
         CHECK_DELTA( cowlingMode->getOmega2(), double(L), MACHINE_PRECISION );
+    }
+    double const KELVIN_PRECISION = 1.e-12;
+    for (int L=2; L<10; L++){
+        auto nonradialMode = std::make_unique<Mode<4UL>>(0, L, 0, nonradialDriver.get());
+        CHECK_DELTA( nonradialMode->getOmega2(), double(2*L*(L-1))/double(2*L+1), KELVIN_PRECISION );
     }
 }
 

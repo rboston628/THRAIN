@@ -29,6 +29,9 @@ public:
 	Polytrope(double, double, double, std::size_t);	//constructor, M, R, n and length
 	Polytrope(double, std::size_t);					//constructor, n and length
 	Polytrope(double, std::size_t, const double);	//constructor, n and length, dx
+	//owns raw arrays; copying would double-free
+	Polytrope(Polytrope const&) = delete;
+	Polytrope& operator=(Polytrope const&) = delete;
 	virtual ~Polytrope();  //destructor
 	std::size_t length() override final {return len;}
 	//these three functions specify units
@@ -73,14 +76,14 @@ private:
 	//to rescale, basically "finish" the part of Rn we left off, sqrt[Pc/(Grho^2)]
 	// radius scales like finished Rn
 	// mass scales like rho0*Rn3
-	double rho0;	//central density
-	double P0;		//central pressure
-	double Rn;		//radius scale factor
+	double rho0 = 0.0;	//central density
+	double P0 = 0.0;	//central pressure
+	double Rn = 0.0;	//radius scale factor
 	//lane-emden solution functions
 	enum VarName {x=0, y, z, numvar};
-	double **Y;   //at each point X, variables x, y, z
-	double *mass;
-	double *base; //= pow(y,n-1), avoids repeated calls to pow(y,n)
+	double **Y = nullptr;   //at each point X, variables x, y, z
+	double *mass = nullptr;
+	double *base = nullptr; //= pow(y,n-1), avoids repeated calls to pow(y,n)
 	double GG;
 	double set_mass(double const y[numvar]);
 		

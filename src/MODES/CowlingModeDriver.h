@@ -18,6 +18,9 @@ public:
 	//constructor
 	//initialize from a background star and an adiabatic index
 	CowlingModeDriver(Star*, double);
+	//owns raw arrays; copying would double-free
+	CowlingModeDriver(CowlingModeDriver const&) = delete;
+	CowlingModeDriver& operator=(CowlingModeDriver const&) = delete;
 	//destructor
 	virtual ~CowlingModeDriver();
 	
@@ -28,19 +31,19 @@ public:
 	void getCoeff(double *CC, const std::size_t, const int, const double, const int) override final;
 
 private:
-	std::size_t len;		//number of grid points for mode
-	std::size_t len_star;	//number of grid points in star
+	std::size_t len = 0;		//number of grid points for mode
+	std::size_t len_star = 0;	//number of grid points in star
 	double adiabatic_index;	//adiabatic index; set to 0 to use star's Gamma1
 	enum VarNames {y1=0, y2};
-	
+
 	//perturbation quantities
-	double *r, *A, *U, *C, *V;
+	double *r = nullptr, *A = nullptr, *U = nullptr, *C = nullptr, *V = nullptr;
 	void initializeArrays();
 	
 	static const int BC_C = 4;	//the desired order near the center
 	static const int BC_S = 4;	//the desired order near the surface
 	//expansion coefficients near surface;
-	double As[BC_S+1], Vs[BC_S+1], cs[BC_S+1], Us[BC_S+1], cProds[BC_S+1], k_surface;
+	double As[BC_S+1], Vs[BC_S+1], cs[BC_S+1], Us[BC_S+1], cProds[BC_S+1], k_surface = 0.0;
 	//expansion coefficients near center;
 	double Ac[BC_C/2+1], Vc[BC_C/2+1], cc[BC_C/2+1], Uc[BC_C/2+1], cProdc[BC_C/2+1];
 	void setupBoundaries() override final;
