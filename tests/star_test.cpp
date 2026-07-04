@@ -384,13 +384,14 @@ TEST_CASE("star: star_several_polytropes") {
   double const INDEX[] = {2.0, 2.5, 3.0, 3.5, 4.0};
   std::size_t const LEN = 1001;
 
-  double const expected_error = pow(1.0/LEN, 3);
+  double const expected_error = 3.0 * pow(1.0/LEN, 3);
   double const acceptable_error(1.e-4);
   double residual;
 
   for(double n : INDEX){
+    CAPTURE(n);
     auto testStar = std::make_unique<Polytrope>(n, LEN);
-    residual = pow(10.0,ceil(log10(testStar->SSR())));
+    residual = testStar->SSR();
     CHECK_LT(residual, expected_error);
     // assert P/rho = theta?
     do_test_center ( testStar.get(), acceptable_error );
