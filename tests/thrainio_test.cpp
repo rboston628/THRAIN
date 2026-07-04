@@ -584,7 +584,8 @@ TEST_SUITE("ThrainIO [unit]") {
     CAPTURE(echoedcontents);
     CHECK_EQ(filecontents, echoedcontents);
     // clean up the file tree
-    filelib::remove(ThrainConfig::inputFileName("test_file.txt"));
+    filelib::remove(ThrainConfig::inputFileName(testfilename));
+    filelib::remove(ThrainConfig::echoedFileName(readfilename));
   }
 
   /* test setup output, which created output object */
