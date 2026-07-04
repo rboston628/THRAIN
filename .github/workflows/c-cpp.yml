@@ -179,7 +179,7 @@ jobs:
         make cleantests tests-cxxtest CXX=g++-9
         ./tests/cxxtest.out
         make cleantests tests-doctest CXX=g++-9
-        ./tests/doctest.out --force-colors=1 -tce="*slow*"
+        ./tests/doctest.out --force-colors=1 -tse="*[system]*"
 
   system-tests:
     name: system tests
@@ -199,4 +199,4 @@ jobs:
         AR: ${{ matrix.config.ar }}
       run: pixi run build
     - name: Run doctest system tests
-      run: pixi run doctest -tc="*slow*"
+      run: pixi run doctest -ts="*[system]*"

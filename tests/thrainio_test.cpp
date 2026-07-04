@@ -30,11 +30,9 @@ namespace {
 
     char *read_buffer = new char[fsize + 1];
     fread(read_buffer, fsize, 1, infile);
-    read_buffer[fsize] = 0;
+    read_buffer[fsize] = '\0';
     fclose(infile);
     contents = std::string(read_buffer);
-    // remove all whitespace from the string for comparison
-    contents = remove_all_whitespace(contents);
     delete[] read_buffer;
   }
 }
@@ -595,6 +593,7 @@ TEST_SUITE("ThrainIO [unit]") {
     read_entire_file(readfilename, echoedcontents);
     // remove whitespace from the original file contents for comparison
     filecontents = remove_all_whitespace(filecontents);
+    echoedcontents = remove_all_whitespace(echoedcontents);
     CAPTURE(filecontents);
     CAPTURE(echoedcontents);
     CHECK_EQ(filecontents, echoedcontents);

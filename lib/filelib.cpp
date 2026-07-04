@@ -48,7 +48,7 @@ void remove(std::string const &path) {
     result = system(("rm -rf " + path).c_str());
   }
 #endif
-  // if (result != 0) throw std::runtime_error("Failed to remove " + path);
+  if (result != 0) throw std::runtime_error("Failed to remove " + path);
 }
 
 void touch(std::string const &path) {
