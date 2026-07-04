@@ -89,7 +89,7 @@ namespace {
 } // namespace
 
 struct SetUpTearDown {
-  ThrainLogger::LogLevel originalLevel;
+  ThrainLogger::LogLevel originalLevel = ThrainLogger::LogLevel::INFO;
   SetUpTearDown() { 
     originalLevel = ThrainLogger::getLogLevel();
     ThrainLogger::setLogLevel(ThrainLogger::LogLevel::INFO);
