@@ -142,12 +142,8 @@ jobs:
       run: |
         pixi run build-tests
 
-    - name: Run CxxTest tests
-      if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
-      run: pixi run cxxtest
-
-    - name: Run doctest tests
-      run: pixi run doctest -tse="*[system]*"
+    - name: Run unit tests
+      run: pixi run test -tse="*[system]*"
 
   # GCC 9 compatibility lane (backwards-compatibility)
   gcc9:
@@ -159,7 +155,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cxxtest gnuplot gcc-9 g++-9
+        sudo apt-get install -y gnuplot gcc-9 g++-9
 
     - name: Build library (GCC 9)
       shell: bash
@@ -176,10 +172,8 @@ jobs:
     - name: Run tests (GCC 9)
       shell: bash
       run: |
-        make cleantests tests-cxxtest CXX=g++-9
-        ./tests/cxxtest.out
-        make cleantests tests-doctest CXX=g++-9
-        ./tests/doctest.out --force-colors=1 -tse="*[system]*"
+        make cleantests tests CXX=g++-9
+        ./tests/tests.out --force-colors=1 -tse="*[system]*"
 
   system-tests:
     name: system tests
@@ -198,5 +192,5 @@ jobs:
         CXX: ${{ matrix.config.cxx }}
         AR: ${{ matrix.config.ar }}
       run: pixi run build
-    - name: Run doctest system tests
-      run: pixi run doctest -ts="*[system]*"
+    - name: Run system tests
+      run: pixi run test -ts="*[system]*"

@@ -28,14 +28,13 @@ endif
 # Auto dependency files
 CPPFLAGS += -MMD -MP
 
-# If we're in a conda-like environment (pixi/conda/mamba), allow it to provide
-# headers (e.g., cxxtest) without hard-coding paths.
+# If we're in a conda-like environment (pixi/conda/mamba), 
+# allow it to provide headers without hard-coding paths.
 ifneq ($(CONDA_PREFIX),)
 	CFLAGS += -I$(CONDA_PREFIX)/include
 endif
 
-## files needed to compile stellar models
-#  dependencies
+## files needed to compile stellar models dependencies
 _STARTYPES = \
 	STARS/Star \
 		STARS/Polytrope \
@@ -101,23 +100,12 @@ mode: $(MAINOBJ) $(MODEOBJ) $(STAROBJ) $(DRVOBJ)
 -include $(DEPS)
 
 # -------------------------------------------------------------
-# TESTS - mized doctest + cxxtest
+# TESTS
 # -------------------------------------------------------------
 
 TDIR = tests
-
-# Tools for CxxTest generation
-CXXTESTGEN ?= cxxtestgen
-SED        ?= sed
-
-# Generated CxxTest runner
-CXXTEST_CPP  := $(TDIR)/cxxtests.cpp
-CXXTEST_OUT  := $(TDIR)/cxxtest.out
-DOCTEST_OUT  := $(TDIR)/doctest.out
-
-# Discover tests by extension
-DOCTEST_SRCS := $(filter-out $(CXXTEST_CPP),$(wildcard $(TDIR)/*.cpp))
-CXXTEST_HDRS := $(wildcard $(TDIR)/*.h)
+DOCTEST_OUT  := $(TDIR)/tests.out
+DOCTEST_SRCS := $(wildcard $(TDIR)/*.cpp)
 
 # define test dependencies
 # these are "mock" classes that are only useful for testing
@@ -138,34 +126,12 @@ TEST_CORE_OBJS := \
 	$(MODEOBJ) $(STAROBJ) $(DRVOBJ) \
 	$(TESTMODEOBJ) $(TESTSTAROBJ)
 
-# Build both during migration
-tests: tests-doctest tests-cxxtest
-
-# DOCTEST BUILD
-tests-doctest: thrain $(DOCTEST_SRCS) $(TESTSTAROBJ) $(TESTMODEOBJ)
+# the tests target
+tests: thrain $(DOCTEST_SRCS) $(TESTSTAROBJ) $(TESTMODEOBJ)
 	$(CXX) $(LDFLAGS) -o $(DOCTEST_OUT) \
 		$(TEST_CORE_OBJS) \
 		$(DOCTEST_SRCS) -I$(TDIR) $(CPPFLAGS) $(CXXFLAGS) \
 		$(LDIR)/mylib.a $(LDLIBS)
-
-# CXXTEST BUILD
-tests-cxxtest: thrain $(TESTSTAROBJ) $(TESTMODEOBJ)
-	$(CXXTESTGEN) --error-printer -o $(CXXTEST_CPP) $(CXXTEST_HDRS)
-#	this line makes cxxtest print to stderr so that stdout can be captured
-	sed 's/CxxTest::ErrorPrinter tmp;/CxxTest::ErrorPrinter tmp(std::cerr);/' \
-		$(CXXTEST_CPP) > changed.cpp && mv changed.cpp $(CXXTEST_CPP)
-	$(CXX) $(LDFLAGS) -o $(CXXTEST_OUT) \
-		$(TEST_CORE_OBJS) \
-		$(CXXTEST_CPP) $(CPPFLAGS) $(CXXFLAGS) \
-		$(LDIR)/mylib.a $(LDLIBS)
-
-#TESTSRC := $(TDIR)/mode_test.cpp $(TDIR)/rootfind_test.cpp $(TDIR)/basic.cpp $(TDIR)/string_test.cpp $(TDIR)/logger_test.cpp $(TDIR)/fullcalc_test.cpp $(TDIR)/test_main.cpp $(TDIR)/matrix_test.cpp $(TDIR)/thrainunits_test.cpp
-#TESTSRC := $(wildcard $(TDIR)/*.cpp)
-
-# tests: thrain $(TESTSRC) $(TESTSTAROBJ) $(TESTMODEOBJ)
-# 	$(CXX) $(LDFLAGS) -o $(TDIR)/tests.out $(TEST_CORE_OBJS)
-# 		$(TESTSRC) -I$(TDIR) $(CPPFLAGS) $(CXXFLAGS) \
-# 		$(LDIR)/mylib.a $(LDLIBS)
 
 $(TESTSTAROBJ): $(ODIR)/%.o: $(TDIR)/%.cpp $(TESTSTARDEPS)
 	@mkdir -p $(@D)

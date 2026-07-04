@@ -19,8 +19,7 @@ cppcheck = "==2.6.1"
 # Runtime tools
 gnuplot = "*"
 
-# Test frameworks
-cxxtest = "*"
+# Test framework
 doctest = "*"
 
 [target.linux-64.dependencies]
@@ -35,8 +34,7 @@ cppcheck = "==2.6.1"
 # Runtime tools
 gnuplot = "*"
 
-# Test frameworks
-cxxtest = "*"
+# Test framework
 doctest = "*"
 
 [target.win-64.dependencies]
@@ -59,16 +57,13 @@ thrain = "./thrain"
 
 cppcheck = "make cppcheck"
 
-# Builds both CxxTest and doctest tests
-build-tests = "make cleantests tests-cxxtest tests-doctest"
-
-# Builds and runs the CxxTest test runner
-cxxtest = "make tests-cxxtest && ./tests/cxxtest.out"
+# Builds all tests
+build-tests = "make cleantests tests"
 
 # Builds and rune the doctest test runner
 # doctest = "make tests-doctest && ./tests/doctest.out --force-colors=1"
-doctest = '''
-make tests-doctest && echo "make=$?" && ./tests/doctest.out --force-colors=1
+test = '''
+make tests && echo "make=$?" && ./tests/tests.out --force-colors=1
 '''
 
 clean = "make clean cleantests"
