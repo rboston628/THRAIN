@@ -100,3 +100,150 @@ TEST_CASE_FIXTURE(SWDLog, "construction with non-default params"
 }
 
 } // TEST_SUITE
+#include "../src/STARS/SimpleWD.h"
+#include "doctest.h"
+#include <stdio.h>
+#include <cmath>
+
+double center_expand_local(double const x, double const *const ac, int const maxPow){
+  double value = ac[0];
+  // ac[] here are coefficients for powers x^(2*i) stored in sequence [0,2,4] => we treat indices as 0..maxPow/2
+  for(int i=1; i<=maxPow/2; ++i){
+    value += ac[i]*pow(x,2*i);
+  }
+  return value;
+}
+
+double surface_expand_inverse_local(double const t, double const *const ac, int const maxPow){
+  const int O = 1; // same convention used in SimpleWD
+  double value = ac[O-1]/t;
+  for(int i=0; i<=maxPow; ++i){
+    value += ac[O+i]*pow(t,i);
+  }
+  return value;
+}
+
+class SimpleWDTest : public CxxTest::TestSuite {
+public:
+  static SimpleWDTest *createSuite (){
+    system("mkdir -p tests/artifacts");
+    ThrainLogger::setOutputFile("tests/tests/simplewd_log.txt", "w");
+    printf("\n## SIMPLE WD TESTS  -- some of these are slow ##\n");
+    return new SimpleWDTest();
+  }
+  static void destroySuite(SimpleWDTest *suite) {
+    ThrainLogger::unsetOutputFile();
+    printf("\n################");
+    delete suite;
+  }
+
+  void test_construction_variety_and_SSR(){
+    // construct several SimpleWD models and check SSR within a reasonable bound
+    const std::size_t LEN = 1001;
+    double masses[] = {0.2, 0.6, 1.0};
+    double teffs[]  = {9000.0, 12000.0};
+    const double expected_error = 10.0 * pow(1.0/LEN, 4); // same scaling heuristic used elsewhere
+
+    for(double M : masses){
+      for(double T : teffs){
+        SimpleWD *s = new SimpleWD(M, T, LEN);
+        double residual = pow(10.0, ceil(log10(s->SSR())));
+        TS_ASSERT_LESS_THAN(residual, expected_error);
+        delete s;
+      }
+    }
+  }
+
+  void xtest_SSR_scales_with_N(){
+    std::size_t LENs[] = {251, 501, 1001};
+    const int Ntest = 3;
+    double SSR[Ntest];
+
+    for(int i=0;i<Ntest;++i){
+      SimpleWD *s = new SimpleWD(0.6, 12000.0, LENs[i]);
+      SSR[i] = s->SSR();
+      delete s;
+    }
+    // SSR should decrease with increasing resolution
+    for(int i=1;i<Ntest;++i){
+        TS_ASSERT_LESS_THAN(SSR[i], fmax(SSR[i-1], 1.e-16));
+    }
+  }
+
+  void xtest_half_grid_point_behavior(){
+    // Verify that constructor enforces odd internal grid length (expands even -> odd)
+    std::size_t evenLen = 1000;
+    std::size_t oddLen  = 1001;
+    SimpleWD *s_even = new SimpleWD(0.6, 12000.0, evenLen);
+    SimpleWD *s_odd  = new SimpleWD(0.6, 12000.0, oddLen);
+
+    // final length() should equal the (possibly adjusted) "true" grid size used internally
+    // SimpleWD makes even -> odd by incrementing once, so expected length equals original if odd, or +1 if even
+    std::size_t len_even = s_even->length();
+    std::size_t len_odd  = s_odd->length();
+    TS_ASSERT_EQUALS(len_even, evenLen + 1);
+    TS_ASSERT_EQUALS(len_odd,  oddLen);
+
+    delete s_even;
+    delete s_odd;
+  }
+
+  void xtest_center_and_surface_expansions_small(){
+    // Ensure get*Center / get*Surface coefficients reproduce the function near center/surface
+    const std::size_t LEN = 1001;
+    SimpleWD *s = new SimpleWD(0.608, 12000.0, LEN);
+
+    // Center coefficients
+    constexpr int MAXPOW_C = 4;
+    double Ac[3] = {0.0}, Vc[3] = {0.0}, Uc[3] = {0.0}, cc[3] = {0.0};
+    int maxC = MAXPOW_C;
+    s->getAstarCenter(Ac, maxC, 5./3.);
+    s->getVgCenter(Vc, maxC, 5./3.);
+    s->getUCenter(Uc, maxC);
+    s->getC1Center(cc, maxC);
+
+    // Test for first few points near center
+    const double tol_center = 1e-4;
+    std::size_t Ncheck = 4;
+    double R = s->Radius();
+    for(std::size_t i=0;i<Ncheck;++i){
+      double x = s->rad(i)/R;
+      double a_fit = center_expand_local(x, Ac, MAXPOW_C);
+      double v_fit = center_expand_local(x, Vc, MAXPOW_C);
+      double u_fit = center_expand_local(x, Uc, MAXPOW_C);
+      double c_fit = center_expand_local(x, cc, MAXPOW_C);
+
+      TS_ASSERT_DELTA(a_fit, s->getAstar(i, 5./3.), tol_center);
+      TS_ASSERT_DELTA(v_fit, s->getVg(i, 5./3.), tol_center);
+      TS_ASSERT_DELTA(u_fit, s->getU(i), tol_center);
+      TS_ASSERT_DELTA(c_fit, s->getC(i), tol_center);
+    }
+
+    // Surface coefficients (inverse expansion)
+    constexpr int MAXPOW_S = 3;
+    int maxS = MAXPOW_S;
+    double As[6] = {0.0}, Vs[6] = {0.0}, Us[5] = {0.0}, cs[5] = {0.0};
+    s->getAstarSurface(As, maxS, 5./3.);
+    s->getVgSurface(Vs, maxS, 5./3.);
+    s->getUSurface(Us, maxS);
+    s->getC1Surface(cs, maxS);
+
+    const double tol_surf = 1e-3;
+    // test a few points near surface (avoid the very last index if degenerate)
+    std::size_t L = s->length();
+    for(std::size_t idx = L-2; idx > L-6; --idx){
+      double t = 1.0 - s->rad(idx)/s->Radius();
+      double v_fit = surface_expand_inverse_local(t, Vs, MAXPOW_S);
+      double a_fit = surface_expand_inverse_local(t, As, MAXPOW_S);
+      TS_ASSERT_DELTA(v_fit, s->getVg(idx, 5./3.), tol_surf);
+      // A* can be large near surface => compare relatively
+      double refV = s->getVg(idx, 5./3.);
+      if(std::abs(refV) > 0.0) {
+        TS_ASSERT_LESS_THAN(fabs((a_fit - s->getAstar(idx, 5./3.))/s->getAstar(idx, 5./3.)), 1e-1);
+      } else {
+        TS_ASSERT_DELTA(a_fit, s->getAstar(idx, 5./3.), tol_surf);
+      }
+    }
+    delete s;
+  }
+};
