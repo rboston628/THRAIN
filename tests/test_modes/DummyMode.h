@@ -43,7 +43,7 @@ public:
     static int iter;
     static std::vector<int> klist;
 private:
-    int K;
+    int K = 0;
 };
 
 
@@ -63,7 +63,7 @@ public:
     static int iter;
     static std::vector<int> klist;
 private:
-    int K;
+    int K = 0;
 };
 
 

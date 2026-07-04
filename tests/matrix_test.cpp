@@ -91,8 +91,8 @@ bool matrix_triangular(T const (&m)[N][N]){
 struct Rngfixture {
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution;
-    std::function<double(void)> rando;
-    std::function<std::complex<double>(void)> randoC;
+    std::function<double(void)> rando {};
+    std::function<std::complex<double>(void)> randoC {};
 
     explicit Rngfixture(unsigned seed = 0) : generator(seed), distribution(-10.0, 10.0) {
         rando = [this]()->double { return this->distribution(this->generator); };

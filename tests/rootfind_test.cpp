@@ -10,6 +10,9 @@ struct RootFindLineFixture {
     double root = 2.0;
     double over_root = 2.4;
     double under_root = 1.6;
+protected:
+    //never deleted through a base pointer
+    ~RootFindLineFixture() = default;
 };
 struct Line {
     virtual ~Line() = default;
@@ -33,6 +36,9 @@ struct RootFindParabola : RootFindLineFixture, Line {
 
 struct RootFind2DFixture {
     double xroot[2] = {1.5, 3.7};
+protected:
+    //never deleted through a base pointer
+    ~RootFind2DFixture() = default;
 };
 struct Field {
     virtual ~Field() = default;
@@ -643,6 +649,72 @@ TEST_CASE_FIXTURE(RootFind2DFixture, "rootfind: newton_search_2d") {
     rootfind::newton_search(downdown, xguess, dx, tol, 10);
     CHECK_DELTA( xguess[0], xroot[0], tol );
     CHECK_DELTA( xguess[1], xroot[1], tol );
+}
+
+TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_1d_flat") {
+    /** on a flat function the Newton step is 0/0; the search must
+    *   detect this and return finite values instead of NaN **/
+    double xguess = 1.0;
+    double const tol = 1.0e-10;
+    double const yfinal = rootfind::newton_search<double>(flat, xguess, 0.1, tol, 100);
+    CHECK( std::isfinite(xguess) );
+    CHECK( yfinal == 1.0 );
+    CHECK( xguess == 1.0 ); // no step can be taken on a flat function
+}
+
+TEST_CASE_FIXTURE(RootFind2DFixture, "newton_search_2d_target") {
+    // the target version forwards to the zero version; solution is x = xroot + target
+    double target[2] = {0.5, -0.5};
+    double xguess[2] = {3.*xroot[0], 5.*xroot[1]};
+    double dx[2] = {0.1, 0.2};
+    double const tol = 1.0e-10;
+
+    rootfind::newton_search<2>(upup, target, xguess, dx, tol, 10);
+    CHECK_DELTA( xguess[0], xroot[0] + target[0], tol );
+    CHECK_DELTA( xguess[1], xroot[1] + target[1], tol );
+}
+
+TEST_CASE("newton_search_2d_var_limit") {
+    /** a Newton step on log(x) from x=3 lands at x<0, where the function
+    *   is undefined; the var_limit must shrink the step to keep x positive **/
+    std::function<void(double[2], double[2])> const logfield =
+        [](double f[2], double x[2])->void {
+            f[0] = std::log(x[0]);
+            f[1] = x[1] - 1.0;
+        };
+    std::function<bool(double[2])> const positive =
+        [](double x[2])->bool { return x[0] > 0.0; };
+    double xguess[2] = {3.0, 1.0};
+    double dx[2] = {0.1, 0.1};
+    double const tol = 1.0e-10;
+
+    rootfind::newton_search<2>(logfield, xguess, dx, tol, 50, positive);
+    CHECK_DELTA( xguess[0], 1.0, tol );
+    CHECK_DELTA( xguess[1], 1.0, tol );
+}
+
+TEST_CASE("newton_search_2d_nan_recovery") {
+    /** the Jacobian probe at x[1] = 1.0 + 0.6 lands exactly on the NaN
+    *   region boundary, poisoning the Newton step with NaNs; the recovery
+    *   must fall back to a scaled previous step, which stays below the
+    *   boundary because pseudo_unif() < 1, after which the search converges **/
+    std::function<void(double[2], double[2])> const nanfield =
+        [](double f[2], double x[2])->void {
+            if(x[1] >= 1.6){
+                f[0] = f[1] = std::nan("");
+            }
+            else {
+                f[0] = x[0] - 2.0;
+                f[1] = x[1] - 1.0;
+            }
+        };
+    double xguess[2] = {3.0, 1.0};
+    double dx[2] = {0.1, 0.6};
+    double const tol = 1.0e-10;
+
+    rootfind::newton_search<2>(nanfield, xguess, dx, tol, 50);
+    CHECK_DELTA( xguess[0], 2.0, tol );
+    CHECK_DELTA( xguess[1], 1.0, tol );
 }
 
 } // end TEST_SUITE

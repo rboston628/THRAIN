@@ -17,7 +17,7 @@ namespace {
     ~SetupTeardown() {
       ThrainConfig::reconfigure(original_config);
     }
-    std::unordered_map<std::string, std::string> original_config;
+    std::unordered_map<std::string, std::string> original_config {};
   };
 }
 
