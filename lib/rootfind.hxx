@@ -39,6 +39,11 @@ T rootfind::newton_search(
 
 	while(std::abs(target-f1)>tol && tracker++!=max_iter){
 		f2 = func(x+dx);
+		if(f2==f1){
+			//the function is locally flat, so no Newton step can be taken
+			ThrainLogger::error("ERROR: Newton search stuck on flat region!\n");
+			break;
+		}
 		ddx = dx*(target-f1)/(f2-f1);
 		x += ddx;
 		dx = ddx;
@@ -62,9 +67,11 @@ void rootfind::newton_search(
 	double F1=0.0, F2=0.0, maxDF = -1.0;
 	for(int i=0; i<np; i++) F1 += 0.5*f1[i]*f1[i];
 	
-	for(int i=0; i<np; i++) ddx[i] = dx[i];
 	for(int i=0; i<np; i++) maxDF = fmax(maxDF, std::abs(f1[i]));
 	while( maxDF > tol && tracker++!=max_iter){
+		//probe with small steps relative to the current position, so that the
+		//  probes remain within the trust region; fall back on caller dx at zero
+		for(int i=0; i<np; i++) ddx[i] = (x1[i] != 0.0 ? 0.01*x1[i] : dx[i]);
 		//calculate the matrix of derivatives (df/dx)
 		for(int i=0; i<np; i++) x2[i] = x1[i];
 		for(int i=0; i<np; i++) {
@@ -83,6 +90,14 @@ void rootfind::newton_search(
 			// then do something to try to recover
 			ThrainLogger::error("ERROR: Matrix inversion failed!\nTrying to recover with past value.\n");
 			//use the last gradient
+			double scale = rootfind::pseudo_unif();
+			for(int i=0; i<np; i++) dx[i] = scale*dxsave[i];
+		}
+		//if inversion produced NaNs (e.g. NaN residuals), also recover with past value
+		bool anyNaN = false;
+		for(int i=0; i<np; i++) anyNaN |= std::isnan(dx[i]);
+		if(anyNaN){
+			ThrainLogger::error("ERROR: Newton step is NaN!\nTrying to recover with past value.\n");
 			double scale = rootfind::pseudo_unif();
 			for(int i=0; i<np; i++) dx[i] = scale*dxsave[i];
 		}
@@ -111,14 +126,7 @@ void rootfind::newton_search(
 		F1 = F2;
 		for(int i=0; i<np; i++) f1[i] = f2[i];
 		for(int i=0; i<np; i++) x1[i] = x2[i];
-		
-		//if none of the dx are zero, use these as the new differences in numerical differentiation
-		bool anyZero = false;
-		for(int i=0; i<np; i++) anyZero |= (dx[i]==0.0);
-		if(!anyZero){
-			for(int i=0; i<np; i++) ddx[i] = dx[i];
-		}
-		
+
 		//determine the max difference
 		maxDF = -1.0;
 		for(int i=0; i<np; i++) if(fabs(f1[i])>maxDF) maxDF = fabs(f1[i]);
@@ -136,12 +144,12 @@ void rootfind::newton_search(
 	std::function<bool(double[np])> const& var_limit //a function limiting values of x1
 ){
 	// make a new function with zero at the target
-	std::function<void(double f[np], double x[np])>& zero_func = [func,target](double f[np], double x[np]){
+	std::function<void(double f[np], double x[np])> const zero_func = [&func,&target](double f[np], double x[np]){
 		func(f,x);
 		for(std::size_t i=0; i<np; i++){
 			f[i] = target[i] - f[i];
 		}
 	};
-	rootfind::newton_search(zero_func, x1, dx, tol, max_iter);
+	rootfind::newton_search<np>(zero_func, x1, dx, tol, max_iter, var_limit);
 }
 #endif
