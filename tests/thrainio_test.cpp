@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <cctype>
+
 #include "../src/ThrainMain.h"
 #include "../src/ThrainIO.h"
 #include "doctest.h"
