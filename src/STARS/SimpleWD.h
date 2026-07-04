@@ -60,6 +60,11 @@ public:
 	Abundance Xmass;
 		
 private:
+
+	// delete copy and assignment
+	SimpleWD(SimpleWD const&) = delete;
+	SimpleWD& operator=(SimpleWD const&) = delete;
+
 	void setup();
 	void initFromChandrasekhar();
 	StellarVar Ystart0, YstartS;
