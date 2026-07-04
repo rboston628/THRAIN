@@ -8,26 +8,14 @@
 // TODO: check failure if not using ModeDriver
 // TODO: check g-modes (k<0)
 
-namespace {
-  // static ModeBaseTest *createSuite (){
-  //   printf("\nMODE FINDER TESTS I");
-  //   ThrainConfig::reconfigure("tests/tests.config");
-  //   ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
-  //   return new ModeBaseTest;
-  // }
-  // static void destroySuite(ModeBaseTest *suite) { 
-  //   delete suite; 
-  // }
-}
-
-TEST_SUITE("Mode Base Tests") {
+TEST_SUITE("Mode Base Tests [unit]") {
   // test that result fails if given bad polytrope index
-  TEST_CASE("compare_JCD_bad_n") {
+  TEST_CASE("thrainmode: compare_JCD_bad_n") {
     CHECK_ISNAN(mode::compare_JCD(1.2, 1, 1, 0.01));
   }
 
   // test that result fails if given bad L or K for lookup
-  TEST_CASE("compare_JCD_bad_lk") {
+  TEST_CASE("thrainmode: compare_JCD_bad_lk") {
     // fail L too low
     CHECK_ISNAN(mode::compare_JCD(1.5, 0, 1, 0.01));
     // fail L too high
@@ -38,7 +26,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_ISNAN(mode::compare_JCD(1.5, 1, 36, 0.01));
   }
 
-  TEST_CASE("compare_JCD"){
+  TEST_CASE("thrainmode: compare_JCD"){
     for(std::size_t L=1; L<=3; L++){
     for(std::size_t K=1; K<36; K++){
       CHECK_EQ(0.0, mode::compare_JCD(1.5, L, K, mode::JCD1_5[L-1][K-1]/nug));
@@ -48,7 +36,7 @@ TEST_SUITE("Mode Base Tests") {
     }
   } 
 
-  TEST_CASE("compare_Pekeris_k0"){
+  TEST_CASE("thrainmode: compare_Pekeris_k0"){
     // first trst special case for K=0
     int K = 0;
     for(int L=2; L<10; L++){
@@ -81,7 +69,7 @@ TEST_SUITE("Mode Base Tests") {
 
   /* test finding min/max from within found lists */
 
-  TEST_CASE("min_from_set_exact"){
+  TEST_CASE("thrainmode: min_from_set_exact"){
     // test will find exactly bracketing k's
     std::set<int> kbrackets {0,1,3,5};
     std::map<int, double> w2brackets {{0,4},{1,12},{3,14},{5,17}};
@@ -92,7 +80,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2min, 12);
   }
 
-  TEST_CASE("max_from_set_exact"){
+  TEST_CASE("thrainmode: max_from_set_exact"){
     // test will find exactly bracketing k's
     std::set<int> kbrackets {0,1,3,5};
     std::map<int, double> w2brackets {{0,4},{1,12},{3,14},{5,17}};
@@ -103,7 +91,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2max, 14);
   }
 
-  TEST_CASE("min_from_set_rough"){
+  TEST_CASE("thrainmode: min_from_set_rough"){
     // test will find roughly bracketing k's
     std::set<int> kbrackets {0,1,5,11};
     std::map<int, double> w2brackets {{0,4},{1,12},{5,14},{11,17}};
@@ -114,7 +102,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2min, 12);
   }
 
-  TEST_CASE("max_from_set_rough"){
+  TEST_CASE("thrainmode: max_from_set_rough"){
     // test will find roughly bracketing k's
     std::set<int> kbrackets {0,1,5,11};
     std::map<int, double> w2brackets {{0,4},{1,12},{5,14},{11,17}};
@@ -125,7 +113,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2max, 14);
   }
 
-  TEST_CASE("max_from_set_nothing"){
+  TEST_CASE("thrainmode: max_from_set_nothing"){
     // test will find not find a max
     std::set<int> kbrackets {0,1,3,5};
     std::map<int, double> w2brackets {{0,4},{1,12},{3,14},{5,17}};
@@ -136,7 +124,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2max, 0.0);
   }
 
-  TEST_CASE("min_from_set_nothing"){
+  TEST_CASE("thrainmode: min_from_set_nothing"){
     // test will not find a min
     std::set<int> kbrackets {5,6,7};
     std::map<int, double> w2brackets {{5,4.0},{6,12.0},{7,14.0}};
@@ -147,7 +135,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2min, 0.0);
   }
 
-  TEST_CASE("min_from_set_largest"){
+  TEST_CASE("thrainmode: min_from_set_largest"){
     // the target is larger than all members of set
     // will return the max of the set as the min
     std::set<int> kbrackets {5,6,7};
@@ -159,7 +147,7 @@ TEST_SUITE("Mode Base Tests") {
     CHECK_EQ(w2min, 14.0);
   }
 
-  TEST_CASE("max_from_set_smallest"){
+  TEST_CASE("thrainmode: max_from_set_smallest"){
     // the target is smaller than all members of set
     // will return the min of the set as the max
     std::set<int> kbrackets {5,6,7};
@@ -177,13 +165,16 @@ std::string const calcname = "modefinder";
 
 struct SetupTeardown {
   SetupTeardown() {
-    ThrainConfig::reconfigure("tests/tests.config");
-    ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
     if (filelib::exists(ThrainConfig::calculationDir(calcname))) {
       filelib::remove(ThrainConfig::calculationDir(calcname));
     }
     filelib::makedir(ThrainConfig::calculationDir(calcname));
     filelib::touch(ThrainConfig::calculationFileName(calcname, "modefinder.txt"));
+  }
+  ~SetupTeardown() {
+    if (filelib::exists(ThrainConfig::calculationDir(calcname))) {
+      filelib::remove(ThrainConfig::calculationDir(calcname));
+    }
   }
 };
 
@@ -243,9 +234,9 @@ void do_test_mode_finder_fake_classes(
 }
 } // namespace
 
-TEST_SUITE("Mode Finder Tests") {
+TEST_SUITE("Mode Finder Tests [unit]") {
   // make sure that it does not try to look for a dipole f-mode
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_no_dipole_f") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_no_dipole_f") {
     std::string testname = "NO DIPOLE F";
     // STEP 1 removes the L=1,K=0 mode
     // STEP 2 finds only K=1,2 modes
@@ -264,7 +255,7 @@ TEST_SUITE("Mode Finder Tests") {
   }
 
   // make sure that it always looks for f-mode with L>=2
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_akways_find_k0") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_akways_find_k0") {
     std::string testname = "ALWAYS FIND K0 - L=", name;
     // STEP 1 adds a K=0 mode for K>=2
     // STEP 2 finds K=0,1 modes
@@ -285,7 +276,7 @@ TEST_SUITE("Mode Finder Tests") {
   }
 
   // simplest test, finds modes in STEP 2 in order
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_happy_path") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_happy_path") {
     std::string testname = "HAPPY PATH";
     // STEP 1 does nothing
     // STEP 2 finds K=1,2,3,4,5 in order
@@ -299,7 +290,7 @@ TEST_SUITE("Mode Finder Tests") {
   }
 
   // simple test, finds modes in STEP 2 out of order
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_happy_path_unordered") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_happy_path_unordered") {
     std::string testname = "HAPPY PATH UNORDERED";
     // STEP 1 puts the unordered K in order
     // STEP 2 finds K=1,2,3,4,5 in order
@@ -313,7 +304,7 @@ TEST_SUITE("Mode Finder Tests") {
   }
 
   // chck multiple Ls
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_many_L") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_many_L") {
     std::string testname = "MANY Ls";
     // STEP 1 creates maps for each L, adding 0s in L=2,3
     // STEP 2 finds K=0,1,2,3 for each L
@@ -328,7 +319,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,Lexp,Kexp, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_discover_in_bracket_search") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_discover_in_bracket_search") {
     std::string testname = "FIND BRACKET IN SEACH";
     // STEP 1 create maps
     // STEP 2 all modes found except for 3
@@ -342,7 +333,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_exact_brackets") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_exact_brackets") {
     std::string testname = "EXACT BRACKETS";
     // STEP 1 create maps
     // STEP 2 find modes to be brackets
@@ -358,7 +349,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_near_brackets") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_near_brackets") {
     std::string testname = "NEAR BRACKETS";
     // STEP 1 create maps
     // STEP 2 modes to benear brackets are found
@@ -373,7 +364,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_find_brackets") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_find_brackets") {
     std::string testname = "FINDING BRACKETS";
     // STEP 1 create maps
     // STEP 2 find K=1, brackets for K=4, not K=9
@@ -388,7 +379,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_set_lower") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_set_lower") {
     std::string testname = "TEST FIND LOWER";
     // STEP 2: find a mode to serve as upper bracket
     // STEP 3: setup upper, find default lower
@@ -403,7 +394,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_set_upper") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_set_upper") {
     std::string testname = "TEST FIND UPPER";
     // STEP 2: find a mode to serve as lower bracket
     // STEP 3: setup lower, quest for upper
@@ -418,7 +409,7 @@ TEST_SUITE("Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "mode_finder_unordered") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: mode_finder_unordered") {
     std::string testname = "TEST UNORDERED";
     DummyMode::iter = 0;
     // STEP 2 finds nothing in list
@@ -433,7 +424,7 @@ TEST_SUITE("Mode Finder Tests") {
   }
 }
 
-TEST_SUITE("Controlled Mode Finder Tests") {
+TEST_SUITE("Controlled Mode Finder Tests [unit]") {
 
   // // this will destroy one of the extraneous dirs created
   // static ControlledModeFinderTest *createSuite (){
@@ -471,7 +462,7 @@ TEST_SUITE("Controlled Mode Finder Tests") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "controlled_mode_finder_happy_path") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: controlled_mode_finder_happy_path") {
     std::string testname = "CONTROLLED HAPPY PATH";
     // STEP 1 does nothing
     // STEP 2 finds K=1,2,3,4,5 in order
@@ -484,7 +475,7 @@ TEST_SUITE("Controlled Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,L,K, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "controlled_mode_finder_random") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: controlled_mode_finder_random") {
     std::string testname = "CONTROLLED RANDOM";
     ControlledMode::iter = 0;
     ControlledMode::klist = {
@@ -513,7 +504,7 @@ TEST_SUITE("Controlled Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,Lexp,Kexp, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "controlled_mode_finder_straggler") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: controlled_mode_finder_straggler") {
     std::string testname = "CONTROLLED STRAGGLER";
     ControlledMode::iter = 0;
     ControlledMode::klist = {
@@ -542,7 +533,7 @@ TEST_SUITE("Controlled Mode Finder Tests") {
     do_test_mode_finder_fake_classes(testname, L,K,Lexp,Kexp, w2);
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "controlled_mode_finder_unfindable") {
+  TEST_CASE_FIXTURE(SetupTeardown, "modefinder: controlled_mode_finder_unfindable") {
     std::string testname = "CONTROLLED UNFINDABLE";
     ControlledMode::iter = 0;
     ControlledMode::klist = { 1, 5 };

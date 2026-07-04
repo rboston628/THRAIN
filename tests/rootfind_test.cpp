@@ -64,9 +64,9 @@ struct RootFind2DDownDown : RootFind2DFixture, Field {
 } downdown;
 } // namespace
 
-TEST_SUITE("RootFind") {
+TEST_SUITE("RootFind [unit]") {
 
-TEST_CASE("pseudo_unif_not_repeated") {
+  TEST_CASE("rootfind: pseudo_unif_not_repeated") {
     /** 
      * make sure the pseudo_unif produces a value between 0 and 1
      * also make sure that in 1000 iterations, the same value is not repeated
@@ -83,7 +83,7 @@ TEST_CASE("pseudo_unif_not_repeated") {
     }
 }
 
-TEST_CASE("pseudo_unif_range") {
+  TEST_CASE("rootfind: pseudo_unif_range") {
     /**
      * make sure the pseudo_unif produces a value between xmin and xmax
      * also make sure that in 1000 iterations, the same value is not repeated
@@ -100,7 +100,7 @@ TEST_CASE("pseudo_unif_range") {
     }
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_line_up"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_up"){
     double xmin, xmax, xguess;
 
     // test situation
@@ -139,7 +139,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_line_up"){
     CHECK_LT( 0.0, slopeup(xmax));
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_line_down"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_down"){
     double xmin, xmax, xguess;
     /* test situation
     //      \        
@@ -178,7 +178,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_line_down"){
     CHECK_LT( 0.0, slopedown(xmin));
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_sine"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     double xmin, xmax, xguess;
 
     /* test situation
@@ -296,7 +296,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_sine"){
     CHECK_LT( 0.0, sinusoid(xmax));
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_failures") {
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_failures") {
     double xmin, xmax, xguess;
 
     /* test situation
@@ -320,7 +320,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_move_failures") {
     CHECK(doctest::IsNaN<double>(xmax));
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_newton"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
    double xmin, xmax, xguess;
 
     /* test situation
@@ -438,7 +438,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "find_brackets_newton"){
     CHECK_LT( 0.0, sinusoid(xmax));
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "bisection_search"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: bisection_search"){
     double xmin, xmax, xguess;
 
     /* test situation
@@ -508,7 +508,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "bisection_search"){
     CHECK_DELTA( xguess, 2.*root, 1.e-10 );
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_1d"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: newton_search_1d"){
     double xguess, tol = 1.e-10;
     
     // happy path -- the guess is the root
@@ -535,7 +535,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_1d"){
     CHECK_DELTA( xguess, root, tol );
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_target_1d"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: newton_search_target_1d"){
     double xguess, tol = 1.e-10;
     double xtarget = 1./3., ytarget=0.5;
     
@@ -556,7 +556,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_target_1d"){
     CHECK_DELTA( xguess, xtarget, tol );
 }
 
-TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_1d_complex"){
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: newton_search_1d_complex"){
     typedef std::complex<double> C;
     C croot {this->root, 0.5*this->root};
     std::function<C(C)> up_complex = [croot](C x)->C{return (x-croot);};
@@ -595,7 +595,7 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "newton_search_1d_complex"){
     CHECK_LT( std::abs(xguess-xroot), tol );
 }
 
-TEST_CASE_FIXTURE(RootFind2DFixture, "newton_search_2d") {
+TEST_CASE_FIXTURE(RootFind2DFixture, "rootfind: newton_search_2d") {
     double xguess[2];
     double dx[2] = {0.1,0.2};
     double tol = 1.0e-10;

@@ -16,7 +16,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cairo-1.18.4-he90730b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cppcheck-2.6.1-py39hdb17a17_1.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cxx-compiler-1.11.0-hfcd1e18_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/cxxtest-4.4-py39hf88036b_1005.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cyrus-sasl-2.1.28-hac629b4_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h24cb091_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/doctest-2.5.2-hb700be7_0.conda
@@ -158,7 +157,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/compiler-rt_osx-64-19.1.7-h138dee1_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/cppcheck-2.6.1-py39hcdcc54f_1.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-64/cxx-compiler-1.11.0-h307afc9_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/cxxtest-4.4-py39h7c0e7c0_1005.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/cyrus-sasl-2.1.28-h7cc0300_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/doctest-2.5.2-hc1436ee_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/font-ttf-dejavu-sans-mono-2.37-hab24e00_0.tar.bz2
@@ -668,31 +666,6 @@ packages:
   license_family: BSD
   size: 6732
   timestamp: 1753098827160
-- conda: https://conda.anaconda.org/conda-forge/linux-64/cxxtest-4.4-py39hf88036b_1005.conda
-  sha256: c85167c8a3bbcf8ddb17c9bbf0dba2889a545e7529ac0ee9ae141b4d5e5a423d
-  md5: 9ec8568c7ee5f5ae8a930fab9d82284d
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - libgcc >=13
-  - libstdcxx >=13
-  - python >=3.9,<3.10.0a0
-  - python_abi 3.9.* *_cp39
-  license: LGPL-3.0-only
-  license_family: LGPL
-  size: 91706
-  timestamp: 1725898241381
-- conda: https://conda.anaconda.org/conda-forge/osx-64/cxxtest-4.4-py39h7c0e7c0_1005.conda
-  sha256: 51a54396944278308c12fe80d18469b944724bc86da0a8d9b1670c61b39183b7
-  md5: 1cdc10fdaf226c04c5ac20574efc5e57
-  depends:
-  - __osx >=10.13
-  - libcxx >=17
-  - python >=3.9,<3.10.0a0
-  - python_abi 3.9.* *_cp39
-  license: LGPL-3.0-only
-  license_family: LGPL
-  size: 91916
-  timestamp: 1725898269683
 - conda: https://conda.anaconda.org/conda-forge/linux-64/cyrus-sasl-2.1.28-hac629b4_1.conda
   sha256: 7684da83306bb69686c0506fb09aa7074e1a55ade50c3a879e4e5df6eebb1009
   md5: af491aae930edc096b58466c51c4126c

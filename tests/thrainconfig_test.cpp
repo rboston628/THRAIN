@@ -12,7 +12,6 @@
 namespace {
   struct SetupTeardown {
     SetupTeardown() {
-      ThrainLogger::setLogLevel(ThrainLogger::LogLevel::MUTE);
       original_config = ThrainConfig::getConfigOptions();
     }
     ~SetupTeardown() {
@@ -22,9 +21,9 @@ namespace {
   };
 }
 
-TEST_SUITE("ThrainConfig") {
+TEST_SUITE("ThrainConfig [unit]") {
 
-  TEST_CASE_FIXTURE(SetupTeardown, "restore defaults") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: restore defaults") {
     // put it int oa state that is NOT the default
     std::unordered_map<std::string, std::string> newconfig{
       {"input_directory", "A"},
@@ -41,7 +40,7 @@ TEST_SUITE("ThrainConfig") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "get config options") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: get config options") {
     std::unordered_map<std::string, std::string> newconfig{
       {"input_directory", "A"},
       {"output_directory", "B"},
@@ -54,7 +53,7 @@ TEST_SUITE("ThrainConfig") {
     }
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "reconfigure from file") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: reconfigure from file") {
     ThrainConfig::restoreDefaults();
     CHECK_NE(ThrainConfig::inputDir(), "testin");
     CHECK_NE(ThrainConfig::outputDir(), "testout");
@@ -65,7 +64,7 @@ TEST_SUITE("ThrainConfig") {
     CHECK_EQ(ThrainConfig::defaultCalcName(), "testname");
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "reconfigure from map") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: reconfigure from map") {
     CHECK_NE(ThrainConfig::inputDir(), "map_input/");
     CHECK_NE(ThrainConfig::outputDir(), "map_output/");
     CHECK_NE(ThrainConfig::defaultCalcName(), "map_calc");
@@ -80,7 +79,7 @@ TEST_SUITE("ThrainConfig") {
     CHECK_EQ(ThrainConfig::defaultCalcName(), "map_calc");
   }
 
-  TEST_CASE_FIXTURE(SetupTeardown, "resolveCalcName") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: resolveCalcName") {
     std::string name = "testcalc";
     std::string resolved = ThrainConfig::resolveCalcName("", name);
     CHECK_EQ(resolved, ThrainConfig::defaultCalcName() + "/" + name);
@@ -128,9 +127,9 @@ namespace {
   }
 }
 
-TEST_SUITE("ThrainConfigIntegration") {
+TEST_SUITE("ThrainConfigIntegration [unit]") {
   // THRAIN IO READ_INPUT
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio read input") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through thrainio read input") {
     // copy over the example input file to new directory
     ThrainConfig::reconfigure("./tests/tests.config");
     std::string source_calcdata = ThrainConfig::inputFileName("example_input.txt");
@@ -159,7 +158,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(dest_dir);
   }
   // THRAIN IO ECHO_INPUT
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio echo") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through thrainio echo") {
     // retrieve an input file to load a calcdata object
     Calculation::InputData calcdata;
     ThrainConfig::reconfigure("./tests/tests.config");
@@ -175,7 +174,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(ThrainConfig::calculationDir(calcdata.calcname));
   }
   // THRAIN IO WRITE_STELLAR_OUTPUT
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio write stellar") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through thrainio write stellar") {
     // retrieve an input file to load a calcdata object
     Calculation::InputData calcdataIn;
     ThrainConfig::reconfigure("./tests/tests.config");
@@ -196,7 +195,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(ThrainConfig::calculationDir(calcdataIn.calcname));
   }
   // THRAIN IO WRITE_MODE_OUTPUT
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio write mode") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through thrainio write mode") {
     // retrieve an input file to load a calcdata object
     Calculation::InputData calcdataIn;
     ThrainConfig::reconfigure("./tests/tests.config");
@@ -236,7 +235,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(ThrainConfig::calculationDir(calcdataOut.calcname));
   }
   // THRAIN IO WRITE_TIDAL_OVERLAP
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through thrainio write tidal") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through thrainio write tidal") {
     // retrieve an input file to load a calcdata object
     Calculation::InputData calcdataIn;
     ThrainConfig::reconfigure("./tests/tests.config");
@@ -258,21 +257,21 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(ThrainConfig::calculationDir(calcdataOut.calcname));
   }
   // POLYTROPE WRITES TO CORRECT LOCATION
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through polytrope write") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through polytrope write") {
     Star *star = new Polytrope(1.5, 100);
     std::string const dir = do_test_star_write("polytrope.1.5", star);
     // cleanup
     filelib::remove(ThrainConfig::calculationDir(dir));
   }
   // CHWD WRITES TO CORRECT LOCATION
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through chwd write") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through chwd write") {
     Star *star = new ChandrasekharWD(1.5, 100, Chandrasekhar::A0, Chandrasekhar::B0);
     std::string const dir = do_test_star_write("ChandrasekharWD.1.500", star);
     // cleanup
     filelib::remove(ThrainConfig::calculationDir(dir));
   }
   // MESA WRITES TO CORRECT LOCATION
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through mesa write") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through mesa write") {
     MESA *star = new MESA(ThrainConfig::inputDir() + "test_polytrope_n=2.2_v101.dat", 100);
     std::string const name = strmakef("MESA.M%1.2g.R%1.2g.L%1.2g", star->Mass(), star->Radius(), star->Luminosity());
     std::string const dir = do_test_star_write(name, star);
@@ -280,7 +279,7 @@ TEST_SUITE("ThrainConfigIntegration") {
     filelib::remove(ThrainConfig::calculationDir(dir));
   }
   // SWD WRITES TO CORRECT LOCATION
-  TEST_CASE_FIXTURE(SetupTeardown, "dir through swd write") {
+  TEST_CASE_FIXTURE(SetupTeardown, "config: dir through swd write") {
     SimpleWD *star = new SimpleWD(0.8, 12000, 100);
     std::string const name = strmakef("WD_M0.80_L1.10_X0.00_Y0.06");
     std::string const dir = do_test_star_write(name, star);

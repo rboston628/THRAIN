@@ -8,29 +8,29 @@ namespace {
   std::string const test_output_dir ("tests/output/");
 }
 
-TEST_SUITE("FileLib") {
+TEST_SUITE("FileLib [unit]") {
 
-  TEST_CASE("exists on non-existing file") {
+  TEST_CASE("filelib: exists on non-existing file") {
     std::string const testfile (test_output_dir + "hoopydoopydeedaw.txt");
     REQUIRE( !filelib::exists(testfile) );
   }
 
-  TEST_CASE("exists on existing file") {
+  TEST_CASE("filelib: exists on existing file") {
     std::string const testfile ("./src/ThrainMain.cpp");
     REQUIRE( filelib::exists(testfile) );
   }
 
-  TEST_CASE("exists on non-existing directory") {
+  TEST_CASE("filelib: exists on non-existing directory") {
     std::string const testdir (test_output_dir + "hoopydoopydeedaw");
     REQUIRE( !filelib::exists(testdir) );
   }
 
-  TEST_CASE("exists on existing directory") {
+  TEST_CASE("filelib: exists on existing directory") {
     std::string const testdir ("./src");
     REQUIRE( filelib::exists(testdir) );
   }
 
-  TEST_CASE("makedir") {
+  TEST_CASE("filelib: makedir") {
     if (!filelib::exists(test_output_dir)) {
       filelib::makedir(test_output_dir);
       REQUIRE( filelib::exists(test_output_dir) );
@@ -44,7 +44,7 @@ TEST_SUITE("FileLib") {
     filelib::remove(testdir);
   }
 
-  TEST_CASE("makedir recursive") {
+  TEST_CASE("filelib: makedir recursive") {
     std::string const parentdir (test_output_dir + "level1/");
     std::string const childdir (parentdir + "level2/");
     filelib::remove(parentdir);
@@ -57,7 +57,7 @@ TEST_SUITE("FileLib") {
     filelib::remove(parentdir);
   }
 
-  TEST_CASE("remove") {
+  TEST_CASE("filelib: remove") {
     std::string const testdir (test_output_dir + "filelib_test_dir");
     filelib::makedir(testdir);
     REQUIRE( filelib::exists(testdir) );
@@ -65,7 +65,7 @@ TEST_SUITE("FileLib") {
     REQUIRE( !filelib::exists(testdir) );
   }
 
-  TEST_CASE("touch") {
+  TEST_CASE("filelib: touch") {
     std::string const testfile (test_output_dir + "filelib_test_file.txt");
     filelib::remove(testfile);
     REQUIRE( !filelib::exists(testfile) );
@@ -75,7 +75,7 @@ TEST_SUITE("FileLib") {
     filelib::remove(testfile);
   }
 
-  TEST_CASE("makedir on existing directory") {
+  TEST_CASE("filelib: makedir on existing directory") {
     std::string const testdir (test_output_dir + "filelib_test_dir");
     filelib::makedir(testdir);
     REQUIRE( filelib::exists(testdir) );
@@ -85,7 +85,7 @@ TEST_SUITE("FileLib") {
     filelib::remove(testdir);
   }
 
-  TEST_CASE("remove on non-existing directory") {
+  TEST_CASE("filelib: remove on non-existing directory") {
     std::string const testdir (test_output_dir + "filelib_test_dir");
     filelib::remove(testdir);
     REQUIRE( !filelib::exists(testdir) );
@@ -93,7 +93,7 @@ TEST_SUITE("FileLib") {
     REQUIRE( !filelib::exists(testdir) );
   }
 
-  TEST_CASE("touch on existing file") {
+  TEST_CASE("filelib: touch on existing file") {
     std::string const testfile (test_output_dir + "filelib_test_file.txt");
     filelib::touch(testfile);
     REQUIRE( filelib::exists(testfile) );
@@ -103,7 +103,7 @@ TEST_SUITE("FileLib") {
     filelib::remove(testfile);
   }
 
-  TEST_CASE("no infinite recursion") {
+  TEST_CASE("filelib: no infinite recursion") {
     std::string const testdir ("filelib_test_dir");
     // this will segfA=ault due to recursion depth if not passing
     filelib::makedir(testdir);
@@ -111,6 +111,4 @@ TEST_SUITE("FileLib") {
     // cleanup
     filelib::remove(testdir);
   }
-
-
 }
