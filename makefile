@@ -22,7 +22,7 @@ ifeq ($(IS_MSVC),cl)
 	CXXFLAGS += /std:c++14 /W4 /EHsc
 else
 # GCC/Clang flags
-	CXXFLAGS += -std=c++14 -Wuninitialized -Weffc++ --pedantic-errors -Wno-unused-result
+	CXXFLAGS += -std=c++14 -Wuninitialized -Weffc++ --pedantic-errors -Wno-unused-result -Werror
 endif
 
 # Auto dependency files

@@ -40,7 +40,7 @@ MESA::MESA(std::string const &filename, std::size_t L) : len(L) {
 	for(std::size_t k=0; k<Ntot-1; k++){
 		fscanf(infile, "%*[^\n]\n");
 	}
-	fscanf(infile, "%*d %lg %lg %lg %*lg %lg %*lg %lg %*[^\n]", &Rtot, &Mtot, &Ltot, ts, &dels);
+	fscanf(infile, "%*d %lg %lg %lg %*g %lg %*g %lg %*[^\n]", &Rtot, &Mtot, &Ltot, ts, &dels);
 
 	//set scale quantities
 	Dscale = Mtot*pow(Rtot,-3)/(4.*m_pi);
@@ -59,8 +59,8 @@ MESA::MESA(std::string const &filename, std::size_t L) : len(L) {
 	//read from the file
 	fseek(infile, firstdata, SEEK_SET);
 	for(std::size_t k=0; k<Ntot; k++){
-		fscanf(infile, " %*d %lg  %lg  %*lg", &rt[k], &mt[k]);
-		fscanf(infile, " %lg %*lg %lg  %*lg", &pt[k], &dt[k]);
+		fscanf(infile, " %*d %lg  %lg  %*g", &rt[k], &mt[k]);
+		fscanf(infile, " %lg %*g %lg  %*g", &pt[k], &dt[k]);
 		fscanf(infile, " %lg %lg           ", &Nt[k], &Gt[k]);
 		fscanf(infile, " %*[^\n]\n");
 		//dis-dimensionalize the variables

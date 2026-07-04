@@ -57,39 +57,42 @@ public:
 	double sound_speed2(std::size_t, double GamPert=0.0) override;
 	double Ledoux(std::size_t, double GamPert=0.0);
 	double BruntVaisala(std::size_t, double GamPert=0.0);
-	Abundance Xmass;
+	Abundance Xmass {};
 		
 private:
+	// delete copy and assignment
+	SimpleWD(SimpleWD const&) = delete;
+	SimpleWD& operator=(SimpleWD const&) = delete;
+
 	void setup();
 	void initFromChandrasekhar();
-	StellarVar Ystart0, YstartS;
-	double Y0; //the value y0 from the Chandrasekhar model
+	StellarVar Ystart0 {}, YstartS {};
+	double Y0 = 0.0; //the value y0 from the Chandrasekhar model
 	void rescaleR();
 
+	std::size_t Ntot, Ncore = 0, Natm = 0;//number of grid points
 
-	std::size_t Ntot, Ncore, Natm;//number of grid points
-	
 	//surfce values
-	double Msolar, Mstar; //in solar and CGS units
-	double Lsolar, Lstar; //in solar and CGS units
-	double Rsolar, Rstar; //in solar and CGS units
+	double Msolar, Mstar = 0.0; //in solar and CGS units
+	double Lsolar = 0.0, Lstar = 0.0; //in solar and CGS units
+	double Rsolar = 0.0, Rstar = 0.0; //in solar and CGS units
 	double Teff;		  //effective temperature (K)
 	//scale values
-	double Dscale, Pscale, Tscale;
+	double Dscale = 0.0, Pscale = 0.0, Tscale = 0.0;
 
 	//solution functions
-	double *logQ;	   // the independent variable
-	StellarVar*  logY; // log density, radius, pressure, mass, temperature, luminosity
-	StellarVar* dlogY; // dlogY/dlogQ, as above
+	double *logQ = nullptr;	   // the independent variable
+	StellarVar*  logY = nullptr; // log density, radius, pressure, mass, temperature, luminosity
+	StellarVar* dlogY = nullptr; // dlogY/dlogQ, as above
 	void setupGrid(double, std::size_t);
 	void expandGrid(std::size_t);
 
-	StellarVar Yscale, logYscale;
-	StellarVar Ysolar;
-	StellarVar Ystar;
+	StellarVar Yscale {}, logYscale {};
+	StellarVar Ysolar {};
+	StellarVar Ystar {};
 	
 	//methods to calculate the two regions
-	static const int numv=3;
+	static constexpr std::size_t numv = 3;
 	void        joinAtCenter(double x[numv], double f[numv], double& F);
 	double      calculateCore( const double x[numv], std::size_t Nmax);
 	std::size_t firstCoreStep( const double x[numv], double& rholast, std::size_t Nmax);
@@ -107,24 +110,24 @@ private:
 	double energyTransport( const StellarVar&, const Abundance&);
 	
 	//abundances
-	Abundance  Xtot;
-	Abundance *Xelem, *dXelem;
+	Abundance  Xtot {};
+	Abundance *Xelem = nullptr, *dXelem = nullptr;
 	Abundance massFraction();
 	//
-	EOS core_pressure, atm_pressure;
+	EOS core_pressure {}, atm_pressure {};
 	EOS* getEOS(const StellarVar& Y, const Abundance& X);
-	
-	double zy, zc, zo;
-	double by, bc, bo;
-	double my, mc, mo;
+
+	double zy = 0.0, zc = 0.0, zo = 0.0;
+	double by = 0.0, bc = 0.0, bo = 0.0;
+	double my = 0.0, mc = 0.0, mo = 0.0;
 	Abundance findAbundance(const double, const double, Abundance&);
 	
 	//thermodynamic variables
-	double *adiabatic_1, *nabla, *nabla_ad, *brunt_vaisala, *ledoux, *kappa;
+	double *adiabatic_1 = nullptr, *nabla = nullptr, *nabla_ad = nullptr, *brunt_vaisala = nullptr, *ledoux = nullptr, *kappa = nullptr;
 	void populateBruntVaisala();
-		
+
 	//methods for handling the BCs
-	double nc;
+	double nc = 0.0;
 	double ac[8];
 	double tc[4], dc[4], pc[4];
 	double A0[4], V0[4], c0[4], U0[4];
