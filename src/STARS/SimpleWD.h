@@ -81,9 +81,9 @@ private:
 	double Dscale = 0.0, Pscale = 0.0, Tscale = 0.0;
 
 	//solution functions
-	double *logQ;	   // the independent variable
-	StellarVar*  logY; // log density, radius, pressure, mass, temperature, luminosity
-	StellarVar* dlogY; // dlogY/dlogQ, as above
+	double *logQ = nullptr;	   // the independent variable
+	StellarVar*  logY = nullptr; // log density, radius, pressure, mass, temperature, luminosity
+	StellarVar* dlogY = nullptr; // dlogY/dlogQ, as above
 	void setupGrid(double, std::size_t);
 	void expandGrid(std::size_t);
 
@@ -111,7 +111,7 @@ private:
 	
 	//abundances
 	Abundance  Xtot {};
-	Abundance *Xelem, *dXelem;
+	Abundance *Xelem = nullptr, *dXelem = nullptr;
 	Abundance massFraction();
 	//
 	EOS core_pressure {}, atm_pressure {};
@@ -123,7 +123,7 @@ private:
 	Abundance findAbundance(const double, const double, Abundance&);
 	
 	//thermodynamic variables
-	double *adiabatic_1, *nabla, *nabla_ad, *brunt_vaisala, *ledoux, *kappa;
+	double *adiabatic_1 = nullptr, *nabla = nullptr, *nabla_ad = nullptr, *brunt_vaisala = nullptr, *ledoux = nullptr, *kappa = nullptr;
 	void populateBruntVaisala();
 
 	//methods for handling the BCs
