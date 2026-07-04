@@ -147,7 +147,7 @@ jobs:
       run: pixi run cxxtest
 
     - name: Run doctest tests
-      run: pixi run doctest -tce="*slow*"
+      run: pixi run doctest -tse="*[system]*"
 
   # GCC 9 compatibility lane (backwards-compatibility)
   gcc9:
