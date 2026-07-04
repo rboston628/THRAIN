@@ -133,7 +133,6 @@ jobs:
       run: pixi run thrain sampleinput6.txt
 
     - name: Build THRAIN tests
-      if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
       shell: bash
       env:
         CC: ${{ matrix.config.cc }}
