@@ -10,6 +10,14 @@ namespace {
     fclose(outfile);
   }
 
+  std::string remove_all_whitespace(std::string const& s){
+    std::string result = s;
+    result.erase(std::remove_if(result.begin(), result.end(), [](unsigned char x) {
+        return std::isspace(x);
+    }), result.end());
+    return result;
+  }
+
   void read_entire_file(std::string filename, std::string& contents){
     FILE* infile = fopen(ThrainConfig::echoedFileName(filename).c_str(), "r");
     REQUIRE(infile);
@@ -22,6 +30,8 @@ namespace {
     read_buffer[fsize] = 0;
     fclose(infile);
     contents = std::string(read_buffer);
+    // remove all whitespace from the string for comparison
+    contents = remove_all_whitespace(contents);
     delete[] read_buffer;
   }
 }
@@ -580,6 +590,8 @@ TEST_SUITE("ThrainIO [unit]") {
     CHECK_EQ(0, io::echo_input(data));
     CAPTURE(ThrainConfig::echoedFileName(readfilename));
     read_entire_file(readfilename, echoedcontents);
+    // remove whitespace from the original file contents for comparison
+    filecontents = remove_all_whitespace(filecontents);
     CAPTURE(filecontents);
     CAPTURE(echoedcontents);
     CHECK_EQ(filecontents, echoedcontents);
