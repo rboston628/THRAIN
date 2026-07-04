@@ -224,7 +224,7 @@ std::size_t NonradialModeDriver::SurfaceBC(double **ymode, double *ys, double om
 	yy[y1][0] = ys[y1];
 	yy[y2][0] = ys[y1] + ys[y3];
 	yy[y3][0] = ys[y3];
-	yy[y4][0] = -double(l+1)*ys[y3];
+	yy[y4][0] = -double(l+1)*ys[y3] - Us[0]*ys[y1];
 	
 	//constants that show up
 	double L2 = double(l*l+l);

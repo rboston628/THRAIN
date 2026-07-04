@@ -109,10 +109,9 @@ double calculate_Pekeris(int l, int k, double Gam1){
 	double wPek2, dnl;
 	if(k<0) wPek2 = 0.0;
 	else if(k==0) {
-		//there is a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664), 
+		//there is a formula for f-modes due to Chandrasekhar (1964, ApJ vol 139 p 664),
 		// c.f. Cox (1980) eq 17.80
-		// NOTE the values I get are always wPek2 = l
-		wPek2 = double(l); //double(2.*l*(l-1))/double(2*l+1);
+		wPek2 = double(2*l*(l-1))/double(2*l+1);
 	}
 	else {
 		// for modes in uniform stars, compare to the exact equation of Pekeris 1938, eq 32
