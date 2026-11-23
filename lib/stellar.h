@@ -88,7 +88,7 @@ struct Abundance {
 		if(He4<0.0) He4 = 0.0;
 		if(C12<0.0) C12 = 0.0;
 		if(O16<0.0) O16 = 0.0;
-		double tot = H1+He4+C12+O16;
+		double const tot = H1+He4+C12+O16;
 		H1 /= tot;
 		He4/= tot;
 		C12/= tot;
@@ -175,12 +175,25 @@ StellarVar log(const StellarVar &x);
 //double conductive_opacity(StellarVar ly, Abundance const& X);
 
 struct PartialPressure {
-	typedef double (*funcptr)(double,double,Abundance const&);
-	funcptr P, partialRho, partialT;
-	double (*partialX)(chemical::elem, double,double,Abundance const&);
-	funcptr U, UpartialRho, UpartialT;
-	double (*UpartialX)(chemical::elem, double,double,Abundance const&);	
-	double operator()(double rho, double T, Abundance const& chem) {return P(rho,T,chem);};
+	double P(double const rho, double const T, Abundance const& X) const {return pfunc(rho,T,X);}
+	double partialRho(double const rho, double const T, Abundance const& X) const {return prho(rho,T,X);}
+	double partialT(double const rho, double const T, Abundance const& X) const {return pT(rho,T,X);}
+	double partialX(chemical::elem i, double const rho, double const T, Abundance const& X) const {return pX(i,rho,T,X);}
+	double U(double const rho, double const T, Abundance const& X) const {return ufunc(rho,T,X);};
+	double UpartialRho(double const rho, double const T, Abundance const& X) const {return urho(rho,T,X);}
+	double UpartialT(double const rho, double const T, Abundance const& X) const {return uT(rho,T,X);}
+	double UpartialX(chemical::elem i, double const rho, double const T, Abundance const& X) const {return uX(i,rho,T,X);}
+	double operator()(double const rho, double const T, Abundance const& chem) const {return P(rho,T,chem);}
+	using funcptr = double (*)(double const, double const, Abundance const&);
+	using funcptrX = double (*)(chemical::elem, double const, double const, Abundance const&);
+	PartialPressure(funcptr p, funcptr pr, funcptr pt, funcptrX px,
+		funcptr u, funcptr ur, funcptr ut, funcptrX ux)
+		: pfunc(p), prho(pr), pT(pt), pX(px), ufunc(u), urho(ur), uT(ut), uX(ux) {};
+private:
+	funcptr pfunc, prho, pT;
+	funcptrX pX;
+	funcptr ufunc, urho, uT;
+	funcptrX uX;
 };
 
 
@@ -188,28 +201,28 @@ class EOS {
 public:
 	EOS() = default;
 	EOS(std::vector<PartialPressure> const& p) : pressure(p) {};
-	double invert(double rho_last, double P, double T, Abundance const& chem);
-	double invertNewton(double rho_last, double P, double T, Abundance const& chem);
-	double operator()(double rho, double T, Abundance const& chem){
+	double invert(double const rho_last, double const P, double const T, Abundance const& chem);
+	double invertNewton(double const rho_last, double const P, double const T, Abundance const& chem);
+	double operator()(double const rho, double const T, Abundance const& chem){
 		double P = 0.0;
-		for(PartialPressure p : pressure) P += p(rho,T,chem);
+		for(PartialPressure const &p : pressure) P += p(rho,T,chem);
 		return P;
 	}
 	~EOS(){pressure.clear();std::vector<PartialPressure>().swap(pressure);};	//destructor
 	//other stuff
-	double U(double rho, double T, Abundance const& chem);
-	double Gamma1(double rho, double T, Abundance const& chem);
-	double Gamma3(double rho, double T, Abundance const& chem);
-	double nabla_ad(double rho, double T, Abundance const& chem);
-	double chiRho(double rho, double T, Abundance const& chem);
-	double chiT(double rho, double T, Abundance const& chem);
-	double chiY(chemical::elem i, double rho, double T, Abundance const& chem);
+	double U(double const rho, double const T, Abundance const& chem);
+	double Gamma1(double const rho, double const T, Abundance const& chem);
+	double Gamma3(double const rho, double const T, Abundance const& chem);
+	double nabla_ad(double const rho, double const T, Abundance const& chem);
+	double chiRho(double const rho, double const T, Abundance const& chem);
+	double chiT(double const rho, double const T, Abundance const& chem);
+	double chiY(chemical::elem i, double const rho, double const T, Abundance const& chem);
 	//calculate the Ledoux term -- see Brassard etc 1991, eqn (13, 14)
-	double Ledoux(double rho, double T, Abundance const& chem, Abundance const& dchem);
+	double Ledoux(double const rho, double const T, Abundance const& chem, Abundance const& dchem);
 	
 	//partial derivatives
-	double partialRho(double rho, double T, Abundance const& chem);
-	double partialT(double rho, double T, Abundance const& chem);
+	double partialRho(double const rho, double const T, Abundance const& chem);
+	double partialT(double const rho, double const T, Abundance const& chem);
 	
 	PartialPressure operator[](int n);
 	void push_back(PartialPressure);
@@ -220,7 +233,7 @@ private:
 
 //************************************************************************************
 //	PARTIAL PRESSURE FUNCTIONS for EQUATION OF STATE
-//		Each must take arguments double rho, double T, Abundance const& X
+//		Each must take arguments double const rho, double const T, Abundance const& X
 //		Output must be a double, the pressure 
 //		For references, see:
 //		*	Chandrasekhar 1939
@@ -232,85 +245,82 @@ private:
 //************************************************************************************
 
 //IDEAL GAS
-double pressure_ideal(double rho, double T, Abundance const& X);
-double partialRho_ideal(double rho, double T, Abundance const& X);
-double partialT_ideal(double rho, double T, Abundance const& X);
-double partialX_ideal(chemical::elem, double rho, double T, Abundance const& X);
-double energy_ideal(double rho, double T, Abundance const& X);
-double UpartialRho_ideal(double rho, double T, Abundance const& X);
-double UpartialT_ideal(double rho, double T, Abundance const& X);
-double UpartialX_ideal(chemical::elem, double rho, double T, Abundance const& X);
+double pressure_ideal(double const rho, double const T, Abundance const& X);
+double partialRho_ideal(double const rho, double const T, Abundance const& X);
+double partialT_ideal(double const rho, double const T, Abundance const& X);
+double partialX_ideal(chemical::elem, double const rho, double const T, Abundance const& X);
+double energy_ideal(double const rho, double const T, Abundance const& X);
+double UpartialRho_ideal(double const rho, double const T, Abundance const& X);
+double UpartialT_ideal(double const rho, double const T, Abundance const& X);
+double UpartialX_ideal(chemical::elem, double const rho, double const T, Abundance const& X);
 
 
 //RADIATION GAS
-double pressure_rad(double rho, double T, Abundance const& X);
-double partialRho_rad(double rho, double T, Abundance const& X);
-double partialT_rad(double rho, double T, Abundance const& X);
-double partialX_rad(chemical::elem, double rho, double T, Abundance const& X);
-double energy_rad(double rho, double T, Abundance const& X);
-double UpartialRho_rad(double rho, double T, Abundance const& X);
-double UpartialT_rad(double rho, double T, Abundance const& X);
-double UpartialX_rad(chemical::elem, double rho, double T, Abundance const& X);
+double pressure_rad(double const rho, double const T, Abundance const& X);
+double partialRho_rad(double const rho, double const T, Abundance const& X);
+double partialT_rad(double const rho, double const T, Abundance const& X);
+double partialX_rad(chemical::elem, double const rho, double const T, Abundance const& X);
+double energy_rad(double const rho, double const T, Abundance const& X);
+double UpartialRho_rad(double const rho, double const T, Abundance const& X);
+double UpartialT_rad(double const rho, double const T, Abundance const& X);
+double UpartialX_rad(chemical::elem, double const rho, double const T, Abundance const& X);
 
 
 //COULOMB PRESSURE
-double pressure_coul(double rho, double T, Abundance const& X);
-double partialRho_coul(double rho, double T, Abundance const& X);
-double partialT_coul(double rho, double T, Abundance const& X);
-double partialX_coul(chemical::elem, double rho, double T, Abundance const& X);
-double energy_coul(double rho, double T, Abundance const& X);
-double UpartialRho_coul(double rho, double T, Abundance const& X);
-double UpartialT_coul(double rho, double T, Abundance const& X);
-double UpartialX_coul(chemical::elem, double rho, double T, Abundance const& X);
+double pressure_coul(double const rho, double const T, Abundance const& X);
+double partialRho_coul(double const rho, double const T, Abundance const& X);
+double partialT_coul(double const rho, double const T, Abundance const& X);
+double partialX_coul(chemical::elem, double const rho, double const T, Abundance const& X);
+double energy_coul(double const rho, double const T, Abundance const& X);
+double UpartialRho_coul(double const rho, double const T, Abundance const& X);
+double UpartialT_coul(double const rho, double const T, Abundance const& X);
+double UpartialX_coul(chemical::elem, double const rho, double const T, Abundance const& X);
 
 
 //ELECTRON DEGENERACY PRESSURE -- ZERO TEMP
-double pressure_deg_zero(double rho, double T, Abundance const& X);
-double partialRho_deg_zero(double rho, double T, Abundance const& X);
-double partialT_deg_zero(double rho, double T, Abundance const& X);
-double partialX_deg_zero(chemical::elem, double rho, double T, Abundance const& X);
-double energy_deg_zero(double rho, double T, Abundance const& X);
-double UpartialRho_deg_zero(double rho, double T, Abundance const& X);
-double UpartialT_deg_zero(double rho, double T, Abundance const& X);
-double UpartialX_deg_zero(chemical::elem, double rho, double T, Abundance const& X);
-
+double pressure_deg_zero(double const rho, double const T, Abundance const& X);
+double partialRho_deg_zero(double const rho, double const T, Abundance const& X);
+double partialT_deg_zero(double const rho, double const T, Abundance const& X);
+double partialX_deg_zero(chemical::elem, double const rho, double const T, Abundance const& X);
+double energy_deg_zero(double const rho, double const T, Abundance const& X);
+double UpartialRho_deg_zero(double const rho, double const T, Abundance const& X);
+double UpartialT_deg_zero(double const rho, double const T, Abundance const& X);
+double UpartialX_deg_zero(chemical::elem, double const rho, double const T, Abundance const& X);
 
 
 //ELECTRON DEGENERACY PRESSURE -- FINITE TEMP
-double findEta(double rho, double beta, double mue);
-double pressure_deg_finite(double rho, double T, Abundance const& X);
-double partialRho_deg_finite(double rho, double T, Abundance const& X);
-double partialT_deg_finite(double rho, double T, Abundance const& X);
-double partialX_deg_finite(chemical::elem i, double rho, double T, Abundance const& X);
-double energy_deg_finite(double rho, double T, Abundance const& X);
-double UpartialRho_deg_finite(double rho, double T, Abundance const& X);
-double UpartialT_deg_finite(double rho, double T, Abundance const& X);
-double UpartialX_deg_finite(chemical::elem i, double rho, double T, Abundance const& X);
-
+double findEta(double const rho, double const beta, double const mue);
+double pressure_deg_finite(double const rho, double const T, Abundance const& X);
+double partialRho_deg_finite(double const rho, double const T, Abundance const& X);
+double partialT_deg_finite(double const rho, double const T, Abundance const& X);
+double partialX_deg_finite(chemical::elem i, double const rho, double const T, Abundance const& X);
+double energy_deg_finite(double const rho, double const T, Abundance const& X);
+double UpartialRho_deg_finite(double const rho, double const T, Abundance const& X);
+double UpartialT_deg_finite(double const rho, double const T, Abundance const& X);
+double UpartialX_deg_finite(chemical::elem i, double const rho, double const T, Abundance const& X);
 
 
 //ELECTRON DEGENERACY PRESSURE -- FINITE TEMP
 //  find eta by inverting rho = rho0*( F1/2 + beta*F3/2)
 double density_trap(double eta, double beta, double mue);
-double findEta_trap(double rho, double beta, double mue);
-double pressure_deg_trap(double rho, double T, Abundance const& X);
-double energy_deg_trap(double rho, double T, Abundance const& X);
-
+double findEta_trap(double const rho, double const beta, double const mue);
+double pressure_deg_trap(double const rho, double const T, Abundance const& X);
+double energy_deg_trap(double const rho, double const T, Abundance const& X);
 
 
 //ELECTRON DEGENERACY PRESSURE -- PARTIAL DEGENERACY
 //pressure of electron gas under partial degeneracy (T finite)
 //  uses a combination of methods depending on degeneracy
 //	following Cox and Giuli 1980 -- see equation 24.51, the definition of w
-double pressure_deg_partial(double rho, double T, Abundance const& X);
-double partialRho_deg_partial(double rho, double T, Abundance const& X);
-double partialT_deg_partial(double rho, double T, Abundance const& X);
-double partialX_deg_partial(chemical::elem i, double rho, double T, Abundance const& X);
-double energy_deg_partial(double rho, double T, Abundance const& X);
-double UpartialRho_deg_partial(double rho, double T, Abundance const& X);
-double UpartialT_deg_partial(double rho, double T, Abundance const& X);
-double UpartialX_deg_partial(chemical::elem i, double rho, double T, Abundance const& X);
+double pressure_deg_partial(double const rho, double const T, Abundance const& X);
+double partialRho_deg_partial(double const rho, double const T, Abundance const& X);
+double partialT_deg_partial(double const rho, double const T, Abundance const& X);
+double partialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X);
+double energy_deg_partial(double const rho, double const T, Abundance const& X);
+double UpartialRho_deg_partial(double const rho, double const T, Abundance const& X);
+double UpartialT_deg_partial(double const rho, double const T, Abundance const& X);
+double UpartialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X);
 
-	
+
 #endif
 
