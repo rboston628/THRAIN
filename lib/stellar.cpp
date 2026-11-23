@@ -3,6 +3,7 @@
 
 #include "stellar.h"
 #include "rootfind.h"
+#include <array>
 
 double Abundance::nothing{0.0};
 
@@ -516,7 +517,7 @@ double pressure_deg_partial(double const rho, double const T, Abundance const& X
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return pressure_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return wne[1]*boltzmann_k*T;
-	else return 0.0;
+	return 0.0;
 }
 double partialRho_deg_partial(double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -524,7 +525,7 @@ double partialRho_deg_partial(double const rho, double const T, Abundance const&
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return partialRho_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return boltzmann_k*T/proton.mass_CGS/X.mu_e();
-	else return 0.0;
+	return 0.0;
 }
 double partialT_deg_partial(double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -532,7 +533,7 @@ double partialT_deg_partial(double const rho, double const T, Abundance const& X
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return partialT_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return wne[1]*boltzmann_k;
-	else return 0.0;
+	return 0.0;
 }
 double partialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -540,7 +541,7 @@ double partialX_deg_partial(chemical::elem i, double const rho, double const T, 
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return partialX_deg_finite(i,rho,T,X);
 	else if (wne[0] <  0.1) return rho*boltzmann_k*T*pow(X.mu_e(),-2)*chemical::partial_mu_e(i,X);
-	else return 0.0;
+	return 0.0;
 }
 double energy_deg_partial(double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -548,7 +549,7 @@ double energy_deg_partial(double const rho, double const T, Abundance const& X){
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return energy_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return 1.5*wne[1]*boltzmann_k*T;
-	else return 0.0;
+	return 0.0;
 }
 double UpartialRho_deg_partial(double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -556,7 +557,7 @@ double UpartialRho_deg_partial(double const rho, double const T, Abundance const
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return UpartialRho_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return 1.5*boltzmann_k*T/proton.mass_CGS/X.mu_e();
-	else return 0.0;
+	return 0.0;
 }
 double UpartialT_deg_partial(double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -564,7 +565,7 @@ double UpartialT_deg_partial(double const rho, double const T, Abundance const& 
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return UpartialT_deg_finite(rho,T,X);
 	else if (wne[0] <  0.1) return 1.5*wne[1]*boltzmann_k;
-	else return 0.0;
+	return 0.0;
 }
 double UpartialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X){
 	std::array<double, 2> const wne = findW(rho,T,X);
@@ -572,7 +573,7 @@ double UpartialX_deg_partial(chemical::elem i, double const rho, double const T,
 	//else if (w > 20.0) return pressure_deg_large(rho,T,X);
 	else if (wne[0] >= 0.1) return UpartialX_deg_finite(i,rho,T,X);
 	else if (wne[0] <  0.1) return 1.5*rho*boltzmann_k*T*pow(X.mu_e(),-2)*chemical::partial_mu_e(i,X);
-	else return 0.0;
+  return 0.0;
 }
 
 
