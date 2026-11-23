@@ -368,8 +368,8 @@ double partialRho_deg_finite(double const rho, double const T, Abundance const& 
 	double const eta = findEta(rho, beta, mue);
 	//return the partial pressure derivative
 	double dPdrho =  16.*A0/(3.*B0)*beta/X.mu_e()*(
-		FermiDirac3HalfdelEta(eta,beta) + 0.5*beta*FermiDirac5HalfdelEta(eta,beta))/(
-		FermiDirac1HalfdelEta(eta,beta) +     beta*FermiDirac3HalfdelEta(eta,beta));
+		FermiDirac3HalfDelEta(eta,beta) + 0.5*beta*FermiDirac5HalfDelEta(eta,beta))/(
+		FermiDirac1HalfDelEta(eta,beta) +     beta*FermiDirac3HalfDelEta(eta,beta));
 	return dPdrho;
 }
 double partialT_deg_finite(double const rho, double const T, Abundance const& X){
@@ -382,7 +382,7 @@ double partialT_deg_finite(double const rho, double const T, Abundance const& X)
 	double dPdT =  16.*sqrt(2.)*A0*(beta/T)*(
 		2.5*pow(beta,1.5)*(	FermiDirac3Half(eta,beta) + 0.5*beta*FermiDirac5Half(eta,beta) )
 		+ 0.5*pow(beta,2.5)*FermiDirac5Half(eta,beta)
-		+ pow(beta,2.5)*(FermiDirac3HalfdelBeta(eta,beta)+0.5*beta*FermiDirac5HalfdelBeta(eta,beta))
+		+ pow(beta,2.5)*(FermiDirac3HalfDelBeta(eta,beta)+0.5*beta*FermiDirac5HalfDelBeta(eta,beta))
 	);
 	return dPdT;
 }
@@ -395,8 +395,8 @@ double partialX_deg_finite(chemical::elem i, double const rho, double const T, A
 	//return the partial pressure derivative
 	double dPdX =  -16.*sqrt(2.)*A0*pow(beta,2.5)
 		*(FermiDirac1Half(eta,beta)+beta*FermiDirac3Half(eta,beta))
-		*(FermiDirac3HalfdelEta(eta,beta)+0.5*beta*FermiDirac5HalfdelEta(eta,beta))
-		/(FermiDirac1HalfdelEta(eta,beta)+    beta*FermiDirac3HalfdelEta(eta,beta))
+		*(FermiDirac3HalfDelEta(eta,beta)+0.5*beta*FermiDirac5HalfDelEta(eta,beta))
+		/(FermiDirac1HalfDelEta(eta,beta)+    beta*FermiDirac3HalfDelEta(eta,beta))
 		*chemical::partial_mu_e(i,X)/mue;
 	return dPdX;
 }
@@ -419,8 +419,8 @@ double UpartialRho_deg_finite(double const rho, double const T, Abundance const&
 	double const eta = findEta(rho, beta, mue);
 	//return the partial pressure derivative
 	double dUdrho =  24.*A0/(3.*B0)*beta/X.mu_e()*(
-		FermiDirac3HalfdelEta(eta,beta) + beta*FermiDirac5HalfdelEta(eta,beta))/(
-		FermiDirac1HalfdelEta(eta,beta) + beta*FermiDirac3HalfdelEta(eta,beta));
+		FermiDirac3HalfDelEta(eta,beta) + beta*FermiDirac5HalfDelEta(eta,beta))/(
+		FermiDirac1HalfDelEta(eta,beta) + beta*FermiDirac3HalfDelEta(eta,beta));
 	return dUdrho;
 }
 double UpartialT_deg_finite(double const rho, double const T, Abundance const& X){
@@ -430,10 +430,10 @@ double UpartialT_deg_finite(double const rho, double const T, Abundance const& X
 	double const mue = X.mu_e();
 	double const eta = findEta(rho, beta, mue);
 	//return the partial pressure derivative
-	double dUdT =  24.*sqrt(2.)*A0*(beta/T)*(
+	double dUdT =  24.*sqrt(2.)*A0*(beta/T) * (
 		2.5*pow(beta,1.5)*(	FermiDirac3Half(eta,beta) + beta*FermiDirac5Half(eta,beta) )
 		+ pow(beta,2.5)*FermiDirac5Half(eta,beta)
-		+ pow(beta,2.5)*(FermiDirac3HalfdelBeta(eta,beta)+beta*FermiDirac5HalfdelBeta(eta,beta))
+		+ pow(beta,2.5)*(FermiDirac3HalfDelBeta(eta,beta)+beta*FermiDirac5HalfDelBeta(eta,beta))
 	);
 	return dUdT;
 }
@@ -446,8 +446,8 @@ double UpartialX_deg_finite(chemical::elem i, double const rho, double const T, 
 	//return the partial pressure derivative
 	double dUdX =  -24.*sqrt(2.)*A0*pow(beta,2.5)
 		*(FermiDirac1Half(eta,beta) + beta*FermiDirac3Half(eta,beta))
-		*(FermiDirac3HalfdelEta(eta,beta) + beta*FermiDirac5HalfdelEta(eta,beta))
-		/(FermiDirac1HalfdelEta(eta,beta) + beta*FermiDirac3HalfdelEta(eta,beta))
+		*(FermiDirac3HalfDelEta(eta,beta) + beta*FermiDirac5HalfDelEta(eta,beta))
+		/(FermiDirac1HalfDelEta(eta,beta) + beta*FermiDirac3HalfDelEta(eta,beta))
 		*chemical::partial_mu_e(i,X)/mue;
 	return dUdX;
 }

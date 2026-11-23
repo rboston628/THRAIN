@@ -118,7 +118,7 @@ double FermiDirac::FermiDiracDelBeta(double const k, double const eta, double co
  * Outside accuracy range, the direct Fermi-Dirac integration is used instead
 */
 
-namespace FermiDirac::Sagar {
+namespace Sagar {
 // abscissae (x) and weights (w) for 24-point Gauss quadrature method due to Sagar 1991
 double constexpr xFermiDirac1Half[] = {
 	1.065765457622244303e-01, 4.230728669515992804e-01, 9.419850084605768359e-01, 
