@@ -51,12 +51,11 @@ void ThrainConfig::setConfig(std::unordered_map<std::string, std::string> const&
   }
 }
 
-std::unordered_set<std::string> const ThrainConfig::valid_keys{"input_directory", "output_directory", "default_calc_name", "swd_params"};
+std::unordered_set<std::string> const ThrainConfig::valid_keys{"input_directory", "output_directory", "default_calc_name"};
 std::unordered_map<std::string, std::string> const ThrainConfig::default_config{
   {"input_directory", "./"},
   {"output_directory", "./output/"},
-  {"default_calc_name", "models"},
-  {"swd_params", "swd.txt"}
+  {"default_calc_name", "models"}
 };
 
 #endif

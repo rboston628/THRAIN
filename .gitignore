@@ -40,7 +40,6 @@ src/STARS/ZAMS.cpp
 !lib/string.*
 !lib/logger.h
 !lib/filelib.*
-!lib/mathlib.*
 lib/*.o
 
 # the test suite
