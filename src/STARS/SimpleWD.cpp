@@ -107,7 +107,7 @@ SimpleWD::SimpleWD(
 	Xmass = Xtot;
 	
 	ThrainLogger::info("star  :\t M=%le\tR=%le\tL=%le\n", Msolar, Rsolar, Lsolar);
-	name = strmakef("WD_M%0.2f_L%0.2f_X%0.2f_Y%0.2f", Msolar, Rsolar, Xtot[0], Xtot[1]);
+	name = strmakef("WD_M%0.2f_R%0.2f_X%0.2f_Y%0.2f", Msolar, Rsolar, Xtot[0], Xtot[1]);
 	// find relevant scales for re-dimensionalizing the quantities
 	Dscale = Mstar*pow(Rstar,-3)/(4.*m_pi);
 	Pscale = G_CGS*pow(Mstar,2)*pow(Rstar,-4)/(4.*m_pi);
@@ -140,12 +140,12 @@ SimpleWD::SimpleWD(
 		ThrainLogger::info("ITERATION: %d\n", count++);
 		//recompute difference, and Jacobian matrix
 		joinAtCenter(x, f, F);
-		ThrainLogger::debug("\tX1:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::debug("%le ", x[i]);
-		ThrainLogger::debug("\n");
-		ThrainLogger::debug("\tf1:\t");
-		for(int i=0; i<numv; i++) ThrainLogger::info("%le ", f[i]);
-		ThrainLogger::debug("\n");
+		ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "\tX1:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "%le ", x[i]);
+		ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "\n");
+		ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "\tf1:\t");
+		for(int i=0; i<numv; i++) ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "%le ", f[i]);
+		ThrainLogger::logInline(ThrainLogger::LogLevel::DEBUG, "\n");
 		ThrainLogger::debug("\tF1:\t%le\n", F);
 		
 		//calculate a Jacobian matrix by varying each variable
@@ -261,7 +261,7 @@ SimpleWD::~SimpleWD(){
 
 void SimpleWD::setup(){
 	FILE *input_file;
-	if(!(input_file=fopen("swd.txt", "r"))){
+	if(!(input_file=fopen(ThrainConfig::swdParamsFileName().c_str(), "r"))){
 		ThrainLogger::warning("ERROR: EOS file not found... using a default\n");
 		//do something
 		std::vector<PartialPressure> corePres{deg_zero, rad_gas, ideal, coul};

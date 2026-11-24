@@ -92,7 +92,7 @@ int read_input(std::string const &input_file_name, Calculation::InputData &calcd
 		ThrainLogger::info("Ngrid=%zu\n", calcdata.Ngrid);
 		
 		//on a new line, specify the EOS
-		FILE *swd = fopen("swd.txt", "w");
+		FILE *swd = fopen(ThrainConfig::swdParamsFileName().c_str(), "w");
 		fscanf(input_file, "EOS:\n");
 		fprintf(swd, "# equation of state\n");
 		//read the EOS specification
