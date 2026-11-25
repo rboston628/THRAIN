@@ -117,7 +117,8 @@ namespace {
     }
     io::write_stellar_output(calcdataOut);
     // verify the star outputs exist
-    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt"));
+    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name ));
+    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, star->name, name ));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt")));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".png")));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", "BruntVaisala.txt")));
