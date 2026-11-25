@@ -95,8 +95,8 @@ TEST_CASE("eos: find_eta_all_regimes") {
             double const beta = betaOf(T);
             double const eta = findEta(rho, beta, mue);
             double const eta_trap = findEta_trap(rho, beta, mue);
-            REQUIRE( std::isfinite(eta) );
-            REQUIRE( std::isfinite(eta_trap) );
+            CHECK( std::isfinite(eta) );
+            CHECK( std::isfinite(eta_trap) );
             CHECK_DELTA( density_trap(eta_trap, beta, mue), rho, 1.e-10 );
             CHECK( eta == doctest::Approx(eta_trap).epsilon(1.e-4).scale(1.0) );
         }
@@ -110,8 +110,8 @@ TEST_CASE("eos: degeneracy_pressure_limits") {
             CAPTURE(rho); CAPTURE(T);
             double const Pfin  = deg_finite.P(rho, T, X);
             double const Ptrap = deg_trap.P(rho, T, X);
-            REQUIRE( std::isfinite(Pfin) );
-            REQUIRE( std::isfinite(Ptrap) );
+            CHECK( std::isfinite(Pfin) );
+            CHECK( std::isfinite(Ptrap) );
             CHECK_DELTA( Pfin, Ptrap, 1.e-4 );
         }
     }

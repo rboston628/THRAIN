@@ -130,10 +130,19 @@ double EOS::invert(double const rho_last, double const P, double const T, Abunda
 	std::function<double(double)> presDiff = [this,P,T,chem](double x)->double {
 		return P - (*this)(x, T, chem);
 	};
-	rootfind::bisection_find_brackets_newton(presDiff, x, xmin, xmax);
+	int ret = rootfind::bisection_find_brackets_newton(presDiff, x, xmin, xmax);
+	if (ret) {
+		ThrainLogger::error("EOS::invert: failed to find brackets for P=%g, T=%g, rho_last=%g\n", P, T, rho_last);
+		ThrainLogger::error("\tbrackets: [%g, %g]\n", xmin, xmax);
+		return std::nan("");
+	}
 	y = rootfind::bisection_search(presDiff, x, xmin, xmax);
-	x = 0.5*(xmin+xmax);
-	return x;
+	if (!std::isfinite(x)) {
+		ThrainLogger::error("EOS::invert: failed to find root for P=%g, T=%g, rho_last=%g\n", P, T, rho_last);
+		ThrainLogger::error("\tbrackets: [%g, %g]\n", xmin, xmax);
+		return std::nan("");
+	}
+	return 0.5*(xmin+xmax);
 }
 
 // Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
@@ -326,25 +335,64 @@ double UpartialX_deg_zero(chemical::elem i, double const rho, double const T, Ab
 		* pow(rho/B0,1./3.)*(-1./3.*pow(X.mu_e(),-4./3.))*chemical::partial_mu_e(i,X);
 }
 
+namespace {
+// calculate the coefficient in front of the Fermi-Dirac F_k functions for density
+double fermi_dirac_rhocoeff(double const beta, double const mue) {
+	using namespace Chandrasekhar;
+	return 3.*sqrt(2.)*B0*mue*pow(beta, 1.5);
+}
+
+double solveEta(std::function<double(double)> const& density, double const rho, double const beta, double const mue) {
+	using namespace Chandrasekhar;
+
+	// unhappy path: rho or beta is invalid
+	if (std::isnan(rho) || std::isnan(beta) || rho < 0.0) {
+		ThrainLogger::error("ERROR in solveEta: invalid rho = %le, beta = %le\n", rho, beta);
+		return nan("");
+	}
+
+	// approximate eta for degenerate cases: as in Cox and Giuli eq 24.29', pg 793 (but using 24.327b)
+	double const eta_coeff = pow(8.*B0*B0*mue*mue, -1./3.);
+	double const eta_deg = eta_coeff*pow(rho, 2./3.)/beta;
+	// approximate eta for non-degenerate cases: F_{1/2}(eta) --> Gamma(3/2) * exp(eta)
+	double const rho_coeff = fermi_dirac_rhocoeff(beta, mue);
+	double const eta_nondeg = log(2.*rho/(rho_coeff*sqrt(math::PI)));
+	// determine which to use
+	double const guess = (eta_deg > 1.0 ? std::max(eta_deg, eta_nondeg) : eta_nondeg);
+
+	// unhappy path: the guess is invalid
+	if (!std::isfinite(guess)) {
+		ThrainLogger::error("ERROR in solveEta: invalid guess = %le\n", guess);
+		return nan("");
+	}
+
+	// now find the value
+	std::function<double(double)> densDiff = [rho, density](double eta)->double {
+		return density(eta) - rho;
+	};
+	double eta_lo, eta_hi;
+	if (rootfind::bisection_find_brackets_move(densDiff, guess, eta_lo, eta_hi)) {
+		ThrainLogger::error("ERROR in solveEta: failed to find brackets for rho=%g, beta=%g, mue=%g\n", rho, beta, mue);
+		return nan("");
+	}
+	double eta = 0.5 * (eta_lo + eta_hi);
+	rootfind::bisection_search(densDiff, eta, eta_lo, eta_hi);
+	return eta;
+}
+}
+
 
 //ELECTRON DEGENERACY PRESSURE -- FINITE TEMP
 PartialPressure deg_finite = {
 	pressure_deg_finite, partialRho_deg_finite, partialT_deg_finite, partialX_deg_finite,
 	energy_deg_finite, UpartialRho_deg_finite, UpartialT_deg_finite, UpartialX_deg_finite};
 double findEta(double const rho, double const beta, double const mue){
-	using namespace Chandrasekhar;
 	using namespace FermiDirac;
-	//approximate eta as in Cox and Giuli eq 24.29', pg 793 (but using 24.327b)
-	double const eta_coeff = pow(8.*B0*B0*mue*mue, -1./3.);
-	double const rho_coeff = 3.*sqrt(2.)*B0*mue*pow(beta, 1.5);
-	double const eta1 = eta_coeff*pow(rho, 2./3.)/beta;
-	std::function<double(double)> densDiff = [rho, rho_coeff, beta, mue](double eta)->double {
-		return rho_coeff*(FermiDirac1Half(eta,beta) + beta*FermiDirac3Half(eta,beta)) - rho;
+	double const rho_coeff = fermi_dirac_rhocoeff(beta, mue);
+	std::function<double(double)> densDiff = [rho_coeff, beta](double eta)->double {
+		return rho_coeff*(FermiDirac1Half(eta,beta) + beta*FermiDirac3Half(eta,beta));
 	};
-	double eta2 = eta1, eta_min = eta1*0.9, eta_max = eta1*1.1;
-	rootfind::bisection_find_brackets_newton(densDiff, eta1, eta_min, eta_max);
-	rootfind::bisection_search(densDiff, eta2, eta_min, eta_max);
-	return eta2;
+	return solveEta(densDiff, rho, beta, mue);
 }
 //pressure of electron gas under partial degeneracy (T finite)
 //	following Chandrasekhar 1939, Cox & Giuli 1980 (especially pg 851)
@@ -459,22 +507,15 @@ PartialPressure deg_trap = {
 	pressure_deg_trap,  partialRho_deg_finite,  partialT_deg_finite,  partialX_deg_finite,
 	  energy_deg_trap, UpartialRho_deg_finite, UpartialT_deg_finite, UpartialX_deg_finite};
 double density_trap(double eta, double beta, double mue){
-	double const rho_coeff = 3.*sqrt(2.)*Chandrasekhar::B0*mue*pow(beta, 1.5);
+	double const rho_coeff = fermi_dirac_rhocoeff(beta, mue);
 	return rho_coeff*(FermiDirac::FermiDirac(0.5,eta,beta) + beta*FermiDirac::FermiDirac(1.5,eta,beta));
 }
 double findEta_trap(double const rho, double beta, double mue){
 	//approximate eta as in Cox and Giuli eq 24.29', pg 793 (but using 24.327b)
-	using namespace Chandrasekhar;
-	double const eta_coeff = pow(8.*B0*B0*mue*mue, -1./3.);
-	double x = eta_coeff*pow(rho, 2./3.)/beta, xmin, xmax;
-
-	std::function<double(double)> densDiff = [rho,beta,mue](double x)->double {
-		return rho - density_trap(x,beta,mue);
+	std::function<double(double)> densDiff = [beta, mue](double eta)->double {
+		return density_trap(eta, beta, mue);
 	};
-
-	rootfind::bisection_find_brackets_newton(densDiff, x, xmin, xmax);
-	rootfind::bisection_search(densDiff, x, xmin, xmax);
-	return x;
+	return solveEta(densDiff, rho, beta, mue);
 }
 //pressure of electron gas under partial degeneracy (T finite)
 //	following Chandrasekhar 1939, Cox & Giuli 1980 (especially pg 851)
