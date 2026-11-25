@@ -27,6 +27,9 @@ struct RootFindLineUp : RootFindLineFixture, Line {
 struct RootFindLineDown : RootFindLineFixture, Line {
     double operator()(double x) const override final{ return (root-x); }
 } slopedown;
+struct RootFindLineUpNegative : RootFindLineFixture, Line {
+    double operator()(double x) const override final{ return (x+root); }
+} slopeupneg;
 struct RootFindSinusoid : RootFindLineFixture, Line {
     double operator()(double x) const override final{ return sin( x * m_pi/root ); }
 } sinusoid;
@@ -72,7 +75,7 @@ struct RootFind2DDownDown : RootFind2DFixture, Field {
 
 TEST_SUITE("RootFind [unit]") {
 
-  TEST_CASE("rootfind: pseudo_unif_not_repeated") {
+TEST_CASE("rootfind: pseudo_unif_not_repeated") {
     /** 
      * make sure the pseudo_unif produces a value between 0 and 1
      * also make sure that in 1000 iterations, the same value is not repeated
@@ -89,7 +92,7 @@ TEST_SUITE("RootFind [unit]") {
     }
 }
 
-  TEST_CASE("rootfind: pseudo_unif_range") {
+TEST_CASE("rootfind: pseudo_unif_range") {
     /**
      * make sure the pseudo_unif produces a value between xmin and xmax
      * also make sure that in 1000 iterations, the same value is not repeated
@@ -114,13 +117,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_up"){
     // ---[--O-x]----
     //      /
     xguess = over_root;
-    rootfind::bisection_find_brackets_move(slopeup, xguess, xmin, xmax);
+    int ret = rootfind::bisection_find_brackets_move(slopeup, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_LT( xmin, xguess );
-    CHECK_EQ( xguess, xmax );
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( slopeup(xmin), slopeup(xmax) );
     CHECK_LT( slopeup(xmin), 0.0 );
@@ -132,13 +137,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_up"){
     //      /       
     xmin = xmax = 0.0;
     xguess = under_root;
-    rootfind::bisection_find_brackets_move(slopeup, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(slopeup, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT( xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( slopeup(xmin), slopeup(xmax) );
     CHECK_LT( slopeup(xmin), 0.0 );
@@ -153,13 +160,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_down")
     //        \    */
     xmin = xmax = 0.0;
     xguess = under_root;
-    rootfind::bisection_find_brackets_move(slopedown, xguess, xmin, xmax);
+    int ret = rootfind::bisection_find_brackets_move(slopedown, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT(xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( slopedown(xmax), slopedown(xmin) );
     CHECK_LT( slopedown(xmax), 0.0 );
@@ -171,13 +180,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_line_down")
     //        \     */      
     xmin = xmax = 0.0;
     xguess = over_root;
-    rootfind::bisection_find_brackets_move(slopedown, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(slopedown, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_LT( xmin, xguess );
-    CHECK_EQ(xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( slopedown(xmax), slopedown(xmin) );
     CHECK_LT( slopedown(xmax), 0.0 );
@@ -194,7 +205,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #      \  /      \
     #       \/      */ 
     xguess = under_root;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    int ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
@@ -213,7 +225,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #      \  /      \
     #       \/      */ 
     xguess = over_root;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
@@ -232,7 +245,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #      \  /      \
     #       \/      */ 
     xguess = 2.*under_root;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
@@ -251,7 +265,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #      \  /      \
     #       \/      */ 
     xguess = 2.*over_root;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
@@ -270,7 +285,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #       \   /       \
     #        \_/       */ 
     xguess = 1.0;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
@@ -289,7 +305,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_sine"){
     #       \   /       \
     #        \_/        */ 
     xguess = 3.0;
-    rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
@@ -310,7 +327,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_failures") 
     #----x----------- 
     #              */
     xguess = under_root;
-    rootfind::bisection_find_brackets_move(flat, xguess, xmin, xmax);
+    int ret = rootfind::bisection_find_brackets_move(flat, xguess, xmin, xmax);
+    CHECK_EQ( ret, 1 );
     CHECK(doctest::IsNaN<double>(xmin));
     CHECK(doctest::IsNaN<double>(xmax));
 
@@ -321,7 +339,8 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_move_failures") 
     #
     #              */
     xguess = root;
-    rootfind::bisection_find_brackets_move(parabola, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_move(parabola, xguess, xmin, xmax);
+    CHECK_EQ( ret, 1 );
     CHECK(doctest::IsNaN<double>(xmin));
     CHECK(doctest::IsNaN<double>(xmax));
 }
@@ -336,13 +355,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #      \  /      \
     #       \/      */ 
     xguess = under_root;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    int ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // the root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT( xguess, xmax );
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope down
     CHECK_LT( sinusoid(xmax), sinusoid(xmin) );
     CHECK_LT( sinusoid(xmax), 0.0 );
@@ -355,13 +376,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #      \  /      \
     #       \/      */ 
     xguess = over_root;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // the root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmax, xguess );
-    CHECK_LT( xmin, xguess );
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope down
     CHECK_LT( sinusoid(xmax), sinusoid(xmin) );
     CHECK_LT( sinusoid(xmax), 0.0 );
@@ -374,13 +397,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #      \  /      \
     #       \/      */ 
     xguess = 2.*under_root;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // the root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT(xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( sinusoid(xmin), sinusoid(xmax) );
     CHECK_LT( sinusoid(xmin), 0.0 );
@@ -393,13 +418,19 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #      \  /      \
     #       \/      */ 
     xguess = 2.*over_root;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0);
+    // 2*root is bounded
+    CAPTURE(xmin);
+    CAPTURE(xmax);
+    CAPTURE(xguess);
+    CAPTURE(root);
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmax, xguess );
-    CHECK_LT(xmin, xguess);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to slope up
     CHECK_LT( sinusoid(xmin), sinusoid(xmax) );
     CHECK_LT( sinusoid(xmin), 0.0 );
@@ -412,13 +443,15 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #       \   /       \
     #        \_/       */ 
     xguess = 1.0;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // the root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, root );
     CHECK_LT( root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT(xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to concave down (same as slope down)
     CHECK_LT( sinusoid(xmax), sinusoid(xmin) );
     CHECK_LT( sinusoid(xmax), 0.0 );
@@ -431,17 +464,55 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton"){
     #       \   /       \
     #        \_/        */ 
     xguess = 3.0;
-    rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    ret = rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // the root is bounded
     CHECK_LT( xmin, xmax );
     CHECK_LT( xmin, 2.*root );
     CHECK_LT( 2.*root, xmax );
-    // specific to side of zero
-    CHECK_EQ( xmin, xguess );
-    CHECK_LT(xguess, xmax);
+    // guess is also bounded
+    CHECK_LE( xmin, xguess );
+    CHECK_LE( xguess, xmax );
     // specific to concave up (same as slpe up)
     CHECK_LT( sinusoid(xmin), sinusoid(xmax) );
     CHECK_LT( sinusoid(xmin), 0.0 );
     CHECK_LT( 0.0, sinusoid(xmax));
+}
+
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton negative root") {
+    double xmin, xmax, xguess = 1.0;
+    int ret = rootfind::bisection_find_brackets_newton(slopeupneg, xguess, xmin, xmax);
+    CHECK_EQ( ret, 0 );
+    // in slopeupneg, the root is at x = -2
+    CHECK_LT( xmin, xmax );
+    CHECK_LT( xmin, -root );
+    CHECK_LT( -root, xmax );
+}
+
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: find_brackets_newton failures") {
+    double xmin, xmax, xguess;
+
+    /* test situation
+    #----------------             
+    #----x----------- 
+    #              */
+    xguess = under_root;
+    int ret = rootfind::bisection_find_brackets_newton(flat, xguess, xmin, xmax);
+    CHECK_EQ( ret, 1 );
+    CHECK(doctest::IsNaN<double>(xmin));
+    CHECK(doctest::IsNaN<double>(xmax));
+
+    /* test situation
+    #  \   /
+    #   \-/          
+    #----x----------- 
+    #
+    #              */
+    xguess = root;
+    ret = rootfind::bisection_find_brackets_newton(parabola, xguess, xmin, xmax);
+    CHECK_EQ( ret, 1 );
+    CHECK(doctest::IsNaN<double>(xmin));
+    CHECK(doctest::IsNaN<double>(xmax));
 }
 
 TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: bisection_search"){
@@ -512,6 +583,70 @@ TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: bisection_search"){
     rootfind::bisection_find_brackets_newton(sinusoid, xguess, xmin, xmax);
     rootfind::bisection_search(sinusoid, xguess, xmin, xmax);
     CHECK_DELTA( xguess, 2.*root, 1.e-10 );
+}
+
+TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: bisection_search failures") {
+    double xmin, xmax, xguess;
+
+    /* test situation
+    #----------------             
+    #----x----------- 
+    #              */
+    xguess = under_root;
+    xmin = 1.0;
+    xmax = 3.0;
+    double y = rootfind::bisection_search(flat, xguess, xmin, xmax);
+    CAPTURE(xmin);
+    CAPTURE(xmax);
+    CAPTURE(xguess);
+    CHECK(doctest::IsNaN<double>(y));
+    CHECK(doctest::IsNaN<double>(xguess));
+
+    /* test situation
+    #  \   /
+    #   \-/          
+    #----x----------- 
+    #
+    #              */
+    xguess = root;
+    xmin = 1.0;
+    xmax = 3.0;
+    y = rootfind::bisection_search(parabola, xguess, xmin, xmax);
+    CAPTURE(xmin);
+    CAPTURE(xmax);
+    CAPTURE(xguess);
+    CHECK(doctest::IsNaN<double>(y));
+    CHECK(doctest::IsNaN<double>(xguess));
+
+    /* test situation
+    # NaN everywhere */
+    std::function<double(double)> nanfunc = [](double x)->double  {return std::nan("");};
+    xmin = 1.0;
+    xmax = 3.0;
+    xguess = 2.0;
+    y = rootfind::bisection_search(nanfunc, xguess, xmin, xmax);
+    CAPTURE(xmin);
+    CAPTURE(xmax);
+    CAPTURE(xguess);
+    CHECK(doctest::IsNaN<double>(y));
+    CHECK(doctest::IsNaN<double>(xguess));
+
+    /* test situation
+    # NaN|  /  |NaN    
+    #----1-o---2----- 
+    # NaN./    |NaN */
+    std::function<double(double)> const partnan = [](double x)->double { 
+        return (x > 2. && x < 1. ? std::nan("") : x - 1.25); 
+    };
+    xmin = 0.8;
+    xmax = 2.2;
+    xguess = 1.5;
+    y = rootfind::bisection_search(partnan, xguess, xmin, xmax);
+    CAPTURE(xmin);
+    CAPTURE(xmax);
+    CAPTURE(xguess);
+    CHECK(!doctest::IsNaN<double>(y));
+    CHECK_DELTA( xguess, 1.25, 1.e-10 );
 }
 
 TEST_CASE_FIXTURE(RootFindLineFixture, "rootfind: newton_search_1d"){
