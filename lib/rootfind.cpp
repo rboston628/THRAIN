@@ -69,7 +69,7 @@ MoveDirection move_direction(double yleft, double ymid, double yright) {
 	Slope behavior = determine_behavior(yleft, ymid, yright);
 	
 	// now decide which direction to move the brackets based on slope of function
-	bool move_left;
+	bool move_left = false;
 	if (ymid > 0.0) {
 		switch(behavior) {
 			case Slope::UP: move_left = true; break;
