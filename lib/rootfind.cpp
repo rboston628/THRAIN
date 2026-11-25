@@ -208,12 +208,11 @@ int rootfind::bisection_find_brackets_newton(
 	double xm = (move_left ? x1 : x2);
 	double ym = (move_left ? y1 : y2);
 	int iter = 0;
-	double maxstep = 0.2 * fabs(xm);
 	while(ym * y >= 0.0){
 		iter++;
 		if(iter > MAX_ITER) return fail(xmin, xmax);
 		//compute numerical derivative
-		double xdx = xm + 0.01;
+		double xdx = left(xm, 0.01);
 		double ydx = func(xdx);
 		xdx = xm - ym * (xdx - xm) / (ydx - ym);
 		//Newton's method can fail at this if it only approaches the zero from one direction
@@ -225,6 +224,7 @@ int rootfind::bisection_find_brackets_newton(
 			else xdx = right(xdx, 0.1);
 		}
 		//limit amount of change allowed in single step
+		double maxstep = 0.2 * std::max(fabs(xm), fabs(x0));
 		if (move_left) xdx = std::max(xdx, xm - maxstep);
 		else xdx = std::min(xdx, xm + maxstep);
 		ym = func(xdx);
