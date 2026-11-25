@@ -6,6 +6,7 @@
 // - Chandrasekhar WD: 
 // *******************************************************************
 
+#include "../src/ThrainConfig.h"
 #include "../src/STARS/Star.h"
 #include "../src/STARS/Polytrope.h"
 #include "../src/STARS/ChandrasekharWD++.h"
@@ -610,6 +611,7 @@ void test_simple_wd_constructor(){
   fprintf(stderr, "\nSTAR TESTS - SIMPLEWD");
   double const INDEX (0.0);
   std::size_t const LEN (1001);
+  ThrainConfig::reconfigure({{"swd_params", "tests/inputs/test_swd.txt"}});
   auto testStar = std::make_unique<SimpleWD>(0.608, 1.2e4, LEN);
 
   // use the SSR to quantify acceptable error
