@@ -3,8 +3,8 @@
 
 namespace Chandrasekhar {
 	// these values are defined to be consistent with NIST CODATA 2022 values, as in constants.h
-	double constexpr A0 = 6.00233e22;
-	double constexpr B0 = 9.810195e5;
+	double constexpr A0 = 6.002332e22;
+	double constexpr B0 = 9.8101895e5;
 
 	// these values taken from Chandrasekhar 1932, pg 416 in Dover reprint
 	double constexpr A01939 = 6.01e22;
