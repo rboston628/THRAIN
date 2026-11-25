@@ -71,6 +71,10 @@ public:
     return calculationDir(calcname) + trailingSlash(subdir) + filename;
   } 
   
+  static std::string swdParamsFileName() {
+    return instance().config_options.at("swd_params");
+  }
+
   /// Determine correct location for writing output; directory terminates with a "/"
   static std::string resolveCalcName(std::string const& c, std::string const& name);
 

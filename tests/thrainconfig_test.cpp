@@ -58,10 +58,12 @@ TEST_SUITE("ThrainConfig [unit]") {
     CHECK_NE(ThrainConfig::inputDir(), "testin");
     CHECK_NE(ThrainConfig::outputDir(), "testout");
     CHECK_NE(ThrainConfig::defaultCalcName(), "testname");
+    CHECK_NE(ThrainConfig::swdParamsFileName(), "testswd");
     ThrainConfig::reconfigure("tests/inputs/config_test.config");
     CHECK_EQ(ThrainConfig::inputDir(), "testin/");
     CHECK_EQ(ThrainConfig::outputDir(), "testout/");
     CHECK_EQ(ThrainConfig::defaultCalcName(), "testname");
+    CHECK_EQ(ThrainConfig::swdParamsFileName(), "testswd");
   }
 
   TEST_CASE_FIXTURE(SetupTeardown, "config: reconfigure from map") {
@@ -281,8 +283,9 @@ TEST_SUITE("ThrainConfigIntegration [unit]") {
   }
   // SWD WRITES TO CORRECT LOCATION
   TEST_CASE_FIXTURE(SetupTeardown, "config: dir through swd write") {
+    ThrainConfig::reconfigure({{"swd_params", "tests/inputs/test_swd.txt"}});
     SimpleWD *star = new SimpleWD(0.8, 12000, 100);
-    std::string const name = strmakef("WD_M0.80_L1.11_X0.00_Y0.06");
+    std::string const name = strmakef("WD_M0.80_R1.11_X0.00_Y0.06");
     std::string const dir = do_test_star_write(name, star);
     // cleanup
     filelib::remove(ThrainConfig::calculationDir(dir));  
