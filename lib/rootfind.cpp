@@ -37,12 +37,12 @@ double right(double x0, double dx) {
 int fail(double &xmin, double &xmax) {
 	xmin = nan("");
 	xmax = nan("");
-	ThrainLogger::error("Unable to find a root near this guess");
+	ThrainLogger::error("Unable to find a root near this guess\n");
 	return 1;
 }
 double fail(double &x) {
 	x = nan("");
-	ThrainLogger::error("Unable to find a root near this guess");
+	ThrainLogger::error("Unable to find a root near this guess\n");
 	return nan("");
 }
 
