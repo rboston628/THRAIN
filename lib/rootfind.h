@@ -49,9 +49,6 @@ double bisection_search(
 //  These methods are for gradient-descent methods
 // *************************************************************************************
 
-template <typename T>
-T gen_abs(T x);
-
 template<std::size_t np>
 std::function<bool(double[np])> no_limit = [](double x[np])->bool{return true;};
 
