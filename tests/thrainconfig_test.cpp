@@ -117,7 +117,8 @@ namespace {
     }
     io::write_stellar_output(calcdataOut);
     // verify the star outputs exist
-    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt"));
+    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name ));
+    CAPTURE(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", star->name ));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".txt")));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", name + ".png")));
     REQUIRE(filelib::exists(ThrainConfig::calculationFileName(calcdataOut.calcname, "star", "BruntVaisala.txt")));
@@ -281,7 +282,7 @@ TEST_SUITE("ThrainConfigIntegration [unit]") {
   // SWD WRITES TO CORRECT LOCATION
   TEST_CASE_FIXTURE(SetupTeardown, "config: dir through swd write") {
     SimpleWD *star = new SimpleWD(0.8, 12000, 100);
-    std::string const name = strmakef("WD_M0.80_L1.10_X0.00_Y0.06");
+    std::string const name = strmakef("WD_M0.80_L1.11_X0.00_Y0.06");
     std::string const dir = do_test_star_write(name, star);
     // cleanup
     filelib::remove(ThrainConfig::calculationDir(dir));  
