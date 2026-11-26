@@ -85,7 +85,7 @@ double fermi_dirac_delBetaIntegrand(double const t, double const k, double const
 } // anonymous namespace
 
 /** GENERIC FERMI-DIRAC FUNCTIONS
- * These are the general Fermi-Dirac functions and integrands, using no approximations, special cases, or simpliciations
+ * These are the general Fermi-Dirac functions and integrands, using no approximations, special cases, or simplifications
  * FermiDirac = F_k(eta,beta) = int_0^infty x^k sqrt(1+beta*x/2) / (1+exp(x-eta)) dx
  */
 

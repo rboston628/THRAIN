@@ -137,22 +137,11 @@ double EOS::invert(double const rho_last, double const P, double const T, Abunda
 		return std::nan("");
 	}
 	y = rootfind::bisection_search(presDiff, x, xmin, xmax);
-	if (!std::isfinite(x)) {
+	if (!std::isfinite(y)) {
 		ThrainLogger::error("EOS::invert: failed to find root for P=%g, T=%g, rho_last=%g\n", P, T, rho_last);
 		ThrainLogger::error("\tbrackets: [%g, %g]\n", xmin, xmax);
 		return std::nan("");
 	}
-	return 0.5*(xmin+xmax);
-}
-
-// Invert the usual EOS P = P(rho,T,X), to instead solve for rho given P,T,X
-// uses nothing but Newton's method
-double EOS::invertNewton(double const rho_last, double const P, double const T, Abundance const& chem){
-	double x=rho_last, dx = 0.01*x, y;  //x2 = rho_last, x, x3, dx;
-	std::function<double(double)> presDiff = [this,P,T,chem](double x)->double {
-		return P - (*this)(x,T,chem);
-	};
-	y = rootfind::newton_search<double>(presDiff, x, dx, 1.e-10, std::size_t(1000));
 	return x;
 }
 

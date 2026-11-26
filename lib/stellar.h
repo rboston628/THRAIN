@@ -60,11 +60,10 @@ struct Abundance {
 	Abundance operator-(const Abundance& x){
 		return Abundance(H1-x.H1, He4-x.He4, C12-x.C12, O16-x.O16);
 	}
-	Abundance& operator=(const Abundance& x){
-		H1 = x.H1; He4 = x.He4; C12 = x.C12; O16 = x.O16;
-		e = x.e;
-		return *this;
-	}
+	Abundance& operator=(const Abundance& x) = default;
+	bool operator==(const Abundance& x) const {
+		return (H1==x.H1 && He4==x.He4 && C12==x.C12 && O16==x.O16);
+	};
 	double  operator[](int n) const {
 		switch(n){
 			case 0: return H1;  break;
@@ -196,19 +195,15 @@ private:
 	funcptrX uX;
 };
 
-
 class EOS {
 public:
 	EOS() = default;
 	EOS(std::vector<PartialPressure> const& p) : pressure(p) {};
+	EOS(EOS const &) = default;
+	EOS& operator=(EOS const &) = default;
 	double invert(double const rho_last, double const P, double const T, Abundance const& chem);
-	double invertNewton(double const rho_last, double const P, double const T, Abundance const& chem);
-	double operator()(double const rho, double const T, Abundance const& chem){
-		double P = 0.0;
-		for(PartialPressure const &p : pressure) P += p(rho,T,chem);
-		return P;
-	}
-	~EOS(){pressure.clear();std::vector<PartialPressure>().swap(pressure);};	//destructor
+	double operator()(double const rho, double const T, Abundance const& chem);
+	~EOS() = default;
 	//other stuff
 	double U(double const rho, double const T, Abundance const& chem);
 	double Gamma1(double const rho, double const T, Abundance const& chem);
