@@ -38,6 +38,12 @@ StellarVar log(const StellarVar &x){
 	return val;
 }
 
+double EOS::operator()(double const rho, double const T, Abundance const& chem){
+	double P = 0.0;
+	for(PartialPressure const &p : pressure) P += p(rho,T,chem);
+	return P;
+}
+
 double EOS::U(double const rho, double const T, Abundance const& chem){
 	double U = 0.0;
 	for(PartialPressure p : pressure) U += p.U(rho,T,chem);
