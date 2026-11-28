@@ -574,9 +574,15 @@ double fd_u_del_rho(double const eta, double const T, Abundance const &X) {
 template <FermiDiracSet const *const fd>
 double fd_u_del_T(double const eta, double const T, Abundance const &X) {
 	double const beta = relativistic_beta(T);
+	double f12 = fd->F[0](eta, beta), f32 = fd->F[1](eta, beta), f52 = fd->F[2](eta, beta);
+	double dfde12 = fd->dFdEta[0](eta, beta), dfde32 = fd->dFdEta[1](eta, beta), dfde52 = fd->dFdEta[2](eta, beta);
+	double dfdb12 = fd->dFdBeta[0](eta, beta), dfdb32 = fd->dFdBeta[1](eta, beta), dfdb52 = fd->dFdBeta[2](eta, beta);
 	return 24.*sqrt(2.)*Chandrasekhar::A0*(beta/T)*(
-		2.5*pow(beta,1.5)*(	fd->F[1](eta, beta) + beta*fd->F[2](eta, beta) )
-		+ pow(beta,2.5)*(fd->dFdBeta[1](eta, beta) + (1.+beta)*fd->dFdBeta[2](eta, beta))
+		2.5*pow(beta,1.5)*(	f32 + beta*f52 )
+		+ pow(beta,2.5)*( dfdb32 + f52 + beta*dfdb52 )
+		- pow(beta,2.5)*( dfde32 + beta*dfde52 ) * ( 
+				1.5/beta * (f12 + beta*f32) + dfdb12 + f32 + beta * dfdb32
+			) / ( dfde12 + beta*dfde32 )
 	);
 }
 

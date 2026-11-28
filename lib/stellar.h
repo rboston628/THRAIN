@@ -226,9 +226,8 @@ struct ElectronPressure : public PartialPressure {
 	using funcptr = double (*)(double const, double const, Abundance const&);
 	using funcptrX = double (*)(chemical::elem, double const, double const, Abundance const&);
 	ElectronPressure(funcptr p, funcptr pr, funcptr pt, funcptrX px,
-		funcptr u, funcptr ur, funcptr ut, funcptrX ux, funcptr es, funcptr rf) : PartialPressure(p, pr, pt, px, u, ur, ut, ux), internal_state(es), rhofunc(rf) {
-			id = next_id++;
-		};
+		funcptr u, funcptr ur, funcptr ut, funcptrX ux, funcptr es, funcptr rf) :
+		 PartialPressure(p, pr, pt, px, u, ur, ut, ux), internal_state(es), rhofunc(rf), id(++next_id) {};
 	ElectronPressure(ElectronPressure const&) = default;
 	ElectronPressure& operator=(ElectronPressure const&) = default;
 	bool operator==(ElectronPressure const& other) const { return id == other.id; }
@@ -250,7 +249,7 @@ extern ElectronPressure no_electrons;
 class EOS {
 public:
 	EOS() = default;
-	EOS(std::vector<PartialPressure> const& p) : pressure(p) {};
+	EOS(std::vector<PartialPressure> const& p) : pressure(p), density_cache(), electron_state_cache() {};
 	EOS(EOS const &) = default;
 	EOS& operator=(EOS const &) = default;
 	double invert(double const rho_last, double const P, double const T, Abundance const& chem);
