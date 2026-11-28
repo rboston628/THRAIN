@@ -646,7 +646,7 @@ double pressure_deg_swap(double const rho, double const T, Abundance const& X){
 	if      (wne[0] >10.0) return pressure_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_pressure<&fermi_sagar>(rho,T,X);
+		return fd_pressure<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return wne[1]*boltzmann_k*T;
 	return 0.0;
@@ -656,7 +656,7 @@ double partialRho_deg_swap(double const rho, double const T, Abundance const& X)
 	if      (wne[0] >10.0) return partialRho_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_p_del_rho<&fermi_sagar>(rho,T,X);
+		return fd_p_del_rho<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return boltzmann_k*T/proton.mass_CGS/X.mu_e();
 	return 0.0;
@@ -666,7 +666,7 @@ double partialT_deg_swap(double const rho, double const T, Abundance const& X){
 	if      (wne[0] >10.0) return partialT_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_p_del_T<&fermi_sagar>(rho,T,X);
+		return fd_p_del_T<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return wne[1]*boltzmann_k;
 	return 0.0;
@@ -686,7 +686,7 @@ double energy_deg_swap(double const rho, double const T, Abundance const& X){
 	if      (wne[0] >10.0) return energy_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_energy<&fermi_sagar>(rho,T,X);
+		return fd_energy<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return 1.5*wne[1]*boltzmann_k*T;
 	return 0.0;
@@ -696,7 +696,7 @@ double UpartialRho_deg_swap(double const rho, double const T, Abundance const& X
 	if      (wne[0] >10.0) return UpartialRho_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_u_del_rho<&fermi_sagar>(rho,T,X);
+		return fd_u_del_rho<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return 1.5*boltzmann_k*T/proton.mass_CGS/X.mu_e();
 	return 0.0;
@@ -706,7 +706,7 @@ double UpartialT_deg_swap(double const rho, double const T, Abundance const& X){
 	if      (wne[0] >10.0) return UpartialT_deg_zero(rho,T,X);
 	else if (wne[0] >= 0.1) {
 		double eta = solveEta<&fermi_sagar>(rho,T,X);
-		return fd_u_del_T<&fermi_sagar>(rho,T,X);
+		return fd_u_del_T<&fermi_sagar>(eta,T,X);
 	}
 	else if (wne[0] <  0.1) return 1.5*wne[1]*boltzmann_k;
 	return 0.0;
