@@ -53,35 +53,43 @@ double fermi_occupation(double const e) {
 	return 1.0/(1.0+exp(e));
 }
 
+typedef double (*G)(double x, double const s, double const f, double const e);
+typedef double (*Xfactor)(double const t, double const k);
+
+double g(double x, double const s, double const f, double const e) {
+	return s * f;
+}
+double g_delEta(double x, double const s, double const f, double const e) {
+	return s * f * fermi_occupation(-e); // d/deta f = f(1-f)
+}
+double g_delBeta(double x, double const s, double const f, double const e) {
+	return 0.25 * x / s * f; // d/dbeta s = x/(4s)
+}
+
+double xfactor(double const t, double const k) {
+	return 2.0 * pow(t, 2.0*k + 1.0);
+}
+double xfactor_1Half(double const t, double const k) {
+	return 2.0 * t * t;
+}
+double xfactor_3Half(double const t, double const k) {
+	return 2.0 * pow(t, 4);
+}
+double xfactor_5Half(double const t, double const k) {
+	return 2.0 * pow(t, 6);
+}
+
 // The Fermi-Diract integrand, f(x) = x^k sqrt(1+beta*x/2) / (1+exp(x-eta))
 // here beta  = kB*T/(m c^2)
 // see Tooper 1969, ApJ 156
 // valid for any eta (including eta <= 0)
+template <G g_func, Xfactor xfactor_func>
 double fermi_dirac_integrand(double const t, double const k, double const eta, double const beta) {
 	double const x = t*t;
 	double const s = sqrt(1.0 + 0.5*beta*x);
 	double const f = fermi_occupation(x-eta);
-	return 2.0*pow(t, 2.0*k+1.0) * s * f;
+	return xfactor_func(t, k) * g_func(x, s, f, x-eta);
 }
-
-// partial derivative del f(X) / delEta
-double fermi_dirac_delEtaIntegrand(double const t, double const k, double const eta, double const beta) {
-	double const x = t*t;
-	double const s = sqrt(1.0 + 0.5*beta*x);
-	double const f = fermi_occupation(x-eta);
-	double const g = s*f*fermi_occupation(eta-x); // d/deta f = f(1-f)
-	return 2.0*pow(t, 2.0*k+1.0)*g;
-}
-
-// partial derivative del f(x) / delBeta
-double fermi_dirac_delBetaIntegrand(double const t, double const k, double const eta, double const beta) {
-	double const x = t*t;
-	double const s = sqrt(1.0 + 0.5*beta*x);
-	double const f = fermi_occupation(x-eta);
-	double const g = 0.25*x/s*f; // d/dbeta s = x/(4s)
-	return 2.0*pow(t, 2.0*k+1.0)*g;
-}
-
 } // anonymous namespace
 
 /** GENERIC FERMI-DIRAC FUNCTIONS
@@ -91,23 +99,90 @@ double fermi_dirac_delBetaIntegrand(double const t, double const k, double const
 
 //numerically integrate the Fermi-Dirac functon F_k(eta)
 double FermiDirac::FermiDirac(double const k, double const eta) {
-	return FermiDirac(k, eta, 0.0);
+	auto const &integrand = [k, eta](double t) {
+		return fermi_dirac_integrand<&g, &xfactor>(t, k, eta, 0.0);
+	};
+	return panel_integrate(eta, integrand);
 }
 
 //numerically integrate the Fermi-Dirac functon F_k(eta, beta)
 double FermiDirac::FermiDirac(double const k, double const eta, double const beta) {
-	std::function<double(double)> integrand = [k, eta, beta](double const t) { return fermi_dirac_integrand(t, k, eta, beta);};
+	auto const &integrand = [k, eta, beta](double t) {
+		return fermi_dirac_integrand<&g, &xfactor>(t, k, eta, beta);
+	};
 	return panel_integrate(eta, integrand);
 }
 //partial derivatives
 double FermiDirac::FermiDiracDelEta(double const k, double const eta, double const beta) {
-	std::function<double(double)> integrand = [k, eta, beta](double const t) { return fermi_dirac_delEtaIntegrand(t, k, eta, beta);};
+	auto const &integrand = [k, eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delEta, &xfactor>(t, k, eta, beta);
+	};
 	return panel_integrate(eta, integrand);
 }
 double FermiDirac::FermiDiracDelBeta(double const k, double const eta, double const beta) {
-	std::function<double(double)> integrand = [k, eta, beta](double const t) { return fermi_dirac_delBetaIntegrand(t, k, eta, beta);};
+	auto const &integrand = [k, eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delBeta, &xfactor>(t, k, eta, beta);
+	};
 	return panel_integrate(eta, integrand);
 }
+
+// special case 1/2
+double FermiDirac::FermiDirac1Half(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g, &xfactor_1Half>(t, 0.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac1HalfDelEta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delEta, &xfactor_1Half>(t, 0.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac1HalfDelBeta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delBeta, &xfactor_1Half>(t, 0.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+// special case 3/2
+double FermiDirac::FermiDirac3Half(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g, &xfactor_3Half>(t, 1.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac3HalfDelEta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delEta, &xfactor_3Half>(t, 1.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac3HalfDelBeta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delBeta, &xfactor_3Half>(t, 1.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+// special case 5/2
+double FermiDirac::FermiDirac5Half(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g, &xfactor_5Half>(t, 2.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac5HalfDelEta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delEta, &xfactor_5Half>(t, 2.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}
+double FermiDirac::FermiDirac5HalfDelBeta(double const eta, double const beta) {
+	auto const &integrand = [eta, beta](double t) {
+		return fermi_dirac_integrand<&g_delBeta, &xfactor_5Half>(t, 2.5, eta, beta);
+	};
+	return panel_integrate(eta, integrand);
+}	
 
 /** SAGAR 1991 QUADRATURE METHODS
  * These are special cases of the Fermi-Dirac functions using special quadrature method of Sagar (1991)
@@ -116,6 +191,9 @@ double FermiDirac::FermiDiracDelBeta(double const k, double const eta, double co
  * They have been independently verified for -100 < eta < 5 up to ~2e-5, with error on order 1e-4 at eta = 10
  * For regions eta > 10, Sagar suggests using asymptotic approximation
  * Outside accuracy range, the direct Fermi-Dirac integration is used instead
+ * See papers:
+ * - Robin P Sagar, Computer Physics Communications vol 66, 1991
+ * - Robin P Sagar, ApJ 376, 1991
 */
 
 namespace Sagar {
@@ -190,8 +268,8 @@ bool is_valid(double const eta){
 }
 } // namespace Sagar
 
-double FermiDirac::FermiDirac1Half(double const eta, double const beta){
-	if (!Sagar::is_valid(eta)) return FermiDirac(0.5, eta, beta);
+double FermiDirac::FermiDiracSagar1Half(double const eta, double const beta){
+	if (!Sagar::is_valid(eta)) return FermiDirac1Half(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -203,8 +281,8 @@ double FermiDirac::FermiDirac1Half(double const eta, double const beta){
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac3Half(double const eta, double const beta){
-	if (!Sagar::is_valid(eta)) return FermiDirac(1.5, eta, beta);
+double FermiDirac::FermiDiracSagar3Half(double const eta, double const beta){
+	if (!Sagar::is_valid(eta)) return FermiDirac3Half(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -216,22 +294,22 @@ double FermiDirac::FermiDirac3Half(double const eta, double const beta){
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac5Half(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDirac(2.5, eta, beta);
+double FermiDirac::FermiDiracSagar5Half(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac5Half(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
 	for(int i=0; i<24; i++){
 		x = Sagar::xFermiDirac5Half[i];
 		w = Sagar::wFermiDirac5Half[i];
-		f = (1.+exp(x))/(1.+exp(x-eta))*sqrt(1.+0.5*beta*x);
+		f = fermi_occupation(x-eta) * (1.+exp(x)) * sqrt(1.+0.5*beta*x);
 		sum += w*f;
 	}
 	return sum;
 }
 
-double FermiDirac::FermiDirac1HalfDelEta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelEta(0.5, eta, beta);
+double FermiDirac::FermiDiracSagar1HalfDelEta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac1HalfDelEta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -243,8 +321,8 @@ double FermiDirac::FermiDirac1HalfDelEta(double const eta, double const beta) {
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac3HalfDelEta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelEta(1.5, eta, beta);
+double FermiDirac::FermiDiracSagar3HalfDelEta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac3HalfDelEta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -256,8 +334,8 @@ double FermiDirac::FermiDirac3HalfDelEta(double const eta, double const beta) {
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac5HalfDelEta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelEta(2.5, eta, beta);
+double FermiDirac::FermiDiracSagar5HalfDelEta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac5HalfDelEta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -270,8 +348,8 @@ double FermiDirac::FermiDirac5HalfDelEta(double const eta, double const beta) {
 	return sum;
 }
 // note d/dbeta sqrt(1+beta*x/2) = 0.25*x/sqrt(1+beta*x/2)
-double FermiDirac::FermiDirac1HalfDelBeta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelBeta(0.5, eta, beta);
+double FermiDirac::FermiDiracSagar1HalfDelBeta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac1HalfDelBeta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -283,8 +361,8 @@ double FermiDirac::FermiDirac1HalfDelBeta(double const eta, double const beta) {
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac3HalfDelBeta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelBeta(1.5, eta, beta);
+double FermiDirac::FermiDiracSagar3HalfDelBeta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac3HalfDelBeta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -296,8 +374,8 @@ double FermiDirac::FermiDirac3HalfDelBeta(double const eta, double const beta) {
 	}
 	return sum;
 }
-double FermiDirac::FermiDirac5HalfDelBeta(double const eta, double const beta) {
-	if (!Sagar::is_valid(eta)) return FermiDiracDelBeta(2.5, eta, beta);
+double FermiDirac::FermiDiracSagar5HalfDelBeta(double const eta, double const beta) {
+	if (!Sagar::is_valid(eta)) return FermiDirac5HalfDelBeta(eta, beta);
 	double f;
 	double x, w;
 	double sum = 0.0;
@@ -309,7 +387,6 @@ double FermiDirac::FermiDirac5HalfDelBeta(double const eta, double const beta) {
 	}
 	return sum;
 }
-
 
 /** ASYMPTOTIC APPROXIMATIONS
  * For very large eta values, the following asymptotic methods will work.

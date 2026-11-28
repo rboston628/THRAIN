@@ -8,6 +8,7 @@ struct Abundance;
 
 namespace chemical {
 	enum elem {h=0, he, c, o};
+	std::array<elem, 4> constexpr allElements = {h, he, c, o};
 	const double Z[] = {1., 2.,  6.,  8.};
 	const double A[] = {1., 4., 12., 16.};
 	
@@ -22,7 +23,6 @@ struct Abundance {
 	int e;
 	double mean_A() const {
 		using namespace chemical;
-		ThrainLogger::debug("\tmuA:\t%0.2f\t%0.2f\t%0.2f\t%0.2f\n", H1, He4, C12, O16);
 		return 1./(H1 + He4/chemical::A[he] + C12/chemical::A[c] + O16/chemical::A[o]);
 	}
 	double mean_Z() const {
@@ -169,10 +169,12 @@ public:
 StellarVar exp(const StellarVar &x);
 StellarVar log(const StellarVar &x);
 
-//some opacities
-//double radiative_opacity(StellarVar ly, Abundance const& X);
-//double conductive_opacity(StellarVar ly, Abundance const& X);
-
+// **************************************************************************
+// PARTIAL PRESSURE
+// A structure describing some interaction within a stellar plasma
+// A bundle of functions for pressure, energy, and partial derivatives
+// Each function must take rho, T, and chemical composition X as arguments
+// **************************************************************************
 struct PartialPressure {
 	double P(double const rho, double const T, Abundance const& X) const {return pfunc(rho,T,X);}
 	double partialRho(double const rho, double const T, Abundance const& X) const {return prho(rho,T,X);}
@@ -195,6 +197,54 @@ private:
 	funcptrX uX;
 };
 
+struct OneValueCache {
+	double x, y;
+	Abundance chem;
+	double val;
+	bool operator==(OneValueCache const& other) const {
+		return (x==other.x && y==other.y && chem==other.chem);
+	}
+	bool cache_match(double const x, double const y, Abundance const& chem) const {
+		return (this->x==x && this->y==y && this->chem==chem);
+	}
+	void recache(double const val, double const x, double const y, Abundance const& chem) {
+		this->x = x; this->y = y; this->chem = chem; this->val = val;
+	}
+	OneValueCache() : x(0.0), y(0.0), chem(), val(nan("")) {};
+};
+
+// **************************************************************************
+// ELECTRON PRESSURE
+// The specific partial pressure of the plasma's electron gas
+// This is described by an internal state, usually the degeneracy parameter
+// The internal state must be described by rho, T, and chemical composition X
+// Each other function must take state, T, and chemical composition X as arguments
+// **************************************************************************
+struct ElectronPressure : public PartialPressure {
+	using funcptr = double (*)(double const, double const, Abundance const&);
+	using funcptrX = double (*)(chemical::elem, double const, double const, Abundance const&);
+	ElectronPressure(funcptr p, funcptr pr, funcptr pt, funcptrX px,
+		funcptr u, funcptr ur, funcptr ut, funcptrX ux, funcptr es, funcptr rf) : PartialPressure(p, pr, pt, px, u, ur, ut, ux), internal_state(es), rhofunc(rf) {
+			id = next_id++;
+		};
+	ElectronPressure(ElectronPressure const&) = default;
+	ElectronPressure& operator=(ElectronPressure const&) = default;
+	bool operator==(ElectronPressure const& other) const { return id == other.id; }
+	bool operator!=(ElectronPressure const& other) const { return id != other.id; }
+	double state(double const rho, double const T, Abundance const& chem) { return internal_state(rho, T, chem); }
+	double density(double const state, double const T, Abundance const &chem) { return rhofunc(state, T, chem); }
+private:
+	// the internal state, eg degeneracy, as function of rho, T, and chemical composition
+	funcptr internal_state;
+	// the total density, as function of internal state, T, and chemical composition
+	funcptr rhofunc;
+	// use this id for easier comparison of electron pressure objects
+	static unsigned char next_id;
+	unsigned char id;
+};
+
+extern ElectronPressure no_electrons;
+
 class EOS {
 public:
 	EOS() = default;
@@ -204,7 +254,7 @@ public:
 	double invert(double const rho_last, double const P, double const T, Abundance const& chem);
 	double operator()(double const rho, double const T, Abundance const& chem);
 	~EOS() = default;
-	//other stuff
+	// other stuff
 	double U(double const rho, double const T, Abundance const& chem);
 	double Gamma1(double const rho, double const T, Abundance const& chem);
 	double Gamma3(double const rho, double const T, Abundance const& chem);
@@ -212,18 +262,26 @@ public:
 	double chiRho(double const rho, double const T, Abundance const& chem);
 	double chiT(double const rho, double const T, Abundance const& chem);
 	double chiY(chemical::elem i, double const rho, double const T, Abundance const& chem);
-	//calculate the Ledoux term -- see Brassard etc 1991, eqn (13, 14)
+	// calculate the Ledoux term -- see Brassard etc 1991, eqn (13, 14)
 	double Ledoux(double const rho, double const T, Abundance const& chem, Abundance const& dchem);
 	
-	//partial derivatives
+	double electronState(double const rho, double const T, Abundance const& chem);
+
+	// partial derivatives
 	double partialRho(double const rho, double const T, Abundance const& chem);
 	double partialT(double const rho, double const T, Abundance const& chem);
 	
 	PartialPressure operator[](int n);
-	void push_back(PartialPressure);
+	void push_back(PartialPressure const&);
+	void push_back(ElectronPressure const&);
 private:
-	//the partial pressures are stored as function pointers in a vector object
+	// the partial pressures are stored as function pointers in a vector object
 	std::vector<PartialPressure> pressure {};
+	ElectronPressure electron_pressure = no_electrons;
+	// density cache to speed up repeated calls to find density
+	OneValueCache density_cache;
+	// electron state cache to speed up repeated calls to find degeneracy parameter
+	OneValueCache electron_state_cache;
 };
 
 //************************************************************************************
@@ -272,7 +330,14 @@ double UpartialT_coul(double const rho, double const T, Abundance const& X);
 double UpartialX_coul(chemical::elem, double const rho, double const T, Abundance const& X);
 
 
+//************************************************************************************
+//	ELECTRON DEGENERACY PRESSURE TERMS
+//  All of the following describe electron degeneracy pressure
+//  They differ by evaluation technique used, or domain of validity
+//************************************************************************************
+
 //ELECTRON DEGENERACY PRESSURE -- ZERO TEMP
+double density_deg_zero(double const X0, double const T, Abundance const& X);
 double pressure_deg_zero(double const rho, double const T, Abundance const& X);
 double partialRho_deg_zero(double const rho, double const T, Abundance const& X);
 double partialT_deg_zero(double const rho, double const T, Abundance const& X);
@@ -282,40 +347,24 @@ double UpartialRho_deg_zero(double const rho, double const T, Abundance const& X
 double UpartialT_deg_zero(double const rho, double const T, Abundance const& X);
 double UpartialX_deg_zero(chemical::elem, double const rho, double const T, Abundance const& X);
 
+//ELECTRON DEGENERACY PRESSURE -- INTEGRATED GAUSS-LEGENDRE
+// these are defined with template methods in stellar.cpp
 
-//ELECTRON DEGENERACY PRESSURE -- FINITE TEMP
-double findEta(double const rho, double const beta, double const mue);
-double pressure_deg_finite(double const rho, double const T, Abundance const& X);
-double partialRho_deg_finite(double const rho, double const T, Abundance const& X);
-double partialT_deg_finite(double const rho, double const T, Abundance const& X);
-double partialX_deg_finite(chemical::elem i, double const rho, double const T, Abundance const& X);
-double energy_deg_finite(double const rho, double const T, Abundance const& X);
-double UpartialRho_deg_finite(double const rho, double const T, Abundance const& X);
-double UpartialT_deg_finite(double const rho, double const T, Abundance const& X);
-double UpartialX_deg_finite(chemical::elem i, double const rho, double const T, Abundance const& X);
+//ELECTRON DEGENERACY PRESSURE -- QUADRATURE SAGAR 1991
+// these are defined with templar methods in stellar.cpp
 
-
-//ELECTRON DEGENERACY PRESSURE -- FINITE TEMP
-//  find eta by inverting rho = rho0*( F1/2 + beta*F3/2)
-double density_trap(double eta, double beta, double mue);
-double findEta_trap(double const rho, double const beta, double const mue);
-double pressure_deg_trap(double const rho, double const T, Abundance const& X);
-double energy_deg_trap(double const rho, double const T, Abundance const& X);
-
-
-//ELECTRON DEGENERACY PRESSURE -- PARTIAL DEGENERACY
-//pressure of electron gas under partial degeneracy (T finite)
+//ELECTRON DEGENERACY PRESSURE -- SWAP METHOD
+//pressure of electron gas under different degrees of degeneracy
 //  uses a combination of methods depending on degeneracy
 //	following Cox and Giuli 1980 -- see equation 24.51, the definition of w
-double pressure_deg_partial(double const rho, double const T, Abundance const& X);
-double partialRho_deg_partial(double const rho, double const T, Abundance const& X);
-double partialT_deg_partial(double const rho, double const T, Abundance const& X);
-double partialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X);
-double energy_deg_partial(double const rho, double const T, Abundance const& X);
-double UpartialRho_deg_partial(double const rho, double const T, Abundance const& X);
-double UpartialT_deg_partial(double const rho, double const T, Abundance const& X);
-double UpartialX_deg_partial(chemical::elem i, double const rho, double const T, Abundance const& X);
-
+double pressure_deg_swap(double const rho, double const T, Abundance const& X);
+double partialRho_deg_swap(double const rho, double const T, Abundance const& X);
+double partialT_deg_swap(double const rho, double const T, Abundance const& X);
+double partialX_deg_swap(chemical::elem i, double const rho, double const T, Abundance const& X);
+double energy_deg_swap(double const rho, double const T, Abundance const& X);
+double UpartialRho_deg_swap(double const rho, double const T, Abundance const& X);
+double UpartialT_deg_swap(double const rho, double const T, Abundance const& X);
+double UpartialX_deg_swap(chemical::elem i, double const rho, double const T, Abundance const& X);
 
 #endif
 

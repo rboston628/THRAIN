@@ -264,7 +264,8 @@ void SimpleWD::setup(){
 	if(!(input_file=fopen(ThrainConfig::swdParamsFileName().c_str(), "r"))){
 		ThrainLogger::warning("ERROR: EOS file not found... using a default\n");
 		//do something
-		std::vector<PartialPressure> corePres{deg_zero, rad_gas, ideal, coul};
+		std::vector<PartialPressure> corePres{rad_gas, ideal, coul};
+		corePres.push_back(deg_zero);
 		std::vector<PartialPressure> atmPres{rad_gas, ideal};
 		for(PartialPressure p : corePres) core_pressure.push_back(p);
 		for(PartialPressure p : atmPres)   atm_pressure.push_back(p);
@@ -297,12 +298,12 @@ void SimpleWD::setup(){
 					 pres->push_back(coul);
 				else if(!strcmp(pressure, "deg_zero"))
 					pres->push_back(deg_zero);
-				else if(!strcmp(pressure, "deg_partial"))
-					pres->push_back(deg_partial);
-				else if(!strcmp(pressure, "deg_finite"))
-					pres->push_back(deg_finite);
-				else if(!strcmp(pressure, "deg_trap"))
-					pres->push_back(deg_trap);
+				else if(!strcmp(pressure, "deg_swap"))
+					pres->push_back(deg_swap);
+				else if(!strcmp(pressure, "deg_sagar"))
+					pres->push_back(deg_sagar);
+				else if(!strcmp(pressure, "deg_integrate"))
+					pres->push_back(deg_integrate);
 				else ThrainLogger::error("ERROR: partial pressure term unrecognized!\n");
 				pressure = strtok(NULL, " \t\n");
 			}
@@ -751,7 +752,12 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	//prepare a Newton method to find surface value of rho
 	double f1 = atm_pressure(Yphoto[dens], Yphoto[temp], Xsurf)-a/kp-b, f2=1.0e2;
 	double x1=1e2, x2 = Yphoto[dens], dx;
+	int iter = 0;
 	while(fabs(x1-x2)/x1 > 1e-10){
+		if (++iter > 10) {
+			ThrainLogger::error("ERROR: failed to converge on photosphere density 1\n");
+			break;
+		}
 		x1 = x2;
 		x2 = 1.01*x1;
 	//  perturb
@@ -760,7 +766,12 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 		f2 = atm_pressure(x2,Yphoto[temp],Xsurf) - a/kp-b;
 	//  correct
 		dx = -f1*(x2-x1)/(f2-f1);
+		int iiter = 0;
 		while(x1+dx < 0.0){
+			if (++iiter > 10) {
+				ThrainLogger::error("ERROR: failed to converge on photosphere density 2\n");
+				break;
+			}
 			x2 *= 0.1;
 			lyp[dens] = log(x2);
 			kp = radiative_opacity(lyp,Xsurf);
@@ -796,7 +807,12 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	tau1 = taup;
 	dtau = (tauf - tau1)/100.0;
 	Y1 = Yphoto;
+	iter = 0;
 	while(Y1[mass] > mf*Mstar){
+		if (++iter > 100) {
+			ThrainLogger::error("ERROR: failed to converge on first atmosphere step 3\n");
+			break;
+		}
 		ly1 = log(Y1);
 		g = G_CGS*exp(ly1[mass]-2.*ly1[radi]);
 		kappa = radiative_opacity(ly1, Xsurf);
@@ -833,7 +849,7 @@ std::size_t SimpleWD::firstAtmosphereStep(const double x[numv], double& rholast)
 	rholast = Y[1][dens];
 
 	//calculate surface derivatives
-	nabla = atm_pressure.nabla_ad( Y[1][dens], Y[1][temp], Xsurf);
+	nabla = atm_pressure.nabla_ad( Yfirst[dens], Yfirst[temp], Xsurf);
 	dlogY[Ntot-1] = dlogYdlogR(logY[Ntot-1], nabla); 
 	dlogY[Ntot-2] = dlogYdlogR(logY[Ntot-2], nabla);
 	Xelem[Ntot-1] = findAbundance(logY[Ntot-1][mass], logY[Ntot-1][radi], dXelem[Ntot-1]);
@@ -987,12 +1003,13 @@ double SimpleWD::energyTransport( const StellarVar& logy, const Abundance& X)
 
 // EQUATION OF STATE  relates pressure and density
 EOS* SimpleWD::getEOS(const StellarVar &y, const Abundance& X){
-	double Patm  =  atm_pressure(y[dens], y[temp], X);
-	double Pcore = core_pressure(y[dens], y[temp], X);
-	if(X.H1 < 0.5) return &core_pressure;
-	else if (Pcore <  Patm) return &atm_pressure;
-	else if (Pcore >= Patm) return &core_pressure;
-	else return &core_pressure; //*/
+	if(X.H1 >= 0.5) {
+		double Patm  =  atm_pressure(y[dens], y[temp], X);
+		double Pcore = core_pressure(y[dens], y[temp], X);
+		if (Pcore <  Patm) return &atm_pressure;
+		else return &core_pressure;
+	}
+	else return &core_pressure;
 }
 
 double SimpleWD::equationOfState(const StellarVar& logy, const Abundance& chem, double& rho_last, int X){
@@ -1895,7 +1912,7 @@ void SimpleWD::printBigASCII( std::string const& calcname){
 		// the fermi-momentum goes here
 		fprintf(fp, "%+le\t", pow(rho/Chandrasekhar::B0/Xelem[X].mu_e(), 1./3.));
 		double beta = boltzmann_k*T/(electron.mass_CGS*C_CGS*C_CGS);
-		double eta = findEta(rho, beta, Xelem[X].mu_e());
+		double eta = 0.0; //findEta(rho, beta, Xelem[X].mu_e());
 		// the degeneracy parameter goes here
 		fprintf(fp, "%+13le\t", eta);
 		//log effective energy generation

@@ -18,7 +18,8 @@
 #include "Star.h"
 #include "../../lib/stellar.h"
 
-extern PartialPressure ideal, rad_gas, coul, deg_zero, deg_finite, deg_trap, deg_partial;
+extern PartialPressure ideal, rad_gas, coul;
+extern ElectronPressure deg_zero, deg_sagar, deg_integrate, deg_swap;
 
 class SimpleWD : public Star {
 public:

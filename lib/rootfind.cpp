@@ -207,6 +207,7 @@ int rootfind::bisection_find_brackets_newton(
 	//we use Newton's method to the nearest zero
 	double xm = (move_left ? x1 : x2);
 	double ym = (move_left ? y1 : y2);
+	if (!std::isfinite(ym)) return fail(xmin, xmax);
 	int iter = 0;
 	while(ym * y >= 0.0){
 		iter++;

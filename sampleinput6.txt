@@ -2,7 +2,7 @@ Name:	testSWDinput
 Model:	newtonian SWD 2000
 EOS:
 	core	rad	ideal	coul	deg_zero
-	atm	rad	ideal
+	atm	rad	ideal deg_partial
 chemical parameters:
 	he	10.0	3.0	1.0
 	c	3.0	4.0	1.0
