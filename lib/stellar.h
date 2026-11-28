@@ -280,9 +280,9 @@ private:
 	std::vector<PartialPressure> pressure {};
 	ElectronPressure electron_pressure = no_electrons;
 	// density cache to speed up repeated calls to find density
-	OneValueCache density_cache;
+	OneValueCache density_cache {};
 	// electron state cache to speed up repeated calls to find degeneracy parameter
-	OneValueCache electron_state_cache;
+	OneValueCache electron_state_cache {};
 };
 
 //************************************************************************************
