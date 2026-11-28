@@ -4,6 +4,8 @@
 #include "../src/constants.h"
 #include "chandra.h"
 
+#include <array>
+
 struct Abundance;
 
 namespace chemical {
