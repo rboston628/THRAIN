@@ -378,9 +378,8 @@ ElectronPressure deg_zero = {
 	energy_deg_zero, UpartialRho_deg_zero, UpartialT_deg_zero, UpartialX_deg_zero,
 	rho_out, rho_out
 };
-double density_deg_zero(double const rho, double const T, Abundance const& X){
+double density_deg_zero(double const X0, double const T, Abundance const& X){
 	using namespace Chandrasekhar;
-	double X0 = calc_x0(rho, T, X);
 	return B0*X.mu_e()*pow(X0,3);
 }
 double pressure_deg_zero(double const rho, double const T, Abundance const& X){
